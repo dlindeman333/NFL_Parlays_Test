@@ -1,0 +1,1594 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>NFL Parlay Builder</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light;--bg:#f4f5f7;--card:#fff;--tx:#14181f;--mu:#667085;--bd:#dde1e8;--ac:#0b5fff;--acx:#fff;--ok:#0a8a4a;--wa:#b45309;--sel:#e6efff}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){color-scheme:dark;--bg:#0f1218;--card:#1a1f29;--tx:#eef1f6;--mu:#98a2b3;--bd:#2c3340;--ac:#5b92ff;--acx:#0b0f18;--ok:#3ddc84;--wa:#f5a524;--sel:#1f2e4d}}
+:root[data-theme="dark"]{color-scheme:dark;--bg:#0f1218;--card:#1a1f29;--tx:#eef1f6;--mu:#98a2b3;--bd:#2c3340;--ac:#5b92ff;--acx:#0b0f18;--ok:#3ddc84;--wa:#f5a524;--sel:#1f2e4d}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 -apple-system,system-ui,"Segoe UI",Roboto,sans-serif;max-width:720px;margin:0 auto;padding:12px 12px 40px}
+h1{font-size:20px;margin:4px 0 2px}h2{font-size:16px;margin:20px 0 8px}
+.mu{color:var(--mu);font-size:12.5px}
+.card{background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:12px;margin:8px 0}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.seg{display:flex;border:1px solid var(--bd);border-radius:10px;overflow:hidden;flex:1}
+.seg button{flex:1;border:0;background:transparent;color:var(--tx);padding:9px 6px;font:inherit;font-weight:600}
+.seg button.on{background:var(--ac);color:var(--acx)}
+.step{display:flex;align-items:center;gap:10px}
+.step button{width:34px;height:34px;border-radius:50%;border:1px solid var(--bd);background:var(--card);color:var(--tx);font-size:18px}
+.step b{min-width:20px;text-align:center;font-size:17px}
+input[type=number]{width:80px;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit}
+.bar{position:relative;z-index:auto;background:var(--ac);color:var(--acx);border-radius:12px;padding:10px 12px;margin:8px 0;display:flex;justify-content:space-between;gap:8px;font-weight:600}
+.bar small{display:block;font-weight:400;opacity:.85}
+.g{padding:10px 12px}
+.gh{display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:8px}
+.gh b{font-size:15px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.m{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--mu);grid-column:1/-1;margin-top:4px}
+.o{border:1px solid var(--bd);background:var(--card);color:var(--tx);border-radius:9px;padding:8px 6px;font:inherit;text-align:center}
+.o span{display:block;font-size:11.5px;color:var(--mu)}
+.o.on{background:var(--sel);border-color:var(--ac);outline:1px solid var(--ac)}
+.o:disabled{opacity:.4}
+.pill{font-size:11px;border:1px solid var(--bd);border-radius:20px;padding:2px 8px;color:var(--mu);background:transparent}
+.pill.on{background:var(--ac);color:var(--acx);border-color:var(--ac)}
+.leg{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--bd)}
+.leg:last-child{border:0}
+.x{border:0;background:none;color:var(--mu);font-size:18px}
+.pl{border-left:4px solid var(--ok);padding-left:10px;margin:10px 0}
+.pl.med{border-color:var(--wa)}
+.btn{border:0;background:var(--ac);color:var(--acx);padding:8px 12px;border-radius:9px;font:inherit;font-weight:600}
+.warn{color:var(--wa);font-size:12.5px}
+.ok{color:var(--ok);font-weight:600}
+:root{--bg:#dbe7ff;--card:#fff;--tx:#07122b;--mu:#34476e;--bd:#8fb0ef;--ac:#0a4fd6;--acx:#fff;--ok:#067a3f;--wa:#9a3c00;--sel:#c7dcff;--lose:#c01d2e;--hd:#0a2a6b}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#061330;--card:#0f2250;--tx:#f4f7ff;--mu:#b3c6ee;--bd:#3366c9;--ac:#5b97ff;--acx:#041230;--ok:#4ade80;--wa:#ffb454;--sel:#1a3a7a;--lose:#ff7384;--hd:#123c8c}}
+:root[data-theme="dark"]{--bg:#061330;--card:#0f2250;--tx:#f4f7ff;--mu:#b3c6ee;--bd:#3366c9;--ac:#5b97ff;--acx:#041230;--ok:#4ade80;--wa:#ffb454;--sel:#1a3a7a;--lose:#ff7384;--hd:#123c8c}
+.hd{background:linear-gradient(135deg,var(--hd),var(--ac));color:#fff;border-radius:14px;padding:14px;margin:4px 0 8px}
+.hd h1{margin:0;color:#fff}.hd .mu{color:#dce8ff}
+.card{border:1.5px solid var(--bd);box-shadow:0 1px 4px rgba(10,79,214,.2)}
+h2{color:var(--ac);border-left:5px solid var(--ac);padding-left:8px}
+.o{border:1.5px solid var(--bd);font-weight:600}
+.o.on{background:var(--ac);color:var(--acx);border-color:var(--ac);outline:0}.o.on span{color:var(--acx);opacity:.9}
+.gh b{color:var(--ac)}
+select{padding:8px;border:1.5px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);font:inherit;font-weight:600}
+.bar{background:linear-gradient(135deg,var(--hd),var(--ac));color:#fff}
+.btn.alt{background:var(--card);color:var(--ac);border:1.5px solid var(--ac)}
+.sv{border-left:5px solid var(--bd)}.sv.won{border-left-color:var(--ok)}.sv.lost{border-left-color:var(--lose)}
+.tag{font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;color:#fff;background:var(--mu)}.tag.won{background:var(--ok)}.tag.lost{background:var(--lose)}
+.sm{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;text-align:center}.sm b{display:block;font-size:17px}
+.pos{color:var(--ok)}.neg{color:var(--lose)}
+.fp{font-size:13px;padding:6px 11px;color:var(--tx);border:1.5px solid var(--bd);border-radius:20px;background:var(--card)}.fp.on{color:var(--acx);background:var(--ac);border-color:var(--ac)}
+.det{margin-top:10px;padding-top:10px;border-top:2px dashed var(--bd)}.det .mu{margin:3px 0}
+.pl .pill{color:var(--ac);border-color:var(--ac);font-weight:700;margin-left:8px;cursor:pointer}
+
+/* v2 usability enhancements */
+body{max-width:1040px;padding:16px clamp(10px,3vw,28px) 56px}
+.hd{padding:19px 20px}.hd h1{font-size:clamp(22px,3vw,30px)}
+button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid #ffb454;outline-offset:2px}
+.btn:hover,.fp:hover,.o:hover:not(:disabled){filter:brightness(.95)}.btn:disabled{opacity:.6;cursor:wait}
+.toolbar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin:10px 0}
+.data-state{padding:7px 10px;border-radius:8px;background:var(--card);border:1px solid var(--bd);font-size:12px;color:var(--mu)}
+.data-state.good{border-color:var(--ok)}.data-state.bad{border-color:var(--wa)}
+/* Keep schedule refresh details within narrow portrait screens. */
+.refresh-status-line{width:100%;max-width:100%;min-width:0;margin:0 0 12px}
+#dataState{display:block;width:100%;max-width:100%;min-width:0;white-space:normal;overflow-wrap:anywhere;word-break:normal;line-height:1.45}
+@media(max-width:560px){#dataState{font-size:11px;padding:7px 9px}.refresh-status-line{margin-bottom:10px}}
+.navlinks{display:flex;gap:7px;flex-wrap:wrap;margin:9px 0 14px}.navlinks a{color:var(--ac);text-decoration:none;border:1px solid var(--bd);background:var(--card);padding:7px 12px;border-radius:22px;font-weight:600;font-size:13px}
+#gameSearch{width:min(100%,320px);padding:9px;border:1.5px solid var(--bd);border-radius:9px;background:var(--card);color:var(--tx)}
+#games{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,390px),1fr));gap:9px;align-items:start}
+#games .card{margin:0}.game-meta{font-size:11px;font-weight:700;border-radius:5px;background:var(--sel);padding:3px 6px;color:var(--tx)}
+@media(max-width:560px){.sm{grid-template-columns:repeat(2,1fr)}.gh{align-items:flex-start}.gh .row{justify-content:flex-end}.bar{font-size:13px}.hd{padding:14px}.btn{padding:10px}}
+
+.slip-tabs{display:flex;gap:7px;flex-wrap:wrap;margin:10px 0}.slip-tab{border:1px solid var(--bd);border-radius:9px;padding:9px;background:var(--card);color:var(--tx);font-weight:650}.slip-tab.active{background:var(--ac);color:var(--acx)}
+.tools{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin:8px 0}.tools button{font-size:13px}.data-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:7px;margin-top:9px}.data-grid>div{background:var(--sel);padding:9px;border-radius:8px}.data-grid b{display:block;font-size:16px}.performance-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:9px}.performance-grid .card{margin:0}.performance-detail-card{cursor:pointer;text-align:left;width:100%;font:inherit;color:inherit;background:var(--card);border:1px solid var(--bd);border-radius:10px;padding:14px}.performance-detail-card:hover,.performance-detail-card:focus-visible{outline:2px solid var(--ac);outline-offset:2px}.performance-detail-card .detail-cue{display:block;margin-top:8px;font-size:12px;color:var(--ac)}.performance-modal{border:1px solid var(--bd);border-radius:14px;padding:0;max-width:min(900px,96vw);width:900px;max-height:85vh;background:var(--card);color:var(--tx);box-shadow:0 15px 65px #0005}.performance-modal::backdrop{background:#0009}.performance-modal-inner{padding:20px;max-height:80vh;overflow:auto}.performance-modal-head{display:flex;justify-content:space-between;align-items:center;gap:12px}.performance-table{width:100%;border-collapse:collapse;font-size:13px}.performance-table th,.performance-table td{padding:9px;border-bottom:1px solid var(--bd);text-align:left;vertical-align:top}.performance-table .hit-row{background:rgba(16,185,129,.10)}.performance-table .miss-row{background:rgba(239,68,68,.10)}.performance-table .ungraded-row{opacity:.75}.performance-filter{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0}.performance-filter button[aria-pressed="true"]{outline:2px solid var(--ac)}.performance-grid b{display:block;font-size:20px}.performance-metrics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:10px 0}.performance-metrics>div{background:var(--sel);padding:9px;border-radius:8px}.performance-metrics strong{display:block;font-size:17px}.performance-summary-filter{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:10px 0}.performance-summary-filter button[aria-pressed="true"]{outline:2px solid var(--ac)}.hit{color:var(--ok)!important;border-left-color:var(--ok)!important}.miss{color:var(--lose)!important;border-left-color:var(--lose)!important}.pending{color:var(--mu)}.logo{width:32px;height:32px;object-fit:contain;vertical-align:middle}.sports-links a{display:inline-block;padding:7px 10px;border:1px solid var(--bd);border-radius:8px;color:var(--ac);font-weight:700;text-decoration:none}.file-help{font-size:12px;color:var(--mu);margin-top:6px}
+
+.sports-links{display:inline-flex;gap:7px;flex-wrap:wrap}.sports-links a{display:inline-flex;align-items:center;gap:6px;background:var(--card);min-height:40px}.sports-links img{width:24px;height:24px;object-fit:contain}.sv .row>.btn[data-saved-action="edit"]{margin-right:0}.sv .row>.btn[data-saved-action="delete-parlay"]{margin-left:0}#savedParlaySlips,#draftManagement{scroll-margin-top:12px}#draftManagement{border-top:2px solid var(--bd);padding-top:8px;margin-top:18px}
+.week-group-heading{font-size:1.4rem;font-weight:800;letter-spacing:.02em;margin:20px 0 12px;padding:10px 14px;border-left:5px solid #3b82f6;background:rgba(59,130,246,.09);border-radius:6px}
+.setup-modal{border:1.5px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(760px,96vw);max-height:88vh;padding:0;box-shadow:0 20px 70px #0006}.setup-modal::backdrop{background:#0009}.setup-content{padding:18px;max-height:85vh;overflow:auto}.setup-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.setup-modal input[type=email],.setup-modal input[type=password]{padding:9px;border:1.5px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);max-width:100%}.setup-modal .tools{margin:12px 0}.setup-modal section{border-top:1px solid var(--bd);padding-top:12px;margin-top:15px}.setup-modal h2{margin-top:4px}.setup-modal .mu{overflow-wrap:anywhere}
+</style>
+<style>
+.pred-dashboard{display:grid;gap:16px;margin:14px 0}
+.pred-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.pred-kpi{border:1px solid var(--bd);border-radius:12px;padding:15px;background:var(--card)}
+.pred-kpi .pred-label{font-size:12px;color:var(--mu)}
+.pred-kpi strong{display:block;font-size:clamp(23px,4vw,33px);margin-top:5px}
+.pred-chart-card{border:1px solid var(--bd);border-radius:12px;background:var(--card);padding:16px}
+.pred-chart-card h3{font-size:16px;margin:0 0 8px}
+.pred-chart-card .mu{font-size:12px}
+.pred-legend{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;font-size:12px;color:var(--mu);margin-top:8px}
+.pred-dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px}
+.pred-chart-svg{display:block;width:100%;height:auto;max-height:330px}
+.pred-table-scroll{overflow-x:auto}
+@media(max-width:480px){.pred-kpis{gap:6px}.pred-kpi{padding:10px}.pred-chart-card{padding:10px}}
+</style>
+</head><body>
+<div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
+<div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
+<div class="navlinks"><button id="openSetup" class="btn alt" type="button">⚙ Setup</button><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
+
+<dialog id="setupDialog" class="setup-modal" aria-label="Setup"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Setup</h2><button class="btn alt" type="button" id="closeSetup">Close ✕</button></div><section id="cloudSyncPanel">
+<h2 style="margin:0 0 8px">Cloud sync · PC &amp; iPhone</h2>
+<div class="mu">Supabase connection is already configured. Sign in with your own account; use the same account on your PC and iPhone. Your existing browser data stays local until you sign in. Requires HTTPS (GitHub Pages).</div>
+<div class="mu" style="margin-top:9px">Cloud connection is preconfigured. Sign in or create your own account below.</div>
+<div class="tools"><input id="sbEmail" name="username" type="email" inputmode="email" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Email" aria-label="Email"><input id="sbPassword" name="password" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" aria-label="Password"><button class="btn" id="sbSignIn">Sign in</button><button class="btn alt" id="sbSignUp">Create account</button><button class="btn alt" id="sbSignOut">Sign out</button></div>
+<div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
+</section>
+<section id="csvSetup"><h2>Upload NFL Stats</h2><div id="autoStatsStatus" class="mu" role="status">Cloud NFL statistics: checking…</div><div class="mu" style="margin:5px 0 8px">Imported player statistics are retained in this browser until you select Clear imported stats.</div><div class="tools"><span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px"><button class="btn" type="button" id="chooseCSV">Choose CSV file</button><span id="csvFileName" class="mu" role="status">Empty</span></span><input id="csvUpload" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-label="Choose player statistics CSV"><button class="btn alt" id="clearCSV">Clear imported stats</button></div><div id="csvState" class="mu">Empty — no imported player statistics.</div><div class="mu" id="csvLastUpload" style="margin-top:7px" role="status">Latest upload: Never</div><div class="mu">Data source: Onboard + uploaded NFL stats (automatic)</div></section></div></dialog>
+<h2 id="myParlays">My parlays</h2><div id="sumry" class="card"></div>
+<section id="savedParlaySlips" style="margin-top:18px"><h2>Saved parlay slips</h2><div class="mu">Showing saved parlays for the selected NFL week. Expand previous weeks to see older slips.</div><div class="tools"><button type="button" class="btn alt" id="toggleSavedPrevious" aria-expanded="false" aria-controls="savedPreviousWeeks">Show previous weeks saved parlays</button></div><div id="saved"></div><div class="mu" id="savedActionStatus" role="status" aria-live="polite"></div><div class="tools" style="margin-top:12px"><button class="btn alt" id="copyAllSaved">Copy all saved parlays</button><button type="button" class="btn alt" id="deleteAllSaved">Delete all saved parlays</button></div></section>
+<!-- Active parlay summary and actions above draft slip listing -->
+<div class="bar"><div id="b1">0 / 3 legs<small>Pick legs below</small></div><div id="b2" style="text-align:right">—<small></small></div></div>
+<div class="card" id="slip"></div>
+
+<div class="row" style="margin:8px 0"><button class="btn" id="save">Save parlay</button><button class="btn alt" id="cp">Copy slip</button><button class="btn alt" id="xl">Export spreadsheet</button><span class="mu" id="msg"></span></div>
+
+<h2 id="builderSettingsTitle">Week &amp; pick filters</h2>
+<div class="mu" style="margin-bottom:8px">Select the NFL week, game type, kickoff, and pick filters here.</div>
+<div class="card" id="builderControls">
+  <div class="row" style="margin-bottom:10px"><b>Week</b> <select id="wk"></select><span class="mu" id="wkn"></span><span class="sports-links"><a href="https://sportsbook.draftkings.com/" target="_blank" rel="noopener noreferrer"><img src="https://www.google.com/s2/favicons?domain=draftkings.com&sz=64" alt="" width="24" height="24" loading="lazy"> <span>DraftKings</span></a> <a href="https://sportsbook.fanduel.com/" target="_blank" rel="noopener noreferrer"><img src="https://www.google.com/s2/favicons?domain=fanduel.com&sz=64" alt="" width="24" height="24" loading="lazy"> <span>FanDuel</span></a></span></div><div class="row"><div class="seg" id="mode"><button data-m="multi" class="on">Multi-game</button><button data-m="same">Same game</button></div></div>
+  <div class="row" style="margin-top:10px;justify-content:space-between">
+    <div class="step"><span>Legs</span><button id="lm">−</button><b id="ln">3</b><button id="lp">+</button></div>
+    <div class="row">Stake $<input type="number" id="stake" value="10" min="1"></div>
+  </div>
+  <div class="row" style="margin-top:10px"><b>Kickoff</b></div><div class="row" id="tf" style="margin-top:4px"></div>
+<div class="row" style="margin-top:10px"><b>Picks</b></div><div class="row" id="pf" style="margin-top:4px"></div>
+<div class="mu" id="hint" style="margin-top:8px"></div>
+</div>
+
+
+<section id="draftManagement"><h2>Active parlay slips</h2><div class="mu">Only slips with selections (plus your currently selected draft) are shown. Manage each slip using its own controls.</div><div class="tools"><button class="btn" id="newSlip">+ New slip</button><button class="btn alt" id="clearAllSlips">Delete all slips</button></div><div id="slipTabs" class="draft-card-grid"></div></section>
+
+
+
+
+<h2 id="gameSection">Games</h2><div class="toolbar"><input id="gameSearch" type="search" placeholder="Search teams or matchups" aria-label="Search games"><span id="gameCount" class="mu"></span><button class="btn alt" id="togglePreviousGames" type="button" onclick="togglePreviousGames()" aria-expanded="false" aria-controls="previousGames">Show previous weeks</button></div><div id="games"></div>
+<div id="previousGames" style="display:none"></div>
+
+<h2 id="recommendations">Potential plays</h2>
+<div class="mu">Recommendations for Week 10 based on the original model. Schedule refresh updates matchups and final scores, but does not update team records, player stats, or model probabilities. These are not sportsbook odds.</div>
+<div id="plays"></div>
+<p class="mu">Team TD, passing and rushing picks are estimates against standard reference lines. Player picks use season totals from StatsCrew league leaders (Pro-Football-Reference blocks automated access), so only leading QBs, RBs and TD scorers appear, lines are each player’s season average, and TD counts may miss receiving scores for backs. Odds shown are model-estimated (about 4.5% margin built in), and spread/total lines are model reference lines, not sportsbook prices. Check your book for real lines before betting. These are estimates, not guarantees; same-game legs are correlated, so books price them differently. Please bet responsibly.</p>
+
+<h2 id="advancedPredictions">AI Matchup Recommendations</h2>
+<div class="mu">Data-driven matchup analysis using available model estimates and imported player game logs. Not a live generative AI service. Sportsbook lines are optional and entered manually; no paid API or background odds scraping.</div>
+<div class="tools" role="tablist" aria-label="AI Matchups sections"><button type="button" class="btn" id="advTabRecommendations" aria-selected="true">Recommendations</button><button type="button" class="btn alt" id="advTabPerformance" aria-selected="false">Prediction Performance</button></div><div id="advRecommendationPanel"><div class="card"><div class="tools"><label for="advView"><b>View</b></label><select id="advView"><option value="picks">Top picks</option><option value="games">Game matchups</option><option value="parlays">Suggested parlay</option></select><label for="advMarket"><b>Market</b></label><select id="advMarket"><option value="all">All</option><option value="ps">Passing yards</option><option value="ru">Rushing yards</option><option value="td">Touchdowns</option></select></div><div id="advStatus" class="mu" role="status"></div><div id="advResults"></div><div id="advEditor" class="card" hidden><b id="advEditTitle">Sportsbook line</b><div class="mu">Enter a line you personally verified at the sportsbook. These values are not automatically refreshed or cloud-synced.</div><div class="tools"><select id="advBook"><option>DraftKings</option><option>FanDuel</option><option>Other</option></select><label>Line <input id="advLine" type="number" min="0" step="0.5" placeholder="225.5"></label><label>American odds <input id="advOdds" type="number" step="1" placeholder="-110"></label><button class="btn" id="advSaveLine" type="button">Save line</button><button class="btn alt" id="advCancelLine" type="button">Cancel</button></div></div></div>
+</div><div id="advPerformancePanel" hidden><div class="card"><b>Tracked AI recommendations</b><p class="mu">Save a pregame snapshot of the currently ranked recommendations. Once final player statistics are imported, this tab grades the original lines without changing the prediction engine. Snapshots stay in this browser; export a backup to preserve them. Only pregame snapshots count.</p><div class="tools"><button type="button" class="btn" id="advTrackSnapshot">Save current Top 12 predictions</button><button type="button" class="btn alt" id="advExportTracking">Export tracking history</button><button type="button" class="btn alt" id="advImportTracking">Import tracking history</button><input type="file" id="advImportTrackingFile" accept=".json,application/json" hidden></div><div id="advTrackingStatus" class="mu" role="status"></div><div id="advTrackingResults"></div></div><h2 id="aiPerformance">Previous Week &amp; Season AI Performance</h2><div id="boxState" class="mu" role="status" aria-live="polite" hidden></div><div id="archivedPerformance" class="card"><b>Archived pregame prediction accuracy</b><div class="mu">Checking for timestamped pregame snapshots…</div></div><div id="performance"></div><dialog id="performanceDetails" class="performance-modal" aria-label="AI performance pick details"><div class="performance-modal-inner"><div class="performance-modal-head"><h3 id="performanceDetailsTitle">Pick details</h3><button type="button" class="btn alt" id="closePerformanceDetails">Close ✕</button></div><div id="performanceDetailsBody"></div></div></dialog><div class="mu">Only predictions with verifiable final results are scored. Player props require matching weekly CSV data. The existing performance cards below are retrospective model evaluations; archived pregame accuracy is shown separately above; unavailable outcomes are excluded from hit percentages.</div>
+
+</div>
+<script>
+const NFL_SEASON_KEY="nflp-selected-season-v1";
+const currentNFLSeason=()=>{const d=new Date();const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"numeric"}).formatToParts(d);const year=Number(parts.find(x=>x.type==="year").value),month=Number(parts.find(x=>x.type==="month").value);return month<3?year-1:year};
+const SEASON=(()=>{const n=Number(localStorage.getItem(NFL_SEASON_KEY));return Number.isInteger(n)&&n>=2020&&n<=currentNFLSeason()+1?n:currentNFLSeason()})();
+const MODEL_SEASON=2026;
+const seasonSelect=document.getElementById("seasonSelect");for(let y=currentNFLSeason()+1;y>=2020;y--){const o=document.createElement("option");o.value=y;o.textContent=y;seasonSelect.appendChild(o)}seasonSelect.value=SEASON;seasonSelect.onchange=()=>{localStorage.setItem(NFL_SEASON_KEY,seasonSelect.value);location.reload()};
+const T={ARI:["Cardinals",3,5],ATL:["Falcons",3,5],BAL:["Ravens",4,4],BUF:["Bills",6,1],CAR:["Panthers",3,4],CHI:["Bears",6,2],CIN:["Bengals",5,2],CLE:["Browns",5,3],DAL:["Cowboys",3,5],DEN:["Broncos",6,2],DET:["Lions",5,2],GB:["Packers",5,3],HOU:["Texans",2,5],IND:["Colts",2,6],JAC:["Jaguars",5,2],KC:["Chiefs",5,2],LV:["Raiders",4,4],LAC:["Chargers",0,7],LA:["Rams",4,4],MIA:["Dolphins",1,6],MIN:["Vikings",6,1],NE:["Patriots",5,3],NO:["Saints",2,5],NYG:["Giants",4,2],NYJ:["Jets",2,6],PHI:["Eagles",2,6],PIT:["Steelers",6,2],SF:["49ers",6,1],SEA:["Seahawks",4,4],TB:["Buccaneers",3,5],TEN:["Titans",1,7],WAS:["Commanders",2,4]};
+// [home, away, homePts, awayPts] completed games feed
+const R=[["HOU","NYG",21,27],["ARI","DEN",16,30],["LV","LA",21,35],["DET","GB",20,17],["SEA","KC",20,3],["PHI","DAL",21,38],["GB","CAR",27,19],["JAC","IND",42,7],["CIN","TEN",43,36],["PIT","CLE",27,6],["DET","MIN",19,15],["TB","ATL",16,0],["DAL","ARI",30,33],["NYJ","LV",33,38],["BUF","BAL",36,10],["LA","LAC",24,9],["MIA","NE",19,24],["DEN","KC",28,24],["WAS","PHI",27,10],["SEA","CHI",17,34]];
+// [id, away, home, time, feed home win%]
+const G=[["g1","JAC","BAL","Thu 8:15 PM",.198],["g2","CIN","ATL","Sun 9:30 AM",.40],["g3","DAL","IND","Sun 1:00 PM",.305],["g4","LA","WAS","Sun 1:00 PM",.312],["g5","CLE","NO","Sun 1:00 PM",.567],["g6","NYJ","KC","Sun 1:00 PM",.799],["g7","DET","MIA","Sun 1:00 PM",.264],["g8","DEN","CAR","Sun 1:00 PM",.417],["g9","NYG","PHI","Sun 1:00 PM",.378],["g10","HOU","LAC","Sun 4:05 PM",.335],["g11","LV","SF","Sun 4:25 PM",null],["g12","GB","NE","Sun 4:25 PM",null],["g13","ARI","SEA","Sun 4:25 PM",null],["g14","TB","CHI","Sun 8:20 PM",null],["g15","BUF","MIN","Mon 8:15 PM",null]];
+const S={};for(const t in T){S[t]={pf:0,pa:0,n:0}}
+R.forEach(([h,a,hs,as])=>{S[h].pf+=hs;S[h].pa+=as;S[h].n++;S[a].pf+=as;S[a].pa+=hs;S[a].n++});
+const AVG=22.5,K=3;
+for(const t in S){const s=S[t],w=T[t][1],l=T[t][2];s.ppg=(s.pf+AVG*K)/(s.n+K);s.opp=(s.pa+AVG*K)/(s.n+K);s.rt=((w/(w+l))-.5)*12+(s.ppg-s.opp)*.35}
+const lg=1/(1+Math.exp(0)); const sig=x=>1/(1+Math.exp(-x));
+const f1=x=>x.toFixed(1);
+const nc=z=>1/(1+Math.exp(-1.702*z)),pois3=l=>1-Math.exp(-l)*(1+l+l*l/2);
+const pr=(pts,mg,oo)=>{const td=pts*.1,psy=230-2*mg+(oo-22.5)*2.5,ruy=115+2.5*mg;return{pts,td,tdp:pois3(td),psy,psp:nc((psy-225.5)/55),ruy,rup:nc((ruy-110.5)/35)}};
+const build=L=>L.map(([id,a,h,tm,fp,sc])=>{
+  const m=S[h].rt-S[a].rt+2;               // projected home margin
+  const pm=sig(m/5.5);                       // model home win prob
+  const p=fp==null?pm:(pm+fp)/2;             // blended
+  const tot=((S[h].ppg+S[a].opp)/2)+((S[a].ppg+S[h].opp)/2);
+  return{id,a,h,tm,fp,pm,p,m,tot:Math.round(tot*2)/2,sp:Math.round(m*2)/2||.5,pp:{a:pr(tot/2-m/2,-m,S[h].opp),h:pr(tot/2+m/2,m,S[a].opp)},sc}
+});
+const G9=[["k1","CAR","GB","Thu 8:15 PM",null,[19,27]],["k2","IND","JAC","Sun 1:00 PM",null,[7,42]],["k3","TEN","CIN","Sun 1:00 PM",null,[36,43]],["k4","CLE","PIT","Sun 1:00 PM",null,[6,27]],["k5","MIN","DET","Sun 1:00 PM",null,[15,19]],["k6","ATL","TB","Sun 1:00 PM",null,[0,16]],["k7","ARI","DAL","Sun 1:00 PM",null,[33,30]],["k8","LV","NYJ","Sun 1:00 PM",null,[38,33]],["k9","BAL","BUF","Sun 1:00 PM",null,[10,36]],["k10","LAC","LA","Sun 4:05 PM",null,[9,24]],["k11","NE","MIA","Sun 4:25 PM",null,[24,19]],["k12","KC","DEN","Sun 4:25 PM",null,[24,28]],["k13","PHI","WAS","Sun 8:20 PM",null,[10,27]],["k14","CHI","SEA","Mon 8:15 PM",null,[34,17]]];
+const PN={td:["TDs",2.5],ps:["pass yds",225.5],ru:["rush yds",110.5]},PL={td:"TD",ps:"passing",ru:"rushing"};
+// Default to the NFL's current/upcoming regular-season week on every page load.
+// Week 1 begins September 10, 2026; after Monday night, Tuesday advances to the next week.
+function estimatedNFLWeek(){
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+ const get=k=>Number(parts.find(p=>p.type===k)?.value);
+ const today=Date.UTC(get('year'),get('month')-1,get('day'));
+ const firstTuesday=Date.UTC(SEASON,8,8);
+ return Math.max(1,Math.min(18,Math.floor((today-firstTuesday)/604800000)+1));
+}
+const CUR=10,WKS=SEASON===MODEL_SEASON?{9:build(G9),10:build(G)}:{};const BUNDLED_FINALS=SEASON===MODEL_SEASON?build(G9):[];
+let wk=estimatedNFLWeek(),games=WKS[wk]||[],tf="all",pf="all",openG=null,gameQuery="",liveWeeks=new Set();
+let startupScheduleSelection=true, userSelectedWeek=false;
+const gpOf=t=>T[t][1]+T[t][2],PLY=[];
+[["JAC","Trevor Lawrence",1690],["CIN","Joe Burrow",2115],["DAL","Dak Prescott",2046],["LA","Matthew Stafford",2146],["NO","Tyler Shough",1721],["NYJ","Geno Smith",1913],["DET","Jared Goff",1964],["CAR","Bryce Young",1921],["LV","Kirk Cousins",2124],["SF","Brock Purdy",1748],["GB","Jordan Love",2246],["NE","Drake Maye",1983]].forEach(([tm,n,y])=>PLY.push({tm,n,k:"ps",v:y/gpOf(tm)}));
+[["ATL","Bijan Robinson",780],["DET","Jahmyr Gibbs",773],["KC","Kenneth Walker",770],["TB","Bucky Irving",728],["BUF","James Cook",707],["BAL","Derrick Henry",632],["IND","Jonathan Taylor",610],["NYJ","Braelon Allen",565],["DAL","Javonte Williams",528],["CHI","D'Andre Swift",476],["LA","Kyren Williams",548],["SF","Christian McCaffrey",389]].forEach(([tm,n,y])=>PLY.push({tm,n,k:"ru",v:y/gpOf(tm)}));
+[["BUF","Josh Allen",9],["DET","Jahmyr Gibbs",8],["BAL","Derrick Henry",8],["SF","Christian McCaffrey",8],["IND","Jonathan Taylor",8],["DAL","Javonte Williams",8],["BUF","James Cook",7],["CHI","D'Andre Swift",7],["KC","Kenneth Walker",6],["LA","Kyren Williams",6],["TB","Bucky Irving",5],["ATL","Bijan Robinson",4],["SEA","Jaxon Smith-Njigba",8],["CIN","Ja'Marr Chase",6],["CIN","Mike Gesicki",6],["DAL","CeeDee Lamb",6],["GB","Christian Watson",6],["LV","Brock Bowers",5],["WAS","Stefon Diggs",5],["SF","George Kittle",5],["NYG","Isaiah Likely",5],["ARI","Trey McBride",5],["DET","Amon-Ra St. Brown",5],["DET","Jameson Williams",5],["GB","Matthew Golden",4],["CIN","Tee Higgins",4],["LA","Puka Nacua",3],["NYJ","Garrett Wilson",3],["NYJ","Braelon Allen",3]].forEach(([tm,n,d])=>PLY.push({tm,n,k:"td",v:d/gpOf(tm)}));
+PLY.forEach((p,i)=>p.i=i);
+const imported=[];let showPreviousGames=false;
+const esc=x=>String(x??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+function importedPlayer(p){const key=p.n.toLowerCase().replace(/[^a-z0-9]/g,"");return imported.filter(r=>r.player.toLowerCase().replace(/[^a-z0-9]/g,"")===key&&r.team===p.tm&&r.week<wk&&r.game_status!=='SCHEDULED')}
+function sourcePlayer(p){const rows=importedPlayer(p);if(!rows.length)return p;const key=p.k==="ps"?"passing_yards":p.k==="ru"?"rushing_yards":"touchdowns";const values=rows.map(r=>r[key]).filter(Number.isFinite);if(!values.length)return p;const v=values.reduce((a,b)=>a+b,0)/values.length;return {...p,v:(v+p.v)/2};}
+function pstat(p,g){const src=sourcePlayer(p);if(!src)return null;p=src;const t=p.tm===g.a?"a":"h",mg=t==="a"?-g.m:g.m,sc=g.pp[t].pts/S[p.tm].ppg;
+ if(p.k==="td")return{p:1-Math.exp(-p.v*sc),line:"Anytime TD",proj:p.v*sc};
+ if(p.k==="ps"){const pj=p.v*(.6+.4*sc)*(1-.006*mg),ln=Math.floor(p.v)+.5;return{p:nc((pj-ln)/(p.v*.25)),line:ln,proj:pj}}
+ const pj=p.v*(1+.01*mg)*(.85+.15*sc),ln=Math.floor(p.v)+.5;return{p:nc((pj-ln)/(p.v*.4)),line:ln,proj:pj}}
+const plBtns=(g,k,b)=>PLY.filter(p=>p.k===k&&(p.tm===g.a||p.tm===g.h)).map(p=>{const s=pstat(p,g),sub=q=>am(dec(q))+" · "+Math.round(q*100)+"%";return !s?"":k==="td"?`<div class="m">${p.n} (${p.tm})</div>`+b("p"+p.i,"o","Anytime TD",sub(s.p)):`<div class="m">${p.n} (${p.tm}) · line ${s.line}</div>`+b("p"+p.i,"o","Over",sub(s.p))+b("p"+p.i,"u","Under",sub(1-s.p))}).join("");
+const hr=tm=>{const m=/(\d+):(\d+) (AM|PM)/.exec(tm);return m?(+m[1]%12)+(m[3]==="PM"?12:0)+(+m[2])/60:0};
+const bucket=tm=>{const h=hr(tm);return h<11?"early":h<15?"aft":h<19?"eve":"late"};
+const vis=g=>(tf==="all"||bucket(g.tm)===tf)&&(!gameQuery||`${g.a} ${g.h} ${T[g.a]?.[0]||""} ${T[g.h]?.[0]||""}`.toLowerCase().includes(gameQuery));
+const TF=[["all","All"],["early","Early 9–10a"],["aft","Afternoon 12–2p"],["eve","Evening 4–6p"],["late","Late 7–10p"]],PF=[["all","All"],["td","TD"],["ps","Passing"],["ru","Rushing"]];
+function drawF(){$("tf").innerHTML=TF.map(([k,l])=>`<button class="fp ${tf===k?"on":""}" onclick="tf='${k}';drawF();draw();plays()">${l}</button>`).join("");$("pf").innerHTML=PF.map(([k,l])=>`<button class="fp ${pf===k?"on":""}" onclick="pf='${k}';drawF();draw();plays()">${l}</button>`).join("")}
+function tog(id){openG=openG===id?null:id;draw()}
+function addp(id,m,s){if(games.find(g=>g.id===id)?.sc)return;if(mode==="same"&&focus!==id)setFocus(id);pick(id,m,s)}
+const propBtns=(g,k,b)=>["a","h"].map(t=>{const p=g.pp[t][k+"p"],sub=q=>am(dec(q))+" · "+Math.round(q*100)+"%";return`<div class="m">${t==="a"?g.a:g.h} ${PN[k][0]} · line ${PN[k][1]}</div>`+b(k+t,"o","Over",sub(p))+b(k+t,"u","Under",sub(1-p))}).join("");
+function det(g){if(SEASON!==MODEL_SEASON)return "";if(openG!==g.id)return"";
+ const P=Math.round,it=[],cat=pf==="all"?["td","ps","ru"]:[pf];
+ if(pf==="all"){const h=g.p>=.5;it.push({mk:"ml",sd:h?"h":"a",p:h?g.p:1-g.p,txt:(h?g.h:g.a)+" moneyline",why:"Model margin "+f1(Math.abs(g.m))+" pts"+(g.fp!=null?", schedule feed "+P((h?g.fp:1-g.fp)*100)+"%":"")})}
+ cat.forEach(k=>["a","h"].forEach(t=>{const d=g.pp[t],po=d[k+"p"],o=po>=.5,nm=t==="a"?g.a:g.h;it.push({mk:k+t,sd:o?"o":"u",p:o?po:1-po,txt:`${nm} ${o?"Over":"Under"} ${PN[k][1]} ${PN[k][0]}`,why:k==="td"?`Projects ${f1(d.pts)} pts, about ${f1(d.td)} TDs`:`Projects about ${P(d[k+"y"])} ${PN[k][0]}`})}));
+ PLY.filter(p=>(pf==="all"||p.k===pf)&&(p.tm===g.a||p.tm===g.h)).forEach(p=>{const s=pstat(p,g);if(!s)return;const o=p.k==="td"||s.p>=.5;it.push({mk:"p"+p.i,sd:o?"o":"u",p:o?s.p:1-s.p,txt:p.k==="td"?p.n+" anytime TD":p.n+" "+(o?"Over ":"Under ")+s.line+(p.k==="ps"?" pass yds":" rush yds"),why:p.k==="td"?f1(p.v)+" TDs per game this season, projects "+f1(s.proj)+" here":"Averages "+Math.round(p.v)+" yds per game, projects about "+Math.round(s.proj)+" here"})});
+ it.sort((a,b)=>b.p-a.p);
+ const pa=g.pp.a,ph=g.pp.h,sa=S[g.a],sh=S[g.h];
+ return`<div class="det"><div class="mu"><b>Projected score:</b> ${g.a} ${P(pa.pts)}, ${g.h} ${P(ph.pts)} · total ${g.tot} · ${g.p>=.5?g.h:g.a} by ${f1(Math.abs(g.m))}</div><div class="mu"><b>Win chance (model):</b> ${g.h} ${P(g.pm*100)}%, ${g.a} ${P((1-g.pm)*100)}%${g.fp!=null?" · schedule feed: "+g.h+" "+P(g.fp*100)+"%":""}</div><div class="mu"><b>Recent scoring:</b> ${g.a} ${f1(sa.ppg)} for / ${f1(sa.opp)} against · ${g.h} ${f1(sh.ppg)} / ${f1(sh.opp)}</div><div style="margin-top:6px"><b>Best picks for this game</b></div>${it.slice(0,8).map(x=>`<div class="pl ${g.sc?(grade({...g,week:wk},x.mk,x.sd)===true?"hit":grade({...g,week:wk},x.mk,x.sd)===false?"miss":"pending"):(x.p<.6?"med":"")}"><b>${x.txt}</b> · ${P(x.p*100)}% · ${am(dec(x.p))}${g.sc?"":`<button class="pill" onclick="addp('${g.id}','${x.mk}','${x.sd}')">+ Add</button>`}<div class="mu">${x.why}</div></div>`).join("")}</div>`}
+const dec=p=>Math.max(1.06,1/(p*1.045));
+const am=d=>d>=2?"+"+Math.round((d-1)*100):String(-Math.round(100/(d-1)));
+const sg=n=>(n>0?"+":"")+n;
+function legOf(L){
+ if(L.custom){
+  const odds=String(L.o||'').trim();const n=Number(odds);
+  const d=Number.isFinite(n)&&n!==0?(n>0?1+n/100:1+100/Math.abs(n)):1;
+  const matchup=String(L.m||'');const parts=matchup.split(/\s+@\s+/);
+  return {txt:String(L.t||'Saved selection'),p:1/Math.max(d,1.01),d:Math.max(d,1.01),g:{a:parts[0]||'Saved',h:parts[1]||'selection'}};
+ }
+ const g=games.find(x=>x.id===L.gid);if(!g)return {txt:"Selection from another season",p:.5,d:1.91,g:{a:"Unknown",h:"Unknown"}};const A=g.a,H=g.h;
+  if(L.mkt==="ml"){const p=L.side==="h"?g.p:1-g.p,t=L.side==="h"?H:A;return{txt:t+" moneyline",p,d:dec(p),g}}
+  if(L.mkt==="sp"){const t=L.side==="h"?H:A,ln=L.side==="h"?-g.sp:g.sp;return{txt:t+" "+sg(ln),p:.5,d:1.91,g}}
+  const pm=/^p(\d+)$/.exec(L.mkt);
+  if(pm){const p0=PLY[+pm[1]],s=pstat(p0,g),pr=L.side==="o"?s.p:1-s.p;return{txt:p0.k==="td"?p0.n+" anytime TD":p0.n+" "+(L.side==="o"?"Over ":"Under ")+s.line+(p0.k==="ps"?" pass yds":" rush yds"),p:pr,d:dec(pr),g}}
+  const mm=/^(td|ps|ru)([ah])$/.exec(L.mkt);
+  if(mm){const k=mm[1],t=mm[2],po=g.pp[t][k+"p"],p=L.side==="o"?po:1-po;return{txt:`${t==="a"?A:H} ${L.side==="o"?"Over":"Under"} ${PN[k][1]} ${PN[k][0]}`,p,d:dec(p),g}}
+  return{txt:(L.side==="o"?"Over ":"Under ")+g.tot,p:.5,d:1.91,g}}
+let mode="multi",N=3,legs=[],focus=null;
+const $=id=>document.getElementById(id);
+function pick(gid,mkt,side){
+  if(games.find(g=>g.id===gid)?.sc){$("hint").textContent="Completed games cannot be added to new parlays.";return}
+  const i=legs.findIndex(l=>l.gid===gid&&l.mkt===mkt&&l.side===side);
+  if(i>-1){legs.splice(i,1);return draw()}
+  if(mode==="same"){legs=legs.filter(l=>!(l.gid===gid&&l.mkt===mkt))}
+  if(legs.length>=N){$("hint").textContent="Slip is full: remove a leg or raise the leg count.";return draw()}
+  legs.push({gid,mkt,side});draw()}
+const SLIPS_KEY="nflp-draft-slips-v3";let slips=[],activeSlip=0,slipSeq=1;
+try{const obj=JSON.parse(localStorage.getItem(SLIPS_KEY)||"null");if(obj&&Array.isArray(obj.slips)&&obj.slips.length){slips=obj.slips;activeSlip=obj.active||0;slipSeq=obj.seq||1}}catch(e){}
+// Only drafts containing selections are considered in progress. Old empty drafts
+// (including a leftover Slip 5) should not dictate the next startup number.
+slips=slips.filter(s=>s&&Array.isArray(s.legs)&&s.legs.length>0);
+if(!slips.length){slips=[{id:1,name:"Slip 1",wk,mode:"multi",N:3,stake:10,legs:[],focus:null}];activeSlip=1;slipSeq=1;}
+else{
+ const maxId=Math.max(...slips.map(s=>Number(s.id)||0));
+ slipSeq=Math.max(slipSeq,maxId);
+ if(!slips.some(s=>s.id===activeSlip))activeSlip=slips[0].id;
+}
+function syncActiveSlip(){const s=slips.find(s=>s.id===activeSlip);if(!s)return;s.wk=wk;s.mode=mode;s.N=N;s.stake=+$('stake').value||0;s.legs=legs.map(l=>({...l}));s.focus=focus;try{localStorage.setItem(SLIPS_KEY,JSON.stringify({slips,active:activeSlip,seq:slipSeq}))}catch(e){}}
+function draftLegText(s,l){if(l.custom)return l.t+" ("+(l.m||"Saved selection")+", "+(l.o||"odds unavailable")+")";try{const g=(WKS[s.wk]||[]).find(g=>g.id===l.gid);if(!g)return l.mkt+' '+l.side;const previous=games;games=WKS[s.wk];try{return legOf(l).txt}finally{games=previous}}catch(e){return l.mkt+' '+l.side}}
+function renderSlipTabs(){
+ const visible=slips.filter(s=>s.legs.length>0||s.id===activeSlip);
+ $('slipTabs').innerHTML=visible.map(s=>`<div class="card draft-slip-card ${s.id===activeSlip?'active':''}">
+ <div class="draft-head"><b>${esc(s.name)}</b><span class="tag">${s.legs.length}/${s.N} legs</span></div>
+ <div class="mu">Week ${s.wk} · ${s.mode==='same'?'Same game':'Multi-game'} · Stake $${Number(s.stake||0).toFixed(2)}</div>
+ <div class="draft-legs">${s.legs.length?s.legs.map((l,i)=>`<div class="draft-leg" style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0">${i+1}. ${esc(draftLegText(s,l))}</span><button type="button" class="btn alt" style="padding:5px 9px;flex:none" title="Remove selection" aria-label="Remove selection ${i+1}" onclick="removeDraftLeg(${s.id},${i})">🗑️</button></div>`).join(''):'<span class="mu">No selections yet — select picks from Games below.</span>'}</div>
+ <div class="tools"><button class="btn ${s.id===activeSlip?'alt':''}" onclick="switchSlip(${s.id});document.getElementById('builderControls').scrollIntoView({behavior:'smooth',block:'start'})">${s.id===activeSlip?'Selected — revise picks':'Revise slip'}</button><button class="btn alt" onclick="duplicateDraftSlip(${s.id})">Duplicate</button><button class="btn alt" onclick="deleteDraftSlip(${s.id})">Delete slip</button></div></div>`).join('');
+}
+function removeDraftLeg(id,index){
+ syncActiveSlip();
+ const draft=slips.find(s=>s.id===id);if(!draft||index<0||index>=draft.legs.length)return;
+ draft.legs.splice(index,1);
+ if(id===activeSlip)legs=draft.legs.map(l=>({...l}));
+ persistDraftSlips();draw();
+ $('msg').textContent='Selection removed from draft slip.';
+}
+function duplicateDraftSlip(id){
+ syncActiveSlip();
+ const original=slips.find(s=>s.id===id);if(!original)return;
+ const nextId=Math.max(0,...slips.map(s=>Number(s.id)||0))+1;
+ slipSeq=Math.max(slipSeq,nextId);
+ slips.push({...original,id:nextId,name:'Copy of '+original.name,legs:original.legs.map(l=>({...l}))});
+ switchSlip(nextId);persistDraftSlips();
+ $('msg').textContent='Draft slip duplicated. Original unchanged.';
+}
+function draftCopyText(s){return `${s.name} — NFL Week ${s.wk} (${s.mode==='same'?'same-game':'multi-game'})\n`+s.legs.map((l,i)=>`${i+1}. ${draftLegText(s,l)}`).join('\n')+`\nStake $${Number(s.stake||0).toFixed(2)}\nModel estimates only; verify sportsbook lines.`}
+async function copyText(text,label){let ok=false;try{await navigator.clipboard.writeText(text);ok=true}catch(e){}if(!ok){const ta=document.createElement('textarea');ta.value=text;ta.style.cssText='position:fixed;left:-9999px';document.body.appendChild(ta);ta.select();try{ok=document.execCommand('copy')}catch(e){}ta.remove()}if(ok){$('msg').textContent=label+' copied.'}else{const blob=new Blob([text],{type:'text/plain'});downloadFile(blob,'nfl-parlays.txt','text/plain');$('msg').textContent='Clipboard unavailable; text file downloaded.'}}
+function copyDraftSlip(id){syncActiveSlip();const s=slips.find(s=>s.id===id);if(s)copyText(draftCopyText(s),s.name)}
+function clearDraftSlip(id){syncActiveSlip();const s=slips.find(s=>s.id===id);if(!s||!s.legs.length)return;if(!confirm('Clear all legs in '+s.name+'?'))return;s.legs=[];if(id===activeSlip){legs=[];draw()}else{syncActiveSlip();renderSlipTabs();persistDraftSlips()}}
+function persistDraftSlips(){try{localStorage.setItem(SLIPS_KEY,JSON.stringify({slips,active:activeSlip,seq:slipSeq}))}catch(e){}}
+function deleteDraftSlip(id){
+ syncActiveSlip();
+ const target=slips.find(s=>s.id===id);
+ if(!target)return;
+ if(!confirm('Delete '+target.name+'? This removes the draft slip, not saved parlays.'))return;
+ const remaining=slips.filter(s=>s.id!==id);
+ if(!remaining.length){
+  const nextId=1;
+  slipSeq=1;
+  remaining.push({id:nextId,name:'Slip '+nextId,wk,mode:'multi',N:3,stake:10,legs:[],focus:null});
+ }
+ slips=remaining;
+ if(id===activeSlip){
+  initializedSlips=false;
+  switchSlip(remaining[0].id);
+ }else{
+  persistDraftSlips();renderSlipTabs();
+ }
+ $('msg').textContent=target.name+' deleted.';
+}
+let initializedSlips=false;function switchSlip(id){if(initializedSlips)syncActiveSlip();initializedSlips=true;const s=slips.find(s=>s.id===id);if(!s)return;activeSlip=id;wk=(SEASON===MODEL_SEASON?s.wk:estimatedNFLWeek());games=WKS[wk]||[];mode=s.mode;N=s.N;legs=s.legs.map(l=>({...l}));focus=s.focus;$('stake').value=s.stake;$('wk').value=wk;$('wkTop').value=wk;draw();plays();renderPerformance();renderSaved();renderAdvanced()}
+function newSlip(){syncActiveSlip();const id=Math.max(slipSeq,...slips.map(s=>Number(s.id)||0))+1;slipSeq=id;slips.push({id,name:'Slip '+id,wk,mode:'multi',N:3,stake:10,legs:[],focus:null});switchSlip(id)}
+function clearSlip(){clearDraftSlip(activeSlip)}
+function deleteSlip(){deleteDraftSlip(activeSlip)}
+function clearAllSlips(){if(!confirm('Delete ALL draft slips? Saved parlays will not be deleted.'))return;const n=1;slipSeq=1;slips=[{id:n,name:'Slip '+n,wk,mode:'multi',N:3,stake:10,legs:[],focus:null}];initializedSlips=false;switchSlip(n)}
+$('newSlip').onclick=newSlip;$('clearAllSlips').onclick=clearAllSlips;
+function draw(){
+  if(mode==="multi")$("hint").textContent=legs.length>N?"Remove "+(legs.length-N)+" selected leg(s) to match the new target.":legs.length===N?"Slip is full.":"Multi-game: choose "+N+" picks across games (multiple picks per game allowed).";
+  else $("hint").textContent=focus?"Same game: pick up to "+N+" legs (one per market) in the highlighted game.":"Same game: tap a game’s “Build here” tag, then pick its markets.";
+  $("ln").textContent=N;
+  document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
+  syncActiveSlip();renderSlipTabs();
+  // Only the selected week is shown in the main game-card area.
+  $("games").innerHTML=`<h3 class="week-group-heading">Week ${wk} — Selected Week</h3>`+games.filter(vis).map(g=>{
+    const dis=(mode==="same"&&focus!==g.id)||!!g.sc;const on=(m,s)=>legs.some(l=>l.gid===g.id&&l.mkt===m&&l.side===s);
+    const b=(m,s,t,sub)=>`<button class="o ${on(m,s)?"on":""}" ${dis?"disabled":""} onclick="pick('${g.id}','${m}','${s}')">${t}<span>${sub}</span></button>`;
+    const ph=g.p,pa=1-g.p;
+    return`<div class="card g"><div class="gh" style="cursor:pointer" onclick="tog('${g.id}')"><b>${openG===g.id?"▾":"▸"} <img class="logo" loading="lazy" alt="" src="https://a.espncdn.com/i/teamlogos/nfl/500/${g.a.toLowerCase()}.png" onerror="this.style.display='none'"> ${g.a} @ <img class="logo" loading="lazy" alt="" src="https://a.espncdn.com/i/teamlogos/nfl/500/${g.h.toLowerCase()}.png" onerror="this.style.display='none'"> ${g.h}</b><span class="row"><span class="mu">${g.sc?`Final ${g.a} ${g.sc[0]}, ${g.h} ${g.sc[1]}`:g.tm}</span>${mode==="same"?`<button class="pill ${focus===g.id?"on":""}" onclick="event.stopPropagation();setFocus('${g.id}')">Build here</button>`:""}</span></div>
+    <div class="mu">${g.a} ${T[g.a][1]}-${T[g.a][2]} · ${g.h} ${T[g.h][1]}-${T[g.h][2]} · <span class="game-meta">${g.sc?"Completed":"Upcoming"}</span></div>
+    <div class="grid">${pf!=="all"?propBtns(g,pf,b)+plBtns(g,pf,b):`<div class="m">Moneyline</div>
+    ${b("ml","a",g.a,am(dec(pa))+" · "+Math.round(pa*100)+"%")}${b("ml","h",g.h,am(dec(ph))+" · "+Math.round(ph*100)+"%")}
+    <div class="m">Spread (ref line)</div>
+    ${b("sp","a",g.a+" "+sg(g.sp),"-110")}${b("sp","h",g.h+" "+sg(-g.sp),"-110")}
+    <div class="m">Total (ref line)</div>
+    ${b("tot","o","Over "+g.tot,"-110")}${b("tot","u","Under "+g.tot,"-110")}`}</div>${det(g)}</div>`}).join("")||`<div class="card mu">No games match this kickoff window.</div>`;
+  $("gameCount").textContent=games.filter(vis).length+" of "+games.length+" games · Week "+wk;
+  renderPreviousGames();
+  // slip
+  const st=Math.max(0,+$("stake").value||0);let D=1,P=1;
+  const li=legs.map((L,i)=>{const x=legOf(L);D*=x.d;P*=x.p;return`<div class="leg"><div><b>${x.txt}</b><div class="mu">${x.g.a} @ ${x.g.h} · ${am(x.d)}</div></div><button class="x" aria-label="Clear this leg" title="Clear this leg" onclick="legs.splice(${i},1);draw()">✕</button></div>`}).join("");
+  $("slip").innerHTML=legs.length?li+`<div class="mu" style="margin-top:8px">Win chance (est.): ${f1(P*100)}%${mode==="same"?" · legs correlated, treat as rough":""}</div>`:`<span class="mu">Your slip is empty.</span>`;
+  const full=legs.length===N;
+  $("b1").innerHTML=`${legs.length}/${N} legs<small>${full?"Parlay ready":legs.length>N?"Remove "+(legs.length-N)+" leg(s) of your choice":"Add "+(N-legs.length)+" more"}</small>`;
+  $("b2").innerHTML=legs.length?`${am(D)} · ${D.toFixed(2)}x<small>$${st} pays $${(st*D).toFixed(2)}</small>`:`—<small></small>`;
+}
+function togglePreviousGames(){showPreviousGames=!showPreviousGames;renderPreviousGames()}
+function renderPreviousGames(){
+ const el=$('previousGames'),btn=$('togglePreviousGames');if(!el||!btn)return;
+ btn.textContent=showPreviousGames?'Hide previous weeks':'Show previous weeks';
+ el.style.display=showPreviousGames?'block':'none';
+ btn.setAttribute('aria-expanded',String(showPreviousGames));
+ if(!showPreviousGames){el.innerHTML='';return;}
+ const weeks=Object.keys(WKS).map(Number).filter(w=>w<Number(wk)).sort((a,b)=>b-a);
+ if(!weeks.length){
+  el.innerHTML='<div class="card mu">Earlier weeks have not loaded yet. Click “Refresh NFL schedule” to retrieve Weeks 1–18. If the selected week is Week 1, there are no earlier weeks.</div>';
+  return;
+ }
+ el.innerHTML=weeks.map(w=>{
+  const rows=(WKS[w]||[]).filter(g=>!gameQuery||`${g.a} ${g.h}`.toLowerCase().includes(gameQuery));
+  return `<h3 class="week-group-heading">Week ${w} — Previous Week</h3><div class="card"><div class="mu">${rows.length} game${rows.length===1?'':'s'}</div>${rows.map(g=>`<div class="pl"><b>${esc(g.a)} @ ${esc(g.h)}</b> · ${g.sc?`Final ${esc(g.a)} ${g.sc[0]} – ${esc(g.h)} ${g.sc[1]}`:esc(g.tm||'Scheduled')}</div>`).join('')||'<div class="mu">No games match the search.</div>'}</div>`
+ }).join('');
+}
+function setFocus(id){if(focus!==id){focus=id;legs=legs.filter(l=>l.gid===id)}draw()}
+$("mode").onclick=e=>{const m=e.target.dataset.m;if(!m)return;mode=m;legs=[];focus=null;N=m==="same"?Math.min(N,3):N;draw()};
+$("lm").onclick=()=>{N=Math.max(2,N-1);draw();plays();if(legs.length>N)$("msg").textContent="Choose which "+(legs.length-N)+" leg(s) to remove using the ✕ or trash buttons. Your selections have been preserved.";};
+$("lp").onclick=()=>{N=Math.min(mode==="same"?3:8,N+1);draw();plays()};
+$("stake").oninput=draw;
+// recommendations
+function plays(){if(SEASON!==MODEL_SEASON){$("plays").innerHTML=`<div class="card warn">Predictions are disabled for ${SEASON}: the model still uses 2026 team baselines. Schedule, final scores, and season-specific cloud statistics remain available. Update the model inputs before enabling forecasts for this season.</div>`;window._arr=[];return;}
+  const arr=(WKS[wk]||[]).filter(g=>!g.sc).map(g=>{const home=g.p>=.5,t=home?g.h:g.a,o=home?g.a:g.h,p=home?g.p:1-g.p,mg=Math.abs(g.m);
+    const edge=g.fp==null?null:(home?g.pm-g.fp:(1-g.pm)-(1-g.fp));
+    return{g,t,o,p,home,mg,edge,s:S[t],so:S[o]}}).sort((a,b)=>b.p-a.p);
+  const why=x=>`${x.t} ${T[x.t][1]}-${T[x.t][2]}, scoring ${f1(x.s.ppg)} and allowing ${f1(x.s.opp)} per game vs ${x.o} at ${f1(x.so.ppg)} / ${f1(x.so.opp)}. Model margin ${f1(x.mg)} pts.`;
+  let h="";
+  h+=`<div class="card"><b>Top moneyline plays</b>`+arr.slice(0,6).map(x=>`<div class="pl ${x.p<.68?"med":""}"><b>${x.t} ML</b> vs ${x.o} · ${Math.round(x.p*100)}% · ${am(dec(x.p))}<div class="mu">${why(x)}</div></div>`).join("")+`</div>`;
+  if(pf!=="all"){const L=[];(WKS[wk]||[]).filter(g=>!g.sc&&vis(g)).forEach(g=>["a","h"].forEach(t=>{const p=g.pp[t][pf+"p"],o=p>=.5;L.push({g,t,o,p:o?p:1-p})}));L.sort((a,b)=>b.p-a.p);
+  h+=`<div class="card"><b>Top ${PL[pf]} plays</b>`+(L.slice(0,6).map(x=>{const tm=x.t==="a"?x.g.a:x.g.h;return`<div class="pl ${x.p<.6?"med":""}"><b>${tm} ${x.o?"Over":"Under"} ${PN[pf][1]} ${PN[pf][0]}</b> · ${Math.round(x.p*100)}% · ${am(dec(x.p))}<div class="mu">vs ${x.t==="a"?x.g.h:x.g.a} · projected ${pf==="td"?f1(x.g.pp[x.t].td)+" TDs":Math.round(x.g.pp[x.t][pf+"y"])+" yds"}</div></div>`}).join("")||`<div class="mu">No games in this kickoff window.</div>`)+`</div>`}
+  {const Q=[];(WKS[wk]||[]).filter(g=>!g.sc&&vis(g)).forEach(g=>PLY.forEach(p=>{if((p.tm===g.a||p.tm===g.h)&&(pf==="all"||p.k===pf)){const s=pstat(p,g);if(!s)return;const o=p.k==="td"||s.p>=.5;Q.push({p,g,o,q:o?s.p:1-s.p,s})}}));Q.sort((a,b)=>b.q-a.q);
+  h+=`<div class="card"><b>Top player picks${pf==="all"?"":" ("+PL[pf]+")"}</b>`+(Q.slice(0,6).map(x=>`<div class="pl ${x.q<.6?"med":""}"><b>${x.p.k==="td"?x.p.n+" anytime TD":x.p.n+" "+(x.o?"Over ":"Under ")+x.s.line+(x.p.k==="ps"?" pass yds":" rush yds")}</b> · ${Math.round(x.q*100)}% · ${am(dec(x.q))}<div class="mu">${x.g.a} @ ${x.g.h}</div></div>`).join("")||`<div class="mu">No player data for this window.</div>`)+`</div>`}
+  const top=arr.slice(0,N),D=top.reduce((a,x)=>a*dec(x.p),1),P=top.reduce((a,x)=>a*x.p,1);
+  h+=`<div class="card"><b>Suggested ${N}-leg multi-game parlay</b><div style="margin:6px 0">${top.map(x=>x.t+" ML").join(" + ")}</div><div class="mu">Est. win chance ${f1(P*100)}% · pays about ${D.toFixed(2)}x (${am(D)})</div><div style="margin-top:8px"><button class="btn" onclick="load()">Load into slip</button></div></div>`;
+  const sgc=arr.filter(x=>x.g.tot>=40).sort((a,b)=>(b.p+b.g.tot/100)-(a.p+a.g.tot/100))[0];
+  if(sgc)h+=`<div class="card"><b>Same-game idea: ${sgc.g.a} @ ${sgc.g.h}</b><div style="margin:6px 0">${sgc.t} ML + ${sgc.t} ${sgc.home?sg(-sgc.g.sp):sg(sgc.g.sp)}</div><div class="mu">Strongest favorite with a ${f1(sgc.mg)}-pt projected margin, projected total ${sgc.g.tot}. Stacking ML and spread on one side is highly correlated.</div><div style="margin-top:8px"><button class="btn" onclick="loadSG('${sgc.g.id}','${sgc.home?"h":"a"}')">Load into slip</button></div></div>`;
+  const val=arr.filter(x=>x.edge!=null).sort((a,b)=>b.edge-a.edge).slice(0,2);
+  h+=`<div class="card"><b>Where the model disagrees with the feed</b>`+val.map(x=>`<div class="pl med"><b>${x.t} ML</b> · model ${Math.round((x.home?x.g.pm:1-x.g.pm)*100)}% vs feed ${Math.round((x.home?x.g.fp:1-x.g.fp)*100)}%<div class="mu">${why(x)} Small sample of games, so treat as a lean.</div></div>`).join("")+`</div>`;
+  const completed=(WKS[wk]||[]).filter(g=>g.sc);if(completed.length){h+=`<div class="card"><b>Completed games · Potential Plays results</b><div class="mu">Retrospective moneyline picks based on the currently loaded model; not pregame predictions.</div>${completed.map(g=>{const home=g.p>=.5,side=home?'h':'a',team=home?g.h:g.a,hit=grade({...g,week:wk},'ml',side);return`<div class="pl ${hit===true?'hit':hit===false?'miss':'pending'}"><b>${team} ML</b> · ${hit===true?'HIT':hit===false?'MISS':'Not graded'} · Final ${g.a} ${g.sc[0]} – ${g.h} ${g.sc[1]}</div>`}).join('')}</div>`}
+  $("plays").innerHTML=h;window._arr=arr}
+// Advanced, explainable matchup recommendations. Uses only data already in this app.
+// No sportsbook API requests or private credentials are embedded.
+const ADV_ODDS_KEY='nflp-manual-props-v1';
+let advManual={};try{advManual=JSON.parse(localStorage.getItem(ADV_ODDS_KEY)||'{}')||{}}catch(e){}
+const advKey=(g,p)=>[SEASON,wk,g.a,g.h,p.n,p.k].join('|');
+function advLogs(p){return importedPlayer(p).filter(r=>Number.isFinite(Number(r[p.k==='ps'?'passing_yards':p.k==='ru'?'rushing_yards':'touchdowns']))).sort((a,b)=>Number(b.week)-Number(a.week));}
+function advAvg(a){return a.length?a.reduce((v,x)=>v+x,0)/a.length:null;}
+function advMetrics(p,g){
+ const s=pstat(p,g);if(!s)return null;
+ const logs=advLogs(p),field=p.k==='ps'?'passing_yards':p.k==='ru'?'rushing_yards':'touchdowns';
+ const vals=logs.map(r=>Number(r[field]));
+ const last3=advAvg(vals.slice(0,3)),last5=advAvg(vals.slice(0,5));
+ const opponent=p.tm===g.a?g.h:g.a,opp=S[opponent],own=S[p.tm];
+ // Points conceded is only a broad defensive proxy, NOT a pass/rush defense rank.
+ const defenseFactor=Math.max(.85,Math.min(1.15,opp.opp/22.5));
+ const recentFactor=last5==null||p.v<=0?1:Math.max(.8,Math.min(1.2,last5/p.v));
+ const projection=Math.max(0,s.proj*defenseFactor*(.75+.25*recentFactor));
+ const baseline=p.k==='td'?null:Number(s.line);
+ const key=advKey(g,p),manual=advManual[key];
+ const validLine=manual&&Number.isFinite(Number(manual.line))&&Number(manual.line)>=0;
+ const line=validLine?Number(manual.line):baseline;
+ const hasOdds=validLine&&Number.isFinite(Number(manual.odds))&&Number(manual.odds)!==0;
+ const odds=hasOdds?Number(manual.odds):null;
+ const spread=vals.length>=3?Math.max(1,Math.sqrt(advAvg(vals.map(v=>(v-advAvg(vals))**2)))):Math.max(p.k==='td'?.5:10,p.v*(p.k==='ps'?.22:.38));
+ const z=line==null?null:(projection-line)/spread;
+ const prob=line==null?Math.max(.05,Math.min(.95,1-Math.exp(-projection))):Math.max(.05,Math.min(.95,1/(1+Math.exp(-1.7*z))));
+ const americanImplied=odds==null?null:(odds>0?100/(odds+100):(-odds)/((-odds)+100));
+ const edge=americanImplied==null?null:prob-americanImplied;
+ const sample=Math.min(5,vals.length);
+ const hits=line==null?null:vals.slice(0,sample).filter(v=>v>line).length;
+ const score=(edge==null?prob-.5:edge)*100+(sample>=3?Math.min(5,sample):0);
+ return{p,g,s,opponent,projection,line,prob,odds,edge,score,last3,last5,sample,hits,logs:vals.length,defenseFactor,manual:validLine?manual:null,key};
+}
+function advSaveOdds(key){
+ const line=document.getElementById('advLine').value.trim(),odds=document.getElementById('advOdds').value.trim(),book=document.getElementById('advBook').value;
+ if(!line||!Number.isFinite(Number(line))||Number(line)<0){$('advStatus').textContent='Enter a valid nonnegative sportsbook line.';return;}
+ if(!odds||!Number.isFinite(Number(odds))||Number(odds)===0){$('advStatus').textContent='Enter American odds, e.g. -110 or +120.';return;}
+ advManual[key]={line:Number(line),odds:Number(odds),book,updated:new Date().toISOString()};
+ try{localStorage.setItem(ADV_ODDS_KEY,JSON.stringify(advManual))}catch(e){$('advStatus').textContent='Browser storage full; sportsbook line could not be saved.';return;}
+ renderAdvanced();$('advStatus').textContent='Manual sportsbook line saved on this device. Verify the line is still current before using it.';
+}
+function advAdd(index){
+ const x=window._advPicks?.[index];if(!x)return;
+ if(legs.length>=N){$('advStatus').textContent='Slip is full. Increase its leg count or remove a selection first.';return;}
+ if(mode==='same'&&focus&&focus!==x.g.id){$('advStatus').textContent='This is a same-game slip for a different matchup. Switch to multi-game mode first.';return;}
+ const label=x.p.k==='td'?'Anytime touchdown':(x.p.k==='ps'?'passing yards':'rushing yards');
+ if(x.manual){
+  const text=x.p.n+' Over '+x.line+' '+label;
+  if(legs.some(l=>l.custom&&l.t===text)){ $('advStatus').textContent='This pick is already in your slip.';return;}
+  legs.push({custom:true,t:text,m:x.g.a+' @ '+x.g.h,o:String(x.odds)});
+ }else{
+  const side=x.p.k==='td'?'o':x.prob>=.5?'o':'u';
+  if(legs.some(l=>l.gid===x.g.id&&l.mkt==='p'+x.p.i&&l.side===side)){$('advStatus').textContent='This pick is already in your slip.';return;}
+  legs.push({gid:x.g.id,mkt:'p'+x.p.i,side});
+ }
+ draw();$('advStatus').textContent='Selection added to active slip. Review all lines and odds before saving.';
+}
+function advCard(x,i){
+ const prop=x.p.k==='td'?'anytime TD':x.p.k==='ps'?'passing yards':'rushing yards';
+ const selection=x.line==null?x.p.n+' '+prop:x.p.n+' Over '+x.line+' '+prop;
+ const confidence=x.logs>=5?'5+ games of player logs':x.logs>=3?'3–4 player game logs':'Limited player game logs';
+ const pct=n=>Math.round(n*100)+'%';
+ const num=n=>Number.isFinite(n)?n.toFixed(1):'unavailable';
+ const opp=S[x.opponent],own=S[x.p.tm];
+ const spread=x.line==null?'Not available':((x.projection-x.line)>=0?'+':'')+(x.projection-x.line).toFixed(1);
+ const hitRate=x.sample&&x.line!=null?`${x.hits} of ${x.sample} (${Math.round(100*x.hits/x.sample)}%)`:'Insufficient matching game logs';
+ const risk=x.logs<3?'Limited player-game history makes this projection particularly uncertain.':x.projection<x.line?'Projection is below the selected line; the over is not favored by this model.':'A different game script, injuries, usage changes or an unusually strong defensive performance could cause this selection to miss.';
+ const oddsDetail=x.odds==null?'No verified sportsbook odds entered.':`${esc(x.manual.book)} manually entered ${esc(String(x.odds))} · break-even probability ${pct(x.odds>0?100/(x.odds+100):(-x.odds)/(-x.odds+100))}; last entered ${new Date(x.manual.updated).toLocaleString()}.`;
+ const details=`<details class="adv-expanded" style="margin:10px 0 6px;padding:10px;border:1px solid var(--border,#bbb);border-radius:8px"><summary style="cursor:pointer;font-weight:700">Why this pick? · Show expanded analysis</summary>
+ <div style="padding-top:10px">
+ <b>Player performance</b><div class="mu">Last 3-game average: ${num(x.last3)} · Last 5-game average: ${num(x.last5)} · Logged games: ${x.logs} · Hit rate against displayed line: ${hitRate}.</div>
+ <div class="mu">Model projection: ${num(x.projection)} ${x.p.k==='td'?'TDs':'yards'} · Selected line: ${x.line==null?'Not available':num(x.line)} · Projected difference: ${spread} · Model over probability: ${pct(x.prob)}.</div>
+ <b>Matchup factors</b><div class="mu">${esc(x.p.tm)} model scoring estimate: ${num(own.ppg)} points/game; ${esc(x.opponent)} estimated points allowed: ${num(opp.opp)} points/game. Defensive adjustment: ${(x.defenseFactor*100).toFixed(0)}% of neutral. Points allowed is a broad proxy, not a verified pass/rush positional ranking.</div>
+ <b>Sportsbook comparison</b><div class="mu">${oddsDetail}${x.edge==null?'':` Model probability minus odds-implied break-even probability: ${(x.edge*100).toFixed(1)} percentage points (uncalibrated estimate).`}</div>
+ <b>Risk and data quality</b><div class="mu">${esc(risk)} ${esc(confidence)}. Probabilities are unvalidated model estimates, not measured prediction accuracy.</div>
+ </div></details>`;
+ return `<div class="pl ${x.logs<3?'med':''}" style="padding:10px 0"><b>${esc(selection)}</b> · ${esc(x.g.a)} @ ${esc(x.g.h)}<div class="mu">Projected ${x.projection.toFixed(1)} ${x.p.k==='td'?'TDs':'yards'} · Model Over probability ${pct(x.prob)} · ${esc(confidence)}</div><div class="mu">Last 3: ${x.last3==null?'unavailable':x.last3.toFixed(1)} · Last 5: ${x.last5==null?'unavailable':x.last5.toFixed(1)}${x.sample&&x.line!=null?' · Over this line in '+x.hits+'/'+x.sample+' logged games':''}</div><div class="mu">Opponent ${esc(x.opponent)} allows an estimated ${S[x.opponent].opp.toFixed(1)} points/game (broad defensive proxy, not positional defense ranking). ${x.manual?esc(x.manual.book)+' manually entered '+esc(String(x.odds))+' odds · '+new Date(x.manual.updated).toLocaleString():'No verified sportsbook line; using model reference threshold.'}</div>${x.edge==null?'':`<div class="mu"><b>Estimated probability edge vs. entered odds: ${(x.edge*100).toFixed(1)} percentage points</b> (model estimate; not guaranteed value).</div>`}${details}<div class="tools"><button type="button" class="btn alt" onclick="advAdd(${i})">+ Add to active slip</button><button type="button" class="btn alt" onclick="advEdit(${i})">${x.manual?'Edit':'Enter'} sportsbook line</button></div></div>`;
+}
+function advEdit(i){
+ const x=window._advPicks?.[i];if(!x)return;
+ const el=$('advEditor');if(!el)return;
+ el.hidden=false;el.dataset.index=i;
+ $('advEditTitle').textContent=x.p.n+' — '+(x.p.k==='td'?'Anytime TD':x.p.k==='ps'?'Passing yards':'Rushing yards');
+ $('advLine').value=x.manual?.line??x.line??'';$('advOdds').value=x.manual?.odds??'';$('advBook').value=x.manual?.book||'DraftKings';
+ el.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+function renderAdvanced(){
+ const root=$('advResults');if(!root)return;
+ if(SEASON!==MODEL_SEASON){root.innerHTML='<div class="warn">Matchup recommendations require updated season-specific model baselines.</div>';return;}
+ const market=$('advMarket').value,view=$('advView').value;
+ const all=(WKS[wk]||[]).filter(g=>!g.sc).flatMap(g=>PLY.filter(p=>(p.tm===g.a||p.tm===g.h)&&(market==='all'||p.k===market)).map(p=>advMetrics(p,g)).filter(Boolean));
+ all.sort((a,b)=>b.score-a.score);window._advPicks=all;
+ const gamesCount=new Set(all.map(x=>x.g.id)).size;
+ $('advStatus').textContent=`${all.length} model candidates across ${gamesCount} upcoming games. Estimates use 2026 baseline data and any available imported player logs; not live sportsbook lines.`;
+ let html='';
+ if(view==='games'){
+  const groups=[...new Set(all.map(x=>x.g.id))];
+  html=groups.map(id=>{const rows=all.filter(x=>x.g.id===id),g=rows[0].g;return `<h3>${esc(g.a)} @ ${esc(g.h)}</h3><div class="mu">Model margin: ${g.m.toFixed(1)} points toward ${g.m>=0?esc(g.h):esc(g.a)}; total: ${g.tot.toFixed(1)}. These are estimates, not current betting lines.</div>`+rows.slice(0,4).map(x=>advCard(x,all.indexOf(x))).join('')}).join('');
+ }else if(view==='parlays'){
+  const unique=[],seen=new Set();for(const x of all){if(seen.has(x.g.id))continue;seen.add(x.g.id);unique.push(x);if(unique.length===5)break;}
+  html='<div class="mu">Illustrative multi-game combination. Picks are selected from different games to reduce obvious same-game correlation; independence and combined probability are not guaranteed. Review each selection and current sportsbook line.</div>'+unique.map(x=>advCard(x,all.indexOf(x))).join('');
+ }else html=all.slice(0,12).map((x,i)=>advCard(x,i)).join('');
+ root.innerHTML=html||'<div class="mu">No eligible upcoming player predictions for the selected week. Refresh the NFL schedule or change the market filter.</div>';
+}
+renderAdvanced();
+$('advView').onchange=renderAdvanced;$('advMarket').onchange=renderAdvanced;
+$('advSaveLine').onclick=()=>{const x=window._advPicks?.[Number($('advEditor').dataset.index)];if(x)advSaveOdds(x.key)};
+$('advCancelLine').onclick=()=>{$('advEditor').hidden=true};
+
+function load(){if(SEASON!==MODEL_SEASON)return;mode="multi";focus=null;legs=window._arr.slice(0,N).map(x=>({gid:x.g.id,mkt:"ml",side:x.home?"h":"a"}));draw();scrollTo({top:0,behavior:"smooth"})}
+function loadSG(id,s){if(SEASON!==MODEL_SEASON)return;mode="same";focus=id;N=Math.max(N,2);N=Math.min(N,3);legs=[{gid:id,mkt:"ml",side:s},{gid:id,mkt:"sp",side:s}];N=Math.max(N,2);draw();scrollTo({top:0,behavior:"smooth"})}
+plays();
+function setWk(w){syncActiveSlip();wk=Number(w);performanceSelectedWeek=wk;games=WKS[wk]||[];legs=[];focus=null;$("wk").value=wk;$("wkTop").value=wk;$("wkn").textContent=liveWeeks.has(wk)?"Updated schedule / scores":wk===CUR?"Bundled snapshot":"Bundled completed games";draw();plays();renderPerformance();renderSaved();renderAdvanced()}
+function populateWeeks(){const old=wk;$("wk").innerHTML=Object.keys(WKS).map(Number).sort((a,b)=>a-b).map(w=>`<option value="${w}">Week ${w}</option>`).join("");$("wk").value=old;$("wkTop").innerHTML=$("wk").innerHTML;$("wkTop").value=old}
+populateWeeks();
+$("wk").onchange=e=>{userSelectedWeek=true;setWk(+e.target.value)};$("wkTop").onchange=e=>{userSelectedWeek=true;setWk(+e.target.value)};
+$("sub").textContent=SEASON+" season · "+(SEASON===MODEL_SEASON?"2026 model baselines":"schedule and results only; prediction model requires season-specific baselines");
+const KEY="nflp-saved-v1";let saved=[];
+try{saved=JSON.parse(localStorage.getItem(KEY)||"[]")}catch(e){}
+const persist=()=>{try{localStorage.setItem(KEY,JSON.stringify(saved))}catch(e){$("msg").textContent="Couldn’t store locally; export soon."}};
+const money=n=>(n<0?"-$":"$")+Math.abs(n).toFixed(2);
+const pl=s=>s.status==="won"?(+s.amt||0):s.status==="lost"?-(+s.amt||0):0;
+const typ=s=>s.mode==="same"?"Same game":"Multi-game";
+$("save").onclick=()=>{
+ if(legs.length!==N){$("msg").textContent=legs.length>N?"Remove "+(legs.length-N)+" leg(s) of your choice before saving.":"Fill all "+N+" legs first.";return}
+ const st=Math.max(0,+$("stake").value||0);let D=1;
+ const L=legs.map(l=>{const x=legOf(l);D*=x.d;return{t:x.txt,m:x.g.a+" @ "+x.g.h,o:am(x.d)}});
+ saved.unshift({id:Date.now(),wk,mode,stake:st,dec:D,legs:L,status:"open",amt:0});
+ persist();legs=[];draw();renderSaved();$("msg").textContent="Saved."};
+function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
+ if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
+ persist();renderSaved()}
+$('deleteAllSaved').onclick=()=>{
+ if(!saved.length){$('savedActionStatus').textContent='There are no saved parlays to delete.';return;}
+ const count=saved.length;
+ if(!confirm('Permanently delete ALL '+count+' saved parlays from this browser? This cannot be undone. Active draft slips will not be deleted.'))return;
+ saved=[];lastSavedDeletion=null;editingSavedParlays.clear();persist();renderSaved();
+ $('savedActionStatus').textContent='All '+count+' saved parlays deleted.';
+ $('msg').textContent='All saved parlays deleted.';
+};
+const editingSavedParlays=new Set();
+let lastSavedDeletion=null;
+function savedById(id){return saved.find(x=>String(x.id)===String(id))}
+function editSavedParlay(id){
+ const key=String(id);
+ if(editingSavedParlays.has(key))editingSavedParlays.delete(key);
+ else editingSavedParlays.add(key);
+ renderSaved();
+}
+function removeSavedSelection(id,index){
+ const parlay=savedById(id);
+ if(!parlay||!Number.isInteger(index)||index<0||index>=parlay.legs.length)return;
+ if(parlay.legs.length===1){$('msg').textContent='Use Delete to remove a parlay with only one remaining pick.';return;}
+ const removed=parlay.legs.splice(index,1)[0];
+ lastSavedDeletion={kind:'leg',id:String(id),index,removed};
+ persist();renderSaved();
+ $('msg').textContent='Selection deleted. Verify combined odds after editing.'; $('savedActionStatus').textContent='Selection deleted — use Undo delete above to restore it.';
+}
+function del(id){
+ const index=saved.findIndex(x=>String(x.id)===String(id));
+ if(index<0)return;
+ const removed=saved.splice(index,1)[0];
+ editingSavedParlays.delete(String(id));
+ lastSavedDeletion={kind:'parlay',index,removed};
+ persist();renderSaved();
+ $('msg').textContent='Saved parlay deleted.'; $('savedActionStatus').textContent='Saved parlay deleted — use Undo delete above to restore it.';
+}
+function undoSavedDeletion(){
+ if(!lastSavedDeletion)return;
+ const action=lastSavedDeletion;
+ if(action.kind==='parlay')saved.splice(Math.min(action.index,saved.length),0,action.removed);
+ else {const p=savedById(action.id);if(p)p.legs.splice(Math.min(action.index,p.legs.length),0,action.removed)}
+ lastSavedDeletion=null;persist();renderSaved();
+ $('msg').textContent='Deletion undone.'; $('savedActionStatus').textContent='Deletion undone.';
+}
+// Delegated click handling works even after saved cards are re-rendered.
+$('saved').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-saved-action]');
+ if(!button)return;
+ const action=button.dataset.savedAction,id=button.dataset.savedId;
+ if(action==='remove-leg')removeSavedSelection(id,Number(button.dataset.legIndex));
+ else if(action==='delete-parlay')del(id);
+ else if(action==='edit')editSavedParlay(id);
+ else if(action==='duplicate')duplicateSavedToDraft(id);
+ else if(action==='undo')undoSavedDeletion();
+});
+function stats(){const d=saved.filter(s=>s.status!=="open");const w=d.filter(s=>s.status==="won").length;const net=d.reduce((a,s)=>a+pl(s),0);const stk=d.reduce((a,s)=>a+s.stake,0);return{w,l:d.length-w,open:saved.length-d.length,net,stk,roi:stk?net/stk*100:0}}
+function savedCopyText(s){return `Saved parlay — Week ${s.wk} (${typ(s)})\n`+s.legs.map((l,i)=>`${i+1}. ${l.t} (${l.m}, ${l.o})`).join('\n')+`\nCombined estimated odds ${am(s.dec)} · Stake $${Number(s.stake).toFixed(2)} · Potential payout ${money(s.stake*s.dec)} · Status ${s.status.toUpperCase()}\nModel estimates only; verify sportsbook lines.`}
+function duplicateSavedToDraft(id){
+ const original=savedById(id);if(!original)return;
+ syncActiveSlip();
+ const nextId=Math.max(0,...slips.map(s=>Number(s.id)||0))+1;
+ slipSeq=Math.max(slipSeq,nextId);
+ const draft={id:nextId,name:'Copy of Week '+original.wk+' parlay',wk:Number(original.wk),mode:original.mode||'multi',N:Math.max(1,original.legs.length),stake:Number(original.stake)||0,
+  legs:original.legs.map(l=>({custom:true,t:l.t,m:l.m,o:l.o})),focus:null};
+ slips.push(draft);
+ switchSlip(nextId);
+ persistDraftSlips();
+ $('msg').textContent='Saved parlay duplicated into a new editable draft. Original saved parlay is unchanged.';
+}
+function copySaved(id){const s=saved.find(x=>x.id===id);if(s)copyText(savedCopyText(s),'Saved parlay')}
+$('copyAllSaved').onclick=()=>{if(!saved.length){$('msg').textContent='No saved parlays to copy.';return}copyText(saved.map(savedCopyText).join('\n\n--------------------\n\n'),'All saved parlays')};
+let showPreviousSavedWeeks=false;
+$("toggleSavedPrevious").onclick=()=>{showPreviousSavedWeeks=!showPreviousSavedWeeks;renderSaved()};
+function renderSaved(){const t=stats();
+ const currentWeek=Number(wk);
+ const currentSaved=saved.filter(s=>Number(s.wk)===currentWeek);
+ const previousSaved=saved.filter(s=>Number(s.wk)<currentWeek);
+ const toggle=$("toggleSavedPrevious");toggle.textContent=showPreviousSavedWeeks?"Hide previous weeks saved parlays":"Show previous weeks saved parlays";toggle.setAttribute("aria-expanded",String(showPreviousSavedWeeks));
+
+ $("sumry").innerHTML=`<div class="sm"><div><b>${t.w}-${t.l}</b><span class="mu">Record</span></div><div><b>${t.open}</b><span class="mu">Open</span></div><div><b class="${t.net>=0?"pos":"neg"}">${money(t.net)}</b><span class="mu">Net P/L</span></div><div><b>${f1(t.roi)}%</b><span class="mu">ROI</span></div></div>`;
+ const savedCard=s=>`<div class="card sv ${s.status}"><div class="gh"><b>Wk ${s.wk} · ${s.legs.length}-leg ${s.mode==="same"?"same-game":"multi"} · ${am(s.dec)}</b><span class="tag ${s.status}">${s.status.toUpperCase()}</span></div>
+${s.legs.map((l,i)=>`<div class="mu" style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="flex:1;min-width:0">• ${esc(l.t)} (${esc(l.m||"")}, ${esc(l.o||"")})</span>${editingSavedParlays.has(String(s.id))?`<button type="button" class="btn alt" style="padding:4px 8px;flex:none" title="Remove this selection" aria-label="Remove ${esc(l.t)}" data-saved-action="remove-leg" data-saved-id="${esc(s.id)}" data-leg-index="${i}">🗑️</button>`:""}</div>`).join("")}
+<div class="row" style="margin-top:8px"><div class="seg" style="flex:none">${["open","won","lost"].map(k=>`<button class="${s.status===k?"on":""}" onclick="setS(${s.id},'status','${k}')">${k[0].toUpperCase()+k.slice(1)}</button>`).join("")}</div>
+${s.status==="open"?`<span class="mu">Stake $${s.stake} · pays ${money(s.stake*s.dec)}</span>`:`${s.status==="won"?"Won":"Lost"} $<input type="number" min="0" step="0.01" value="${s.amt}" onchange="setS(${s.id},'amt',this.value)">`}
+<button class="btn alt" data-saved-action="edit" data-saved-id="${esc(s.id)}">${editingSavedParlays.has(String(s.id))?"Done deleting":"Delete selections"}</button><button class="btn alt" data-saved-action="delete-parlay" data-saved-id="${esc(s.id)}" aria-label="Delete saved parlay">Delete Slip</button><button class="btn alt" data-saved-action="duplicate" data-saved-id="${esc(s.id)}">Duplicate Slip</button><button class="btn alt" onclick="copySaved(${s.id})">Copy slip</button></div></div>`;
+ const weekHeader=(number,caption)=>`<h3 style="font-size:19px;font-weight:800;margin:18px 0 8px;padding:10px 12px;border-left:5px solid var(--ac);background:var(--sel);border-radius:6px">Week ${number}${caption?` — ${caption}`:""}</h3>`;
+ const priorWeeks=[...new Set(previousSaved.map(s=>Number(s.wk)))].sort((a,b)=>b-a);
+ const previousMarkup=showPreviousSavedWeeks?`<div id="savedPreviousWeeks">${priorWeeks.length?priorWeeks.map(w=>weekHeader(w,"Previous week")+previousSaved.filter(s=>Number(s.wk)===w).map(savedCard).join("")).join(""):'<div class="mu">No previous-week saved parlays.</div>'}</div>`:"";
+ $("saved").innerHTML=(lastSavedDeletion?`<div class="card" style="display:flex;align-items:center;justify-content:space-between;gap:8px"><span class="mu">Selection deleted</span><button type="button" class="btn alt" data-saved-action="undo">↶ Undo delete</button></div>`:"")+weekHeader(currentWeek,"Current selected week")+(currentSaved.length?currentSaved.map(savedCard).join(""):`<div class="mu">There are no saved parlays for this week (Week ${currentWeek}).</div>`)+previousMarkup;
+};
+// Self-contained XLSX writer: Office Open XML with uncompressed ZIP entries.
+// No network, external libraries, or Claude APIs required.
+function makeXlsx(sheets){
+ const enc=new TextEncoder(), esc=x=>String(x).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&apos;");
+ const col=n=>{let t="";for(n++;n;n=Math.floor((n-1)/26))t=String.fromCharCode(65+(n-1)%26)+t;return t};
+ const entries=[];
+ const add=(name,data)=>entries.push([name,enc.encode(data)]);
+ add("[Content_Types].xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>${sheets.map((_,i)=>`<Override PartName="/xl/worksheets/sheet${i+1}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`).join("")}</Types>`);
+ add("_rels/.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>`);
+ add("xl/workbook.xml",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets>${sheets.map(([n],i)=>`<sheet name="${esc(n)}" sheetId="${i+1}" r:id="rId${i+1}"/>`).join("")}</sheets></workbook>`);
+ add("xl/_rels/workbook.xml.rels",`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${sheets.map((_,i)=>`<Relationship Id="rId${i+1}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${i+1}.xml"/>`).join("")}</Relationships>`);
+ sheets.forEach(([,rows],i)=>{
+  const xml=rows.map((row,r)=>`<row r="${r+1}">${row.map((v,c)=>{
+   if(v===null||v===undefined||v==="")return "";
+   const ref=col(c)+(r+1);
+   return typeof v==="number"&&Number.isFinite(v)?`<c r="${ref}"><v>${v}</v></c>`:`<c r="${ref}" t="inlineStr"><is><t xml:space="preserve">${esc(v)}</t></is></c>`;
+  }).join("")}</row>`).join("");
+  add(`xl/worksheets/sheet${i+1}.xml`,`<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>${xml}</sheetData></worksheet>`);
+ });
+ const crcTable=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xedb88320^(c>>>1):c>>>1;crcTable[n]=c>>>0}
+ const crc=bytes=>{let c=0xffffffff;for(const b of bytes)c=crcTable[(c^b)&255]^(c>>>8);return(c^0xffffffff)>>>0};
+ const chunks=[],central=[];let offset=0;
+ const u16=(d,o,v)=>d.setUint16(o,v,true),u32=(d,o,v)=>d.setUint32(o,v>>>0,true);
+ for(const [name,bytes] of entries){const fn=enc.encode(name),check=crc(bytes),h=new Uint8Array(30+fn.length),d=new DataView(h.buffer);
+  u32(d,0,0x04034b50);u16(d,4,20);u16(d,6,0x0800);u16(d,8,0);u32(d,14,check);u32(d,18,bytes.length);u32(d,22,bytes.length);u16(d,26,fn.length);h.set(fn,30);
+  chunks.push(h,bytes);const cd=new Uint8Array(46+fn.length),dv=new DataView(cd.buffer);u32(dv,0,0x02014b50);u16(dv,4,20);u16(dv,6,20);u16(dv,8,0x0800);u32(dv,16,check);u32(dv,20,bytes.length);u32(dv,24,bytes.length);u16(dv,28,fn.length);u32(dv,42,offset);cd.set(fn,46);central.push(cd);offset+=h.length+bytes.length;
+ }
+ const centralSize=central.reduce((a,b)=>a+b.length,0),end=new Uint8Array(22),ed=new DataView(end.buffer);u32(ed,0,0x06054b50);u16(ed,8,entries.length);u16(ed,10,entries.length);u32(ed,12,centralSize);u32(ed,16,offset);
+ return new Blob([...chunks,...central,end],{type:"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"});
+}
+function downloadFile(blob,name,type){
+ const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
+$("cp").onclick=async()=>{
+ if(!legs.length){$("msg").textContent="Add at least one leg first.";return}
+ const st=Math.max(0,+$("stake").value||0);let D=1;
+ const ln=legs.map((l,i)=>{const x=legOf(l);D*=x.d;return(i+1)+". "+x.txt+" ("+x.g.a+" @ "+x.g.h+") est. "+am(x.d)});
+ const txt="NFL parlay, Week "+wk+" ("+legs.length+"-leg "+(mode==="same"?"same-game":"multi-game")+")\n"+ln.join("\n")+"\nEst. combined odds "+am(D)+" | Stake $"+st+" pays about $"+(st*D).toFixed(2)+"\nModel estimates only; check your sportsbook for real lines.";
+ let ok=false;
+ try{await navigator.clipboard.writeText(txt);ok=true}catch(e){}
+ if(!ok){try{const ta=document.createElement("textarea");ta.value=txt;ta.style.cssText="position:fixed;opacity:0";document.body.appendChild(ta);ta.select();ok=document.execCommand("copy");ta.remove()}catch(e){}}
+ if(ok){$("msg").textContent="Slip copied."}
+ else{$("msg").innerHTML="";const ta=document.createElement("textarea");ta.value=txt;ta.readOnly=true;ta.rows=Math.min(8,ln.length+4);ta.style.cssText="width:100%;margin-top:6px;font:inherit;background:var(--card);color:var(--tx);border:1.5px solid var(--bd);border-radius:8px;padding:6px";$("msg").appendChild(ta);ta.focus();ta.select()}};
+// Refreshes schedule and final scores. Unofficial ESPN endpoint; errors retain the bundled snapshot.
+const ESPN_BASE="https://site.api.espn.com/apis/site/v2/sports/football/nfl/scoreboard";
+const ESPN_SUMMARY="https://site.api.espn.com/apis/site/v2/sports/football/nfl/summary?event=";
+const BOX_KEY="nflp-team-box-v7";
+let includeTeamBoxPicks=false;
+let teamBoxes={};
+try{const raw=JSON.parse(localStorage.getItem(BOX_KEY)||'{}');if(raw&&typeof raw==='object'&&!Array.isArray(raw))teamBoxes=raw}catch(e){}
+function boxKey(week,a,h){return `${week}:${a}:${h}`}
+function findBox(g){return teamBoxes[boxKey(g.week,g.a,g.h)]||null}
+function updateBoxState(msg){const n=Object.keys(teamBoxes).length;$('boxState').textContent=(msg?msg+' • ':'')+`${n} completed matchup box scores cached (team passing, rushing, touchdowns where verified)`}
+function statNumber(obj,names){const arr=obj?.statistics||[];for(const x of arr){if(names.includes(String(x.name||x.abbreviation||'').toLowerCase())){const v=Number(String(x.displayValue??x.value??'').replace(/,/g,''));if(Number.isFinite(v))return v}}return null}
+function parseTeamBox(data,g){const teams=data.boxscore?.teams||[];const result={};for(const side of ['a','h']){
+ const abbr=side==='a'?g.a:g.h;
+ const entry=teams.find(x=>normalizeTeam(x.team?.abbreviation)===abbr);
+ if(!entry)return null;
+ result[side]={ps:statNumber(entry,['netpassingyards','passingyards','passingyards']),ru:statNumber(entry,['rushingyards']),td:null};
+ }
+ // ESPN scoringPlays includes touchdowns from offense, defense and special teams.
+ // Only count them if the feed provides scoring plays AND its touchdown counts reconcile
+ // to final score accounting for field goals, safeties and conversion points.
+ const plays=data.scoringPlays;
+ if(Array.isArray(plays)&&plays.length){
+  const ids={};for(const side of ['a','h']){const abbr=side==='a'?g.a:g.h;const x=teams.find(x=>normalizeTeam(x.team?.abbreviation)===abbr);ids[String(x.team?.id)]=side}
+  const count={a:0,h:0};let recognized=0;
+  for(const play of plays){const side=ids[String(play.team?.id)];if(!side)continue;
+   const desc=String(play.type?.text||play.scoringType?.name||play.text||'').toLowerCase();
+   const isTD=play.scoringType?.name==='touchdown'||/touchdown/.test(desc);
+   if(isTD){count[side]++;recognized++}
+  }
+  if(recognized>0){result.a.td=count.a;result.h.td=count.h}
+ }
+ return result;
+}
+async function fetchTeamBox(g){const id=String(g.id||'').replace(/^espn/,'');if(!/^\d+$/.test(id))throw Error('No ESPN event ID');
+ const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),12000);
+ try{const res=await fetch(ESPN_SUMMARY+encodeURIComponent(id),{signal:ctl.signal,cache:'no-store'});if(!res.ok)throw Error('HTTP '+res.status);
+ const data=await res.json(),box=parseTeamBox(data,g);if(!box)throw Error('Team stats missing');
+ if(Object.values(box).every(x=>x.ps==null&&x.ru==null&&x.td==null))throw Error('No team totals');
+ teamBoxes[boxKey(g.week,g.a,g.h)]=box;return box;
+ }finally{clearTimeout(timer)}
+}
+let boxLoading=false;
+async function loadTeamBoxes(){if(boxLoading)return;boxLoading=true;const btn=$('boxRefresh');btn.disabled=true;let ok=0,fail=0,skipped=0;
+ const games=Object.entries(WKS).flatMap(([w,gs])=>gs.filter(g=>g.sc).map(g=>({...g,week:+w})));
+ const needed=games.filter(g=>!findBox(g)&&/^espn\d+$/.test(String(g.id||'')));
+ updateBoxState('Loading '+needed.length+' final game box scores…');
+ for(let i=0;i<needed.length;i+=4){await Promise.all(needed.slice(i,i+4).map(async g=>{try{await fetchTeamBox(g);ok++}catch(e){fail++;console.warn('Box score unavailable',g.week,g.a,g.h,e.message)}}));
+ updateBoxState(`${ok} loaded, ${fail} unavailable`);
+ }
+ try{localStorage.setItem(BOX_KEY,JSON.stringify(teamBoxes))}catch(e){updateBoxState('Browser storage full; cache not saved')}
+ draw();plays();renderAdvanced();renderPerformance();updateBoxState(`${ok} newly loaded, ${fail} unavailable, ${games.length-needed.length} already cached`);btn.disabled=false;boxLoading=false;
+}
+$('boxRefresh').addEventListener('click',loadTeamBoxes);
+
+const ESPN_ABBR={WSH:"WAS",JAX:"JAC",LAR:"LA",OAK:"LV",SD:"LAC",STL:"LA"};
+function normalizeTeam(t){const code=String(t||"").toUpperCase();return ESPN_ABBR[code]||code}
+function readableKickoff(iso){const d=new Date(iso);return Number.isNaN(d.getTime())?"Time TBD":new Intl.DateTimeFormat("en-US",{weekday:"short",hour:"numeric",minute:"2-digit",timeZone:"America/New_York"}).format(d).replace(",","")}
+function parseESPN(data){if(!Array.isArray(data.events))throw Error("No schedule events were returned");return data.events.map(e=>{
+ const comp=e.competitions?.[0],home=comp?.competitors?.find(x=>x.homeAway==="home"),away=comp?.competitors?.find(x=>x.homeAway==="away");
+ if(!home||!away)return null;
+ const h=normalizeTeam(home.team?.abbreviation),a=normalizeTeam(away.team?.abbreviation);
+ if(!T[h]||!T[a])return null;
+ const final=!!(e.status?.type?.completed||comp.status?.type?.completed),hs=Number(home.score),as=Number(away.score);
+ const sc=final&&Number.isFinite(hs)&&Number.isFinite(as)?[as,hs]:undefined;
+ return ["espn"+String(e.id).replace(/[^0-9]/g,""),a,h,readableKickoff(e.date),null,sc];
+ }).filter(Boolean)}
+const NFL_REFRESH_KEY="nflp-last-schedule-refresh-v1";
+function showLastScheduleRefresh(){
+ const state=$("dataState");if(!state)return;
+ try{const record=JSON.parse(localStorage.getItem(NFL_REFRESH_KEY+'-'+SEASON)||"null");
+  if(record&&record.time){state.textContent=`Last refresh: ${new Date(record.time).toLocaleString()} • ${record.weeks} weeks updated${record.failures?` • ${record.failures} unavailable`:""}`;state.className="data-state good";}
+ }catch(e){}
+}
+showLastScheduleRefresh();
+async function refreshNFL(){const btn=$("refresh"),state=$("dataState"),selected=wk;
+ btn.disabled=true;btn.textContent="Refreshing…";state.className="data-state";state.textContent=`Loading ${SEASON} weeks 1–18…`;
+ const weeks=Array.from({length:18},(_,i)=>i+1);let successes=0,failures=0;const upcoming=[];
+ // Fetch all regular-season weeks so previous-week cards are available.
+ for(let i=0;i<weeks.length;i+=3){await Promise.all(weeks.slice(i,i+3).map(async w=>{
+  try{const ctl=new AbortController(),timer=setTimeout(()=>ctl.abort(),9000);
+   let res;try{res=await fetch(`${ESPN_BASE}?season=${SEASON}&seasontype=2&week=${w}`,{signal:ctl.signal,cache:"no-store"})}finally{clearTimeout(timer)}
+   if(!res.ok)throw Error("HTTP "+res.status);
+   const payload=await res.json();const rows=parseESPN(payload);if(!rows.length)throw Error("No recognized games");
+   for(const event of payload.events||[]){const start=Date.parse(event.date);if(Number.isFinite(start)&&start>Date.now()&&!event.status?.type?.completed)upcoming.push({week:w,start});}
+   // Preserve verified finals when an endpoint returns a partial or scheduled-only week.
+   const previous=WKS[w]||[];
+   const byMatch=new Map([...BUNDLED_FINALS.filter(g=>w===9),...previous.filter(g=>validFinal(g))].map(g=>[`${g.a}:${g.h}`,g]));
+   const merged=build(rows).map(g=>{const old=byMatch.get(`${g.a}:${g.h}`);return !validFinal(g)&&old?{...g,sc:[...old.sc]}:g});
+   const known=new Set(merged.map(g=>`${g.a}:${g.h}`));
+   for(const old of byMatch.values())if(!known.has(`${old.a}:${old.h}`))merged.push(old);
+   WKS[w]=merged;liveWeeks.add(w);successes++;
+  }catch(e){console.warn("NFL schedule refresh week",w,e);failures++}
+ }))}
+ const next=upcoming.sort((a,b)=>a.start-b.start)[0];
+ const target=startupScheduleSelection&&!userSelectedWeek&&next?next.week:selected;
+ startupScheduleSelection=false;
+ populateWeeks();setWk(target);plays();renderPerformance();
+ // Team box-score retrieval is opt-in for AI performance.
+ state.className="data-state "+(successes?"good":"bad");
+ if(successes){const time=new Date().toISOString();try{localStorage.setItem(NFL_REFRESH_KEY+'-'+SEASON,JSON.stringify({time,weeks:successes,failures}))}catch(e){}state.textContent=`Last refresh: ${new Date(time).toLocaleString()} • ${successes} weeks updated${failures?` • ${failures} unavailable`:""}`;}
+ else{state.textContent="Refresh unavailable • bundled data retained";try{const prior=JSON.parse(localStorage.getItem(NFL_REFRESH_KEY+'-'+SEASON)||"null");if(prior?.time)state.textContent+=` • Last successful refresh: ${new Date(prior.time).toLocaleString()}`}catch(e){}}
+ btn.disabled=false;btn.textContent="↻ Refresh NFL schedule";
+}
+$("refresh").addEventListener("click",refreshNFL);
+$("gameSearch").addEventListener("input",e=>{gameQuery=e.target.value.trim().toLowerCase();draw()});
+const THEME_KEY="nflp-theme-v2";
+try{const th=localStorage.getItem(THEME_KEY);if(th)document.documentElement.dataset.theme=th}catch(e){}
+$("theme").addEventListener("click",()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=next;try{localStorage.setItem(THEME_KEY,next)}catch(e){}});
+// CSV import: RFC4180-style quoted cells, CRLF, escaped quotes.
+function parseCSV(text){text=String(text).replace(/^\uFEFF/,'');const first=text.split(/\r?\n/,1)[0]||'';const delimiter=(first.match(/\t/g)||[]).length>(first.match(/,/g)||[]).length?'\t':',';const out=[];let row=[],field='',quoted=false;for(let i=0;i<text.length;i++){const c=text[i];if(quoted){if(c==='"'&&text[i+1]==='"'){field+='"';i++}else if(c==='"')quoted=false;else field+=c}else if(c==='"')quoted=true;else if(c===delimiter){row.push(field);field=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&text[i+1]==='\n')i++;row.push(field);if(row.some(x=>x.trim()))out.push(row);row=[];field=''}else field+=c}if(quoted)throw Error('Unclosed quoted CSV field');row.push(field);if(row.some(x=>x.trim()))out.push(row);return out}
+const aliases={player:['player','player_name','name','player_display_name','player_display','player_full_name'],team:['team','team_abbr','recent_team','team_abbreviation','team_code'],week:['week','week_number','game_week'],passing_yards:['passing_yards','pass_yards','pass_yds'],rushing_yards:['rushing_yards','rush_yards','rush_yds'],rushing_attempts:['rushing_attempts','carries','rush_attempts','rushing_att'],receiving_yards:['receiving_yards','rec_yards','receiving_yds'],receptions:['receptions','rec'],targets:['targets','tgt'],red_zone_targets:['red_zone_targets','rz_targets','rz_targets_20','redzone_targets'],red_zone_rush_attempts:['red_zone_rush_attempts','rz_rush_attempts','rz_rush_20','red_zone_carries'],snaps:['snaps','offense_snaps','offensive_snaps'],team_snaps:['team_snaps','team_offensive_snaps'],snap_share:['snap_share','snap_pct','offense_pct'],touchdowns:['touchdowns','total_tds','tds']};
+function loadCSV(text,{persist=true}={}){
+ const rows=parseCSV(text);if(rows.length<2)throw Error('CSV needs headers and at least one data row');
+ const heads=rows[0].map(h=>h.trim().toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_|_$/g,''));
+ const ix={};for(const [k,names] of Object.entries(aliases))ix[k]=heads.findIndex(h=>names.includes(h));
+ for(const k of ['player','team','week'])if(ix[k]<0)throw Error('Missing required column: '+k+'. Found: '+heads.slice(0,15).join(', '));
+ const col=name=>heads.indexOf(name),get=(row,k)=>ix[k]<0?'':String(row[ix[k]]??'').trim();
+ const extra=(row,k)=>col(k)<0?'':String(row[col(k)]??'').trim();
+ const num=v=>v===''?null:(Number.isFinite(Number(v))?Number(v):null);
+ const data=[];let skipped=0,scheduled=0,completed=0;
+ for(const row of rows.slice(1)){
+  const week=Number(get(row,'week')),player=get(row,'player'),team=normalizeTeam(get(row,'team'));
+  if(!player||!T[team]||!Number.isInteger(week)||week<1||week>22){skipped++;continue}
+  const r={player,team,week,season:num(extra(row,'season'))??SEASON,game_status:extra(row,'game_status').toUpperCase()||'UNKNOWN',opponent:extra(row,'opponent_team'),next_opponent:extra(row,'next_opponent')};
+  for(const k of Object.keys(aliases).filter(k=>!['player','team','week'].includes(k)))r[k]=num(get(row,k));
+  // Python export uses rushing + receiving TDs for anytime-TD grading; passing TDs are not included.
+  if(r.touchdowns===null){const parts=['rush_tds','rec_tds'].map(k=>num(extra(row,k)));if(parts.some(x=>x!==null))r.touchdowns=parts.reduce((a,b)=>a+(b??0),0)}
+  if(r.snap_share!=null&&r.snap_share>1)r.snap_share/=100;
+  if(r.snap_share==null&&r.snaps!=null&&r.team_snaps>0)r.snap_share=r.snaps/r.team_snaps;
+  r.yards_per_carry=r.rushing_attempts>0&&r.rushing_yards!=null?r.rushing_yards/r.rushing_attempts:null;
+  if(r.game_status==='SCHEDULED')scheduled++;else completed++;
+  data.push(r)
+ }
+ if(!data.length)throw Error('No valid player records (check team abbreviations and week)');
+ imported.splice(0,imported.length,...data);
+ let stored=false;
+ if(persist)try{
+  localStorage.setItem('nflp-import-v3',JSON.stringify(imported));
+  localStorage.setItem('nflp-import-file-v23',document.getElementById('csvUpload').files?.[0]?.name||'Imported CSV');
+  localStorage.setItem('nflp-import-upload-date-v1',new Date().toISOString());
+  stored=true;
+ }catch(err){console.warn('CSV persistence failed',err)}
+ renderCSV();draw();plays();renderPerformance();
+ return {loaded:data.length,skipped,total:rows.length-1,teams:new Set(data.map(r=>r.team)).size,completed,scheduled,stored}
+}
+function renderCSV(){
+ const teams=new Set(imported.map(r=>r.team));
+ const completed=imported.filter(r=>r.game_status==='COMPLETED');
+ const latest=completed.length?Math.max(...completed.map(r=>r.week)):'none';
+ const currentWeek=imported.filter(r=>r.week===wk);
+ const currentCompleted=currentWeek.filter(r=>r.game_status==='COMPLETED').length;
+ $('csvLastUpload').textContent='Latest upload: '+(()=>{try{const raw=localStorage.getItem('nflp-import-upload-date-v1');return raw?new Date(raw).toLocaleString():'Never'}catch(e){return 'Unavailable'}})();
+ $('csvState').textContent=imported.length?`${imported.length.toLocaleString()} player-week records • ${teams.size} teams • ${completed.length.toLocaleString()} completed • ${imported.filter(r=>r.game_status==='SCHEDULED').length.toLocaleString()} scheduled • latest completed Week ${latest} • selected Week ${wk}: ${currentCompleted} completed of ${currentWeek.length} records • onboard + uploaded data`:'Empty — no imported player statistics.';
+
+}
+$('chooseCSV').onclick=()=>{$('csvUpload').click()};
+$('csvUpload').onchange=async e=>{
+ const f=e.target.files?.[0];if(!f)return;
+ $('csvFileName').textContent='Selected: '+f.name+' — importing…';
+ try{
+  if(f.size>25e6)throw Error('File exceeds 25 MB');
+  const result=loadCSV(await f.text());
+  $('csvFileName').textContent='✓ Loaded: '+f.name+' ('+result.loaded.toLocaleString()+' records)';
+  $('csvState').textContent+=' • '+f.name+(result.stored?' • Saved in this browser until cleared':' • WARNING: Browser storage unavailable; reimport after reopening');
+  alert('CSV upload successful!\n\nFile: '+f.name+'\nRecords imported: '+result.loaded.toLocaleString()+'\nCompleted/unknown: '+result.completed.toLocaleString()+'\nScheduled: '+result.scheduled.toLocaleString()+'\nTeams: '+result.teams+'\nRows skipped: '+result.skipped+'\n\n'+(result.stored?'The CSV will be restored when you reopen this file until you clear it.':'Browser storage could not save this CSV; reimport it after reopening.'));
+ }catch(err){
+  $('csvFileName').textContent='✕ Import failed: '+f.name;
+  $('csvState').textContent='Import failed: '+err.message;
+  alert('CSV upload failed.\n\n'+err.message+'\n\nThe selected file is: '+f.name);
+ }
+ // Keep the filename visible: do NOT reset the file input after import.
+};
+
+// Persist imported player-week records across reloads until explicitly cleared.
+const CSV_STORAGE_KEY='nflp-import-v3';
+const CSV_FILE_KEY='nflp-import-file-v23';
+function clearImportedStats(){
+ imported.splice(0,imported.length);
+ $('csvUpload').value='';
+ let error='';
+ try{
+  for(const storage of [localStorage,sessionStorage]){
+   for(let i=storage.length-1;i>=0;i--){
+    const key=storage.key(i);
+    if(key&&/^nflp-import(?:-|$)/i.test(key))storage.removeItem(key);
+   }
+  }
+ }catch(e){error=String(e)}
+ $('csvFileName').textContent='Empty';
+ renderCSV();draw();plays();renderPerformance();
+ $('csvState').textContent=error?'Empty in this session; storage cleanup failed: '+error:'Empty — imported statistics cleared from browser storage.';
+}
+$('clearCSV').onclick=clearImportedStats;
+try{
+ const rows=JSON.parse(localStorage.getItem(CSV_STORAGE_KEY)||'[]');
+ if(Array.isArray(rows)&&rows.length){
+  imported.splice(0,imported.length,...rows);
+  const filename=localStorage.getItem(CSV_FILE_KEY)||'Saved CSV';
+  $('csvFileName').textContent='Restored: '+filename+' ('+rows.length.toLocaleString()+' records)';
+ }else $('csvFileName').textContent='Empty';
+}catch(e){console.warn('CSV restore failed',e);$('csvFileName').textContent='Empty'}
+renderCSV();
+// Grade with an explicit reason. Fuzzy matching is conservative: same team/week,
+// unique player match and a strong name score are required; ambiguous matches stay ungraded.
+function canonicalName(name){return String(name||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\b(jr|sr|ii|iii|iv)\b/g,'').replace(/[^a-z0-9 ]/g,' ').replace(/\s+/g,' ').trim()}
+function levenshtein(a,b){let prev=Array.from({length:b.length+1},(_,i)=>i);for(let i=1;i<=a.length;i++){const cur=[i];for(let j=1;j<=b.length;j++)cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));prev=cur}return prev[b.length]}
+const PLAYER_NICKNAMES={mike:'michael',mikey:'michael',mick:'michael',matt:'matthew',matty:'matthew',chris:'christopher',christian:'christian',alex:'alexander',andy:'andrew',drew:'andrew',nick:'nicholas',nicky:'nicholas',tony:'anthony',ant:'anthony',aj:'aj',dj:'dj',tj:'tj',cj:'cj',jj:'jj',bj:'bj',jk:'jk',jd:'jd',jt:'jt',dj:'dj',will:'william',bill:'william',billy:'william',rob:'robert',bob:'robert',bobby:'robert',jon:'jonathan',john:'johnathan',johnny:'johnathan',josh:'joshua',joe:'joseph',joey:'joseph',dan:'daniel',danny:'daniel',sam:'samuel',ben:'benjamin',zach:'zachary',zac:'zachary',gabe:'gabriel',nate:'nathaniel',pat:'patrick',rick:'richard',ricky:'richard',rich:'richard',trey:'trey',ty:'tyler',cam:'cameron',kenny:'kenneth',ken:'kenneth',jimmy:'james',jim:'james',jamie:'james',jake:'jacob',jacoby:'jacob',eli:'elijah',zeke:'ezekiel',dave:'david',davy:'david',steve:'steven',stevie:'steven',stephen:'steven',ted:'theodore',teddy:'theodore',fred:'frederick',freddie:'frederick',brad:'bradley',greg:'gregory',tre:'tre',devon:'devon'};
+function playerNameParts(name){
+ const n=canonicalName(name).replace(/\b([a-z])\s+([a-z])\b/g,'$1$2').trim();
+ const t=n.split(' ').filter(Boolean);
+ return {first:t[0]||'',last:t.at(-1)||'',middle:t.slice(1,-1),full:n};
+}
+function nameRoot(n){return PLAYER_NICKNAMES[n]||n}
+function playerSimilarity(a,b){
+ const x=playerNameParts(a),y=playerNameParts(b);
+ if(x.full===y.full)return 1;
+ if(!x.first||!y.first||!x.last||!y.last)return 0;
+ const lastSim=1-levenshtein(x.last,y.last)/Math.max(x.last.length,y.last.length);
+ const firstSim=1-levenshtein(nameRoot(x.first),nameRoot(y.first))/Math.max(nameRoot(x.first).length,nameRoot(y.first).length);
+ const initial=x.first[0]===y.first[0];
+ if(x.last===y.last){
+  if(nameRoot(x.first)===nameRoot(y.first))return .995;
+  if(initial&&(x.first.length===1||y.first.length===1))return .94;
+  if(initial&&firstSim>=.68)return .90;
+  return .35;
+ }
+ // Allow small last-name spelling differences only with strongly agreeing first names.
+ if(lastSim>=.80&&(firstSim>=.80||initial&&(x.first.length===1||y.first.length===1)))return .78+.16*lastSim+.05*firstSim;
+ return .55*(1-levenshtein(x.full,y.full)/Math.max(x.full.length,y.full.length))+.25*lastSim+.20*firstSim;
+}
+function matchingPlayerRow(g,p){
+ const candidates=imported.filter(r=>Number(r.week)===Number(g.week)&&normalizeTeam(r.team)===normalizeTeam(p.tm)&&String(r.game_status||'').toUpperCase()==='COMPLETED'&&(Number(r.season)===SEASON));
+ if(!candidates.length){
+  const weekRows=imported.filter(r=>Number(r.week)===Number(g.week)&&(Number(r.season)===SEASON));
+  const teamRows=weekRows.filter(r=>normalizeTeam(r.team)===normalizeTeam(p.tm));
+  const scheduled=teamRows.filter(r=>String(r.game_status||'').toUpperCase()==='SCHEDULED');
+  const completedWeeks=[...new Set(imported.filter(r=>r.game_status==='COMPLETED').map(r=>Number(r.week)))].sort((a,b)=>a-b);
+  const latest=completedWeeks.length?completedWeeks.at(-1):null;
+  if(scheduled.length)return {row:null,reason:`Player missing from completed-week CSV: ${p.n}. Week ${g.week} has ${scheduled.length} scheduled ${p.tm} player records, but no completed game statistics. Latest completed CSV week: ${latest??'none'}. Re-run export.py after nflverse publishes the game stats, then reimport.`};
+  if(!weekRows.length)return {row:null,reason:`Player missing from completed-week CSV: ${p.n}. No player CSV records for Week ${g.week}. Latest completed CSV week: ${latest??'none'}. Re-run export.py and reimport the new CSV.`};
+  return {row:null,reason:`Player missing from completed-week CSV: ${p.n} (${p.tm}, Week ${g.week}). No completed player statistics for this team/week; ${weekRows.length} records exist across other teams or statuses. This is not a player-name mismatch.`};
+ }
+ const ranked=candidates.map(row=>({row,score:playerSimilarity(row.player,p.n)})).sort((a,b)=>b.score-a.score);
+ const best=ranked[0],second=ranked[1];
+ const cutoff=.78;
+ if(best.score<cutoff){
+  const target=playerNameParts(p.n);
+  const sameSurname=ranked.filter(x=>playerNameParts(x.row.player).last===target.last);
+  const plausible=ranked.filter(x=>{const q=playerNameParts(x.row.player);const similarity=1-levenshtein(q.last,target.last)/Math.max(q.last.length,target.last.length,1);return similarity>=.8&&q.first[0]===target.first[0]});
+  if(!sameSurname.length&&!plausible.length)return {row:null,reason:`Player missing from completed-week CSV: ${p.n} (${p.tm}, Week ${g.week}). ${candidates.length} completed teammate records exist, but no plausible player-name entry was found. This is not a fuzzy-name failure; check whether the player appeared or was included in the export.`};
+  return {row:null,reason:`Player name not matched confidently in imported CSV: ${p.n} (${p.tm}, Week ${g.week}); closest match ${best.row.player} (${Math.round(best.score*100)}%, minimum ${Math.round(cutoff*100)}%).`};
+ }
+ // Guard against two plausible names on the same team in the same week.
+ if(second&&second.score>=cutoff&&best.score-second.score<.075)return {row:null,reason:`Ambiguous player-name match: ${best.row.player} (${Math.round(best.score*100)}%) vs ${second.row.player} (${Math.round(second.score*100)}%).`};
+ return {row:best.row,reason:best.score===1?'Exact player match':`Fuzzy player match (${Math.round(best.score*100)}%): ${best.row.player}`};
+}
+function isTeamBoxMarket(m){return /^(td|ps|ru)[ah]$/.test(m)}
+function performanceEligible(x){return includeTeamBoxPicks||!isTeamBoxMarket(x.m)}
+function setTeamBoxPerformance(enabled){includeTeamBoxPicks=!!enabled;const b=$('boxRefresh'),st=$('boxState');b.hidden=!includeTeamBoxPicks;st.hidden=!includeTeamBoxPicks;if(includeTeamBoxPicks){loadTeamBoxes().catch(e=>console.warn('Team box score retrieval failed',e))}renderPerformance()}
+function gradeDetail(g,mkt,side){
+ if(!g.sc)return {result:null,reason:'Game has no verified final score'};
+ const [away,home]=g.sc,val=side==='a'?away:home,other=side==='a'?home:away;
+ if(mkt==='ml')return val===other?{result:false,reason:'MISS: tied final score (moneyline ties count as misses)'}:{result:val>other,reason:'Verified final score'};
+ if(mkt==='sp'){const margin=val-other+(side==='a'?g.sp:-g.sp);return margin===0?{result:null,reason:'Push: final margin equals spread'}:{result:margin>0,reason:'Verified final score and spread'}}
+ if(mkt==='tot'){const diff=away+home-g.tot;return diff===0?{result:null,reason:'Push: final total equals line'}:{result:side==='o'?diff>0:diff<0,reason:'Verified final score and total'}}
+ const tm=/^(td|ps|ru)([ah])$/.exec(mkt);
+ if(tm){const [,k,t]=tm,box=findBox(g),actual=box?.[t]?.[k],line=PN[k][1];
+  if(actual==null||!Number.isFinite(actual))return {result:null,reason:!box?'Team box score unavailable (auto-fetch pending or unsupported event ID)':k==='td'?'Touchdown scoring plays unavailable or unverified':`Team ${k==='ps'?'passing':'rushing'} yards missing from box score`};
+  if(actual===line)return {result:null,reason:'Push: team statistic equals prediction line'};
+  return {result:side==='o'?actual>line:actual<line,reason:`Verified team box score: ${actual} vs line ${line}`};
+ }
+ const mp=/^p(\d+)$/.exec(mkt);
+ if(mp){const p=PLY[+mp[1]];if(!p)return {result:null,reason:'Unknown player market'};
+  const match=matchingPlayerRow(g,p);if(!match.row)return {result:null,reason:match.reason};
+  const stat=p.k==='ps'?match.row.passing_yards:p.k==='ru'?match.row.rushing_yards:match.row.touchdowns;
+  if(stat==null||!Number.isFinite(stat))return {result:null,reason:`Missing ${p.k==='ps'?'passing yards':p.k==='ru'?'rushing yards':'touchdowns'} in CSV for matched player`};
+  if(p.k==='td')return {result:stat>=1,reason:`${match.reason}; actual TDs: ${stat}`};
+  const line=pstat(p,g)?.line;if(!Number.isFinite(line))return {result:null,reason:'Prediction line unavailable under current data-source setting'};
+  if(stat===line)return {result:null,reason:'Push: player statistic equals prediction line'};
+  return {result:side==='o'?stat>line:stat<line,reason:`${match.reason}; actual ${stat} vs line ${line}`};
+ }
+ return {result:null,reason:'Unsupported prediction market'};
+}
+function grade(g,mkt,side){return gradeDetail(g,mkt,side).result}
+function bestFor(g){const all=[];const add=(m,s,p)=>all.push({m,s,p});add('ml',g.p>=.5?'h':'a',Math.max(g.p,1-g.p));for(const k of ['td','ps','ru'])for(const t of ['a','h']){const p=g.pp[t][k+'p'];add(k+t,p>=.5?'o':'u',Math.max(p,1-p))}for(const p of PLY.filter(p=>p.tm===g.a||p.tm===g.h)){const x=pstat(p,g);if(x)add('p'+p.i,p.k==='td'||x.p>=.5?'o':'u',Math.max(x.p,1-x.p))}return all.filter(performanceEligible).sort((a,b)=>b.p-a.p).slice(0,8)}
+function potentialFor(g){const home=g.p>=.5;return [{m:'ml',s:home?'h':'a',p:Math.max(g.p,1-g.p)}]}
+// Missing player-week exports are excluded from every AI Performance denominator.
+function excludedMissingPlayer(detail){return detail.result===null&&String(detail.reason||'').startsWith('Player missing from completed-week CSV:')}
+function scoreSet(games,kind){
+ let hits=0,total=0,unknown=0;const seen=new Set();
+ for(const g of games.filter(g=>g.sc)){
+  const picks=kind==='best'?bestFor(g):potentialFor(g);
+  for(const x of picks.filter(performanceEligible)){
+   const key=`${g.week}:${g.id}:${x.m}:${x.s}`;
+   if(seen.has(key))continue;seen.add(key);
+   const detail=gradeDetail(g,x.m,x.s);
+   if(excludedMissingPlayer(detail))continue;
+   const result=detail.result;
+   if(result===null)unknown++;else{total++;if(result)hits++}
+  }
+ }
+ return {hits,total,unknown,keys:seen};
+}
+function scoreCombined(games){
+ let hits=0,total=0,unknown=0;const seen=new Set();
+ for(const g of games.filter(g=>g.sc))for(const x of [...bestFor(g),...potentialFor(g)].filter(performanceEligible)){
+  const key=`${g.week}:${g.id}:${x.m}:${x.s}`;
+  if(seen.has(key))continue;seen.add(key);
+  const detail=gradeDetail(g,x.m,x.s);
+  if(excludedMissingPlayer(detail))continue;
+  const result=detail.result;
+  if(result===null)unknown++;else{total++;if(result)hits++}
+ }
+ return {hits,total,unknown};
+}
+// Use the same selection and deduplication rules as the summary cards.
+function performanceRows(gs,kind){
+ const seen=new Set(),rows=[];
+ for(const g of gs.filter(g=>g.sc)){
+  const picks=kind==='best'?bestFor(g):kind==='potential'?potentialFor(g):[...bestFor(g),...potentialFor(g)];
+  for(const x of picks.filter(performanceEligible)){
+   const key=`${g.week}:${g.id}:${x.m}:${x.s}`;
+   if(seen.has(key))continue;
+   seen.add(key);
+   const detail=gradeDetail(g,x.m,x.s);if(excludedMissingPlayer(detail))continue;rows.push({g,x,result:detail.result,reason:detail.reason});
+  }
+ }
+ return rows;
+}
+function performancePickName(g,x){
+ const {m,s}=x;
+ if(m==='ml')return `${s==='h'?g.h:g.a} moneyline`;
+ if(m==='sp')return `${s==='h'?g.h:g.a} spread`;
+ if(m==='tot')return `${s==='o'?'Over':'Under'} ${g.tot} total points`;
+ const team=/^(td|ps|ru)([ah])$/.exec(m);
+ if(team)return `${team[2]==='h'?g.h:g.a} ${s==='o'?'Over':'Under'} ${PN[team[1]][1]} ${PN[team[1]][0]}`;
+ const player=/^p(\d+)$/.exec(m);
+ if(player){const p=PLY[+player[1]];if(!p)return m;
+  if(p.k==='td')return `${p.n} anytime TD`;
+  const stat=pstat(p,g);return `${p.n} ${s==='o'?'Over':'Under'} ${stat?.line??'—'} ${p.k==='ps'?'passing':'rushing'} yards`;
+ }
+ return `${m} ${s}`;
+}
+const performanceContexts={};
+let performanceActive=null,performanceFilter='all',performanceSummaryFilter='all',performanceSelectedWeek=null;
+function openPerformanceDetails(period,kind){
+ const ctx=performanceContexts[period];if(!ctx)return;
+ performanceActive={period,kind};performanceFilter='all';
+ const names={best:'Best Picks',potential:'Potential Plays',combined:'Combined (unique picks)'};
+ $('performanceDetailsTitle').textContent=`${ctx.label} — ${names[kind]}`;
+ drawPerformanceDetails();
+ const dialog=$('performanceDetails');
+ if(typeof dialog.showModal==='function')dialog.showModal();else dialog.setAttribute('open','');
+}
+function setPerformanceSummaryFilter(value){performanceSummaryFilter=value;renderPerformance()}
+function drawPerformanceDetails(){
+ if(!performanceActive)return;
+ const {period,kind}=performanceActive,ctx=performanceContexts[period];if(!ctx)return;
+ const rows=performanceRows(ctx.games,kind);
+ const hits=rows.filter(r=>r.result===true).length,misses=rows.filter(r=>r.result===false).length,ungraded=rows.filter(r=>r.result===null).length;
+ const filtered=rows.filter(r=>performanceFilter==='all'||(performanceFilter==='hits'&&r.result===true)||(performanceFilter==='misses'&&r.result===false)||(performanceFilter==='ungraded'&&r.result===null));
+ $('performanceDetailsBody').innerHTML=`<div class="performance-metrics"><div><span class="mu">Graded</span><strong>${hits+misses} / ${rows.length}</strong><small>${rows.length?(100*(hits+misses)/rows.length).toFixed(1):'0.0'}% coverage</small></div><div><span class="mu">Ungraded</span><strong>${ungraded} / ${rows.length}</strong><small>${rows.length?(100*ungraded/rows.length).toFixed(1):'0.0'}% ungraded</small></div><div><span class="mu">Hits</span><strong>${hits}</strong><small>${hits+misses?(100*hits/(hits+misses)).toFixed(1)+'% of graded':'No graded picks'}</small></div><div><span class="mu">Misses</span><strong>${misses}</strong><small>${hits+misses?(100*misses/(hits+misses)).toFixed(1)+'% of graded':'No graded picks'}</small></div></div><p class="mu">Ungraded picks have insufficient result data and are not counted as misses. Picks classified “Player missing from completed-week CSV” are excluded entirely from these counts.</p><div class="performance-filter">${[['all','All'],['hits','Hits'],['misses','Misses'],['ungraded','Ungraded']].map(([key,label])=>`<button type="button" class="btn alt" aria-pressed="${performanceFilter===key}" onclick="performanceFilter='${key}';drawPerformanceDetails()">${label}</button>`).join('')}</div><div style="overflow-x:auto"><table class="performance-table"><thead><tr><th>Week</th><th>Matchup</th><th>Suggested pick</th><th>Result</th><th>Final score</th><th>Grading detail / ungraded reason</th></tr></thead><tbody>${filtered.length?filtered.map(({g,x,result,reason})=>`<tr class="${result===true?'hit-row':result===false?'miss-row':'ungraded-row'}"><td>${g.week}</td><td>${esc(g.a)} @ ${esc(g.h)}</td><td>${esc(performancePickName(g,x))}</td><td><b>${result===true?'✓ Hit':result===false?'✕ Miss':'— Ungraded'}</b></td><td>${esc(g.a)} ${g.sc[0]} – ${esc(g.h)} ${g.sc[1]}</td><td>${esc(reason)}</td></tr>`).join(''):'<tr><td colspan="6">No picks match this filter.</td></tr>'}</tbody></table></div><p class="mu">These are retrospective model selections, not archived pregame forecasts. Historical player lines may reflect the current data-source selection.</p>`;
+}
+$('closePerformanceDetails').onclick=()=>{const d=$('performanceDetails');if(typeof d.close==='function')d.close();else d.removeAttribute('open')};
+function setPerformanceWeek(value){
+ const n=Number(value);
+ performanceSelectedWeek=Number.isInteger(n)?n:null;
+ renderPerformance();
+}
+function validFinal(g){return Array.isArray(g?.sc)&&g.sc.length===2&&g.sc.every(v=>typeof v==='number'&&Number.isFinite(v))}
+function restoreBundledFinals(){
+ const existing=WKS[9]||[];
+ const known=new Map(existing.map(g=>[`${g.a}:${g.h}`,g]));
+ for(const g of BUNDLED_FINALS){const key=`${g.a}:${g.h}`,old=known.get(key);if(!validFinal(old))known.set(key,{...g,sc:[...g.sc]});}
+ WKS[9]=[...known.values()];populateWeeks();renderPerformance();
+ const state=$('dataState');if(state){state.textContent='Bundled Week 9 final scores restored';state.className='data-state good'}
+}
+function hasCompletedPlayerStats(g){
+ if(!validFinal(g))return false;
+ const teams=new Set(imported.filter(r=>Number(r.week)===Number(g.week)&&
+  (Number(r.season)===SEASON)&&
+  String(r.game_status||'').toUpperCase()==='COMPLETED')
+  .map(r=>normalizeTeam(r.team)));
+ return teams.has(normalizeTeam(g.a))&&teams.has(normalizeTeam(g.h));
+}
+function renderPerformance(){if(SEASON!==MODEL_SEASON){$("performance").innerHTML=`<div class="card mu">Retrospective model performance is disabled for ${SEASON} until season-specific model inputs are available. Archived pregame predictions, if any, are shown separately.</div>`;return;}
+ // Protect the bundled completed week even if another workflow replaced it.
+ const week9=WKS[9]||[],week9Matches=new Map(week9.map(g=>[`${g.a}:${g.h}`,g]));
+ for(const g of BUNDLED_FINALS){const old=week9Matches.get(`${g.a}:${g.h}`);if(!validFinal(old))week9Matches.set(`${g.a}:${g.h}`,{...g,sc:[...g.sc]});}
+ WKS[9]=[...week9Matches.values()];
+ const finalScores=Object.entries(WKS).flatMap(([w,gs])=>gs.filter(validFinal).map(g=>({...g,week:+w})));
+ const finished=finalScores.filter(hasCompletedPlayerStats);
+ const weeks=Array.from({length:18},(_,i)=>i+1).filter(w=>w<=Math.max(9,...Object.keys(WKS).map(Number).filter(Number.isFinite))).sort((a,b)=>b-a);
+ const completedWeeks=new Set(finished.map(g=>g.week));
+ const excludedFinals=finalScores.length-finished.length;
+ if(performanceSelectedWeek===null||!weeks.includes(performanceSelectedWeek))performanceSelectedWeek=weeks.includes(Number(wk))?Number(wk):(weeks[0]??null);
+ const chosen=performanceSelectedWeek;
+ const chosenFinalCount=finished.filter(g=>g.week===chosen).length;
+ const blocks=[['previous','Selected completed week',finished.filter(g=>g.week===chosen)],['season','Season (available completed weeks)',finished]];
+ for(const [id,label,gs] of blocks)performanceContexts[id]={label:label+(id==='previous'?' · Week '+(chosen??'—'):''),games:gs};
+ const weekOptions=weeks.map(w=>`<option value="${w}" ${w===chosen?'selected':''}>Week ${w}${completedWeeks.has(w)?'':' · no completed player stats'}</option>`).join('');
+ $('performance').innerHTML=`<div class="tools"><label for="performanceWeek" style="font-weight:700">Performance week</label><select id="performanceWeek" onchange="setPerformanceWeek(this.value)" ${weeks.length?'':'disabled'}>${weekOptions||'<option>No completed weeks loaded</option>'}</select><button class="btn alt" onclick="renderPerformance()">↻ Recalculate AI performance</button><button class="btn alt" onclick="restoreBundledFinals()">Restore Week 9 results</button><span class="mu">${finished.length} games with completed player statistics across ${completedWeeks.size} week(s) · ${excludedFinals} final-score games excluded · ${imported.length} player-week CSV records</span></div><div class="performance-summary-filter"><label style="font-weight:700;display:inline-flex;align-items:center;gap:7px"><input type="checkbox" id="includeTeamBoxPicks" onchange="setTeamBoxPerformance(this.checked)" ${includeTeamBoxPicks?'checked':''}> Include team box-score picks in AI results</label><span class="mu">${includeTeamBoxPicks?'Team passing, rushing and TD picks included':'Team passing, rushing and TD picks excluded'}</span></div><div class="performance-summary-filter"><b>Show performance:</b>${[['all','All picks'],['graded','Graded only'],['ungraded','Ungraded only']].map(([key,label])=>`<button type="button" class="btn alt" aria-pressed="${performanceSummaryFilter===key}" onclick="setPerformanceSummaryFilter('${key}')">${label}</button>`).join('')}</div>`+
+ (chosenFinalCount===0?`<p class="mu" role="status">No games with both final scores and completed player-week CSV records for both teams are available for Week ${chosen}. Refresh your CSV after stats are published and reimport it.</p>`:'')+blocks.map(([id,label,gs])=>{
+  const sets=[['Best Picks','best',scoreSet(gs,'best')],['Potential Plays','potential',scoreSet(gs,'potential')],['Combined (unique picks)','combined',scoreCombined(gs)]];
+  return `<h3>${label}${id==='previous'?' · Week '+(chosen??'—'):''}</h3><div class="performance-grid">${sets.map(([name,kind,t])=>{
+   const coverage=t.total+t.unknown,rate=t.total?(100*t.hits/t.total).toFixed(1)+'%':'N/A',gradedPct=coverage?(100*t.total/coverage).toFixed(1)+'%':'N/A',ungradedPct=coverage?(100*t.unknown/coverage).toFixed(1)+'%':'N/A';
+   const gradedBlock=`<div class="performance-metrics"><div><span class="mu">Graded picks</span><strong>${t.total}</strong><small>${gradedPct} of all picks</small></div><div><span class="mu">Hit rate</span><strong>${rate}</strong><small>${t.hits} hits · ${t.total-t.hits} misses</small></div></div>`;
+   const ungradedBlock=`<div class="performance-metrics"><div><span class="mu">Ungraded picks</span><strong>${t.unknown}</strong><small>${ungradedPct} of all picks</small></div><div><span class="mu">Total suggested</span><strong>${coverage}</strong><small>${gs.length} completed games</small></div></div>`;
+   return `<button type="button" class="card performance-detail-card" onclick="openPerformanceDetails('${id}','${kind}')" aria-label="Show ${name} graded and ungraded pick details for ${label}"><span class="mu">${name}</span>${performanceSummaryFilter==='all'?gradedBlock+ungradedBlock:performanceSummaryFilter==='graded'?gradedBlock:ungradedBlock}<span class="detail-cue">View individual picks →</span></button>`;
+  }).join('')}</div>`;
+ }).join('')+`<p class="mu"><b>How to read these results:</b> Use the All / Graded / Ungraded filters above to change which statistics appear on the cards; click a card to filter individual picks by outcome. Hits / Graded counts only picks with known outcomes. Ungraded picks are excluded from hit rate. Picks classified “Player missing from completed-week CSV” are excluded from all AI Performance calculations, including suggested and ungraded totals. Combined counts duplicate recommendations only once. Season includes only games with final scores AND completed player-week CSV statistics for both teams. Games with missing or scheduled-only player stats are excluded entirely from AI Performance. Import weekly player CSV data to grade supported player props. Team passing/rushing/TD recommendations are excluded by default; opt in above to include them and fetch available box scores. These are retrospective model evaluations, not documented pregame forecasts.</p>`;
+ if($('performanceDetails').open&&performanceActive){
+  if(performanceActive.period==='previous')$('performanceDetailsTitle').textContent=`${performanceContexts.previous.label} — ${{best:'Best Picks',potential:'Potential Plays',combined:'Combined (unique picks)'}[performanceActive.kind]}`;
+  drawPerformanceDetails();
+ }
+}
+
+updateBoxState();drawF();switchSlip(activeSlip);renderSaved();
+// Startup refresh keeps bundled results visible while fetching additional completed games.
+// Browser network/CORS failures leave existing grading intact.
+if(navigator.onLine){setTimeout(()=>{refreshNFL().catch(e=>console.warn('Automatic schedule refresh failed',e))},400)}
+</script>
+<script>
+document.getElementById('openSetup').onclick=()=>document.getElementById('setupDialog').showModal();
+document.getElementById('closeSetup').onclick=()=>document.getElementById('setupDialog').close();
+document.getElementById('setupDialog').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close()});
+/* Optional cloud synchronization: browser-first, single Supabase row per authenticated user.
+   Existing browser storage remains intact; conflict prompts before initial remote restore.
+   Password is never stored. Auth tokens persist in localStorage until sign-out. */
+(()=>{
+"use strict";
+const $=id=>document.getElementById(id);
+// Only personal parlay data belongs in per-user cloud sync. Shared NFL data stays local/read-only.
+const keys=['nflp-saved-v1','nflp-draft-slips-v3'];
+const prefix='nflp-cloud-';
+let config={},auth=null,remoteUpdated=0,lastPushed='',busy=false,started=false,lastPoll=0;
+const status=t=>{$('sbStatus').textContent=t;};
+// Public browser key only. Never embed a Supabase secret/service_role key.
+const CLOUD_URL='https://wpvuunwtyxycqfjwuzkn.supabase.co';
+const CLOUD_PUBLIC_KEY='sb_publishable_DK_yNahtv5ErUXtAzjTxCw_p4EowVj3';
+function authLoad(){
+ try{
+  const saved=localStorage.getItem(prefix+'auth')||sessionStorage.getItem(prefix+'auth');
+  if(!saved)return null;
+  const value=JSON.parse(saved);
+  if(!value||!value.access_token||!value.refresh_token)return null;
+  // Migrate older sessions so the next browser launch can resume them.
+  if(!localStorage.getItem(prefix+'auth'))localStorage.setItem(prefix+'auth',saved);
+  sessionStorage.removeItem(prefix+'auth');
+  return value;
+ }catch(e){console.warn('Cloud session could not be restored',e);return null}
+}
+function storeAuth(a){
+ auth=a;
+ try{
+  if(a)localStorage.setItem(prefix+'auth',JSON.stringify(a));
+  else localStorage.removeItem(prefix+'auth');
+  sessionStorage.removeItem(prefix+'auth');
+ }catch(e){console.warn('Cloud session storage unavailable',e);status('Session storage unavailable; you may need to sign in again.')}
+}
+function settings(){config={url:CLOUD_URL,key:CLOUD_PUBLIC_KEY};}
+function headers(extra={}){return {'apikey':config.key,'Content-Type':'application/json',...extra}}
+async function api(path,options={}){
+ const response=await fetch(config.url+path,{...options,headers:headers(options.headers||{})});
+ const raw=await response.text();let data;try{data=raw?JSON.parse(raw):null}catch{data=raw}
+ if(!response.ok)throw Error((data&& (data.msg||data.error_description||data.message||data.error))||'Supabase request failed: '+response.status);
+ return data;
+}
+async function token(){
+ if(!auth)throw Error('Sign in first.');
+ if(Date.now()<auth.expiresAt-60000)return auth.access_token;
+ if(!auth.refresh_token)throw Error('Session expired. Sign in again.');
+ const data=await api('/auth/v1/token?grant_type=refresh_token',{method:'POST',body:JSON.stringify({refresh_token:auth.refresh_token})});
+ storeAuth({...data,expiresAt:Date.now()+(data.expires_in||3600)*1000});
+ return auth.access_token;
+}
+async function userId(){
+ const jwt=await token();
+ const data=await api('/auth/v1/user',{headers:{Authorization:'Bearer '+jwt}});
+ return data.id;
+}
+function snapshot(){
+ const values={};
+ for(const key of keys){const value=localStorage.getItem(key);if(value!==null)values[key]=value;}
+ return values;
+}
+function fullLocalBackup(){
+ const values={};
+ for(let i=0;i<localStorage.length;i++){
+  const key=localStorage.key(i);
+  if(key&&key.startsWith('nflp-')&&!key.startsWith(prefix))values[key]=localStorage.getItem(key);
+ }
+ return values;
+}
+function personalCloudValues(payload){
+ const values={};
+ if(!payload||typeof payload!=='object'||Array.isArray(payload))return values;
+ for(const key of keys){if(typeof payload[key]==='string')values[key]=payload[key];}
+ return values;
+}
+function stable(obj){return JSON.stringify(Object.fromEntries(Object.entries(obj).sort(([a],[b])=>a.localeCompare(b))))}
+function downloadJSON(data,filename){
+ const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+ const link=document.createElement('a');const url=URL.createObjectURL(blob);link.href=url;
+ link.download=filename;document.body.append(link);link.click();link.remove();
+ setTimeout(()=>URL.revokeObjectURL(url),10000);
+}
+function download(){
+ downloadJSON({version:2,exported_at:new Date().toISOString(),storage:fullLocalBackup()},'nfl-parlay-builder-backup-'+new Date().toISOString().slice(0,10)+'.json');
+ status('Local backup download requested. Verify the file in Downloads before changing cloud data.');
+}
+async function readRemote(uid){
+ const jwt=await token();
+ const rows=await api('/rest/v1/nfl_parlay_sync?select=payload,updated_at&user_id=eq.'+encodeURIComponent(uid),{headers:{Authorization:'Bearer '+jwt}});
+ return rows[0]||null;
+}
+async function push(uid,values){
+ const jwt=await token();
+ await api('/rest/v1/nfl_parlay_sync?on_conflict=user_id',{method:'POST',headers:{Authorization:'Bearer '+jwt,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:uid,payload:values,updated_at:new Date().toISOString()})});
+ lastPushed=stable(values);remoteUpdated=Date.now();
+ status('Synced to Supabase · '+new Date().toLocaleTimeString());
+}
+function restore(values){
+ if(!values||typeof values!=='object'||Array.isArray(values))throw Error('Invalid cloud data.');
+ const incoming=personalCloudValues(values);
+ const local=snapshot();
+ // Download a safety backup rather than duplicating data in quota-limited iPhone storage.
+ // Do not remove local keys missing from the cloud copy.
+ const backup=JSON.stringify({version:2,exported_at:new Date().toISOString(),storage:local},null,2);
+ const blob=new Blob([backup],{type:'application/json'});
+ const link=document.createElement('a');link.href=URL.createObjectURL(blob);
+ link.download='nfl-parlay-pre-restore-'+new Date().toISOString().slice(0,10)+'.json';
+ document.body.append(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(link.href),10000);
+ try{
+  for(const [key,value] of Object.entries(incoming))localStorage.setItem(key,value);
+ }catch(e){
+  // Best-effort rollback; the downloaded backup remains available for manual recovery.
+  for(const key of keys){try{if(key in local)localStorage.setItem(key,local[key]);else localStorage.removeItem(key)}catch{}}
+  throw Error('Not enough storage to restore personal parlays. A backup download was attempted; check your Downloads before clearing any data.');
+ }
+ lastPushed=stable(snapshot());
+ status('Personal cloud data restored. Reloading application…');
+ location.reload();
+}
+// Safe additive reconciliation: never remove a saved parlay merely because one
+// device lacks it. Conflicting edits to the same ID require manual resolution.
+function parseCollection(values,key){
+ try {const x=JSON.parse(values[key]||'null');return x;}catch{return null;}
+}
+function mergePersonal(local,cloud,base){
+ const merged={...cloud,...local};
+ const savedKey='nflp-saved-v1',draftKey='nflp-draft-slips-v3';
+ const l=parseCollection(local,savedKey)||[],r=parseCollection(cloud,savedKey)||[];
+ if(!Array.isArray(l)||!Array.isArray(r))throw Error('Saved parlay format is invalid. No changes made.');
+ const prior=base?parseCollection(base,savedKey):null;
+ const baseline=new Map((Array.isArray(prior)?prior:[]).map(x=>[String(x.id),x]));
+ const result=new Map();
+ for(const item of r){if(item&&item.id!=null)result.set(String(item.id),item)}
+ for(const item of l){
+  if(!item||item.id==null)continue;
+  const id=String(item.id),other=result.get(id);
+  if(!other){result.set(id,item);continue;}
+  if(JSON.stringify(item)===JSON.stringify(other))continue;
+  const old=baseline.get(id);
+  if(old){
+   const localChanged=JSON.stringify(item)!==JSON.stringify(old);
+   const cloudChanged=JSON.stringify(other)!==JSON.stringify(old);
+   if(localChanged&&!cloudChanged){result.set(id,item);continue;}
+   if(cloudChanged&&!localChanged)continue;
+  }
+  throw Error('Saved parlay '+id+' was edited differently on both devices. No data overwritten; keep backups and resolve manually.');
+ }
+ merged[savedKey]=JSON.stringify([...result.values()].sort((x,y)=>(Number(y.id)||0)-(Number(x.id)||0)));
+ // Draft IDs are allocated per browser. Preserve both when a collision occurs,
+ // assigning the incoming draft a fresh ID. Empty draft placeholders are ignored.
+ const ld=parseCollection(local,draftKey),rd=parseCollection(cloud,draftKey);
+ const valid=x=>x&&typeof x==='object'&&Array.isArray(x.slips);
+ if(valid(ld)||valid(rd)){
+  const ls=valid(ld)?ld.slips.filter(x=>x&&Array.isArray(x.legs)&&x.legs.length):[];
+  const rs=valid(rd)?rd.slips.filter(x=>x&&Array.isArray(x.legs)&&x.legs.length):[];
+  const drafts=new Map(rs.map(x=>[String(x.id),x]));
+  let next=Math.max(0,...rs.map(x=>Number(x.id)||0),...ls.map(x=>Number(x.id)||0));
+  const oldDraft=base?parseCollection(base,draftKey):null;
+  const oldMap=new Map((valid(oldDraft)?oldDraft.slips:[]).map(x=>[String(x.id),x]));
+  for(const d of ls){
+   const id=String(d.id),existing=drafts.get(id);
+   if(!existing){drafts.set(id,d);continue;}
+   if(JSON.stringify(existing)===JSON.stringify(d))continue;
+   const old=oldMap.get(id);
+   if(old){
+    const a=JSON.stringify(d)!==JSON.stringify(old),b=JSON.stringify(existing)!==JSON.stringify(old);
+    if(a&&!b){drafts.set(id,d);continue;}
+    if(b&&!a)continue;
+   }
+   // Collision or simultaneous edit: preserve both rather than silently replacing.
+   const same=[...drafts.values()].some(x=>JSON.stringify({...x,id:null})===JSON.stringify({...d,id:null}));
+   if(!same){next++;drafts.set(String(next),{...d,id:next,name:(d.name||'Draft')+' (from other device)'});}
+  }
+  const items=[...drafts.values()];
+  const preferred=valid(ld)&&items.some(x=>String(x.id)===String(ld.active))?ld.active:items[0]?.id||1;
+  merged[draftKey]=JSON.stringify({slips:items,active:preferred,seq:Math.max(next,Number(ld?.seq)||0,Number(rd?.seq)||0)});
+ }
+ return merged;
+}
+async function safePush(uid,values,remote){
+ const jwt=await token();
+ if(remote){
+  const path='/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at)+'&select=updated_at';
+  const rows=await api(path,{method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:values,updated_at:new Date().toISOString()})});
+  if(!Array.isArray(rows)||rows.length!==1)throw Error('Cloud changed while syncing. Retry; nothing was overwritten.');
+  remoteUpdated=Date.parse(rows[0].updated_at)||Date.now();
+ }else{
+  await api('/rest/v1/nfl_parlay_sync',{method:'POST',headers:{Authorization:'Bearer '+jwt,Prefer:'return=minimal'},body:JSON.stringify({user_id:uid,payload:values,updated_at:new Date().toISOString()})});
+  remoteUpdated=Date.now();
+ }
+ lastPushed=stable(values);
+}
+function applyMerged(values){
+ // Never automatically reload here: Safari can enter a reload loop when
+ // startup draft normalization changes storage after a merge.
+ // Save a recoverable backup before updating local storage.
+ downloadJSON({version:2,exported_at:new Date().toISOString(),source:'before-auto-merge',storage:fullLocalBackup()},'nfl-parlay-pre-merge-'+new Date().toISOString().slice(0,10)+'.json');
+ for(const [key,value] of Object.entries(values))if(keys.includes(key))localStorage.setItem(key,value);
+ lastPushed=stable(snapshot());
+ status('Cloud and device data merged safely. Refresh this page ONCE to display the updated parlays. No automatic reload.');
+}
+async function sync(initial=false){
+ if(!auth){status('Sign in first.');return;}
+ if(busy){status('Sync already in progress. Please wait.');return;}
+ if(!navigator.onLine){status('Offline: cannot sync.');return;}
+ busy=true;status('Checking cloud and local parlays…');
+ try{
+  const uid=await userId(),local=snapshot(),remote=await readRemote(uid);
+  if(!remote){await safePush(uid,local,null);started=true;status('Cloud and device are in sync.');return;}
+  const cloud=personalCloudValues(remote.payload);
+  if(stable(local)===stable(cloud)){
+   lastPushed=stable(local);remoteUpdated=Date.parse(remote.updated_at)||Date.now();started=true;
+   status('Cloud and device are in sync · '+new Date().toLocaleTimeString());return;
+  }
+  // Use the last synchronized snapshot only when it is known to be common.
+  const base=lastPushed?JSON.parse(lastPushed):null;
+  const merged=mergePersonal(local,cloud,base);
+  if(stable(merged)!==stable(cloud)){
+   await safePush(uid,merged,remote);
+   status('Merged and uploaded changes to Supabase.');
+  }else{
+   lastPushed=stable(cloud);remoteUpdated=Date.parse(remote.updated_at)||Date.now();
+  }
+  started=true;
+  if(stable(merged)!==stable(local)){
+   applyMerged(merged);return;
+  }
+  status('Cloud and device are in sync · '+new Date().toLocaleTimeString());
+ }catch(e){started=false;status('Sync paused safely: '+e.message);console.warn('Cloud sync error',e)}
+ finally{busy=false}
+}
+async function sign(kind){
+ try{
+  settings();const email=$('sbEmail').value.trim(),password=$('sbPassword').value;
+  if(!email||!password)throw Error('Enter email and password.');
+  status(kind==='signup'?'Creating account…':'Signing in…');
+  const endpoint=kind==='signup'?'/auth/v1/signup':'/auth/v1/token?grant_type=password';
+  const data=await api(endpoint,{method:'POST',body:JSON.stringify({email,password})});
+  if(!data.access_token){status('Account created. Confirm your email using the Supabase message, then sign in.');return}
+  storeAuth({...data,expiresAt:Date.now()+(data.expires_in||3600)*1000});
+  $('sbPassword').value='';
+  started=false;await sync(true);
+ }catch(e){status('Authentication error: '+e.message)}
+}
+$('sbSignIn').onclick=()=>sign('signin');
+$('sbPassword').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();sign('signin')}});
+$('sbEmail').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('sbPassword').focus()}});
+$('sbSignIn').type='button';
+$('sbSignUp').type='button';
+$('sbSignOut').type='button';
+$('sbSignUp').onclick=()=>sign('signup');
+$('sbSignOut').onclick=()=>{storeAuth(null);started=false;status('Signed out. Local data preserved.');};
+$('sbBackup').onclick=download;
+$('sbRestoreCloud').onclick=async()=>{
+ if(!auth){status('Sign in first.');return;}
+ if(busy){status('Sync is already running. Please wait.');return;}
+ busy=true;
+ try{
+  const uid=await userId();const remote=await readRemote(uid);
+  if(!remote){status('No cloud copy exists for this account. Nothing restored.');return;}
+  if(!confirm('Restore your saved cloud data to this device?\n\nA backup download of your local parlays will be attempted first. Verify it in Downloads. The cloud copy will NOT be overwritten.'))return;
+  restore(personalCloudValues(remote.payload));
+ }catch(e){status('Restore failed: '+e.message)}finally{busy=false}
+};
+
+// Explicit recovery path when this PC has the desired saved parlays and cloud has an older copy.
+// Remote update uses an optimistic concurrency condition to avoid overwriting a concurrent edit.
+$('sbUploadLocal').onclick=async()=>{
+ if(!auth){status('Sign in first.');return;}
+ if(busy){status('Another sync operation is running. Please wait.');return;}
+ if(!navigator.onLine){status('Offline: cannot upload.');return;}
+ busy=true;
+ try{
+  status('Checking this device and the current cloud copy…');
+  const uid=await userId();
+  const local=snapshot();
+  let count=0;
+  try{const parsed=JSON.parse(local['nflp-saved-v1']||'[]');count=Array.isArray(parsed)?parsed.length:0;}catch{}
+  if(!count){
+   status('Upload stopped: no saved parlays were found on this device. Check Saved parlay slips.');return;
+  }
+  const remote=await readRemote(uid);
+  const currentCloud=remote?personalCloudValues(remote.payload):{};
+  if(stable(currentCloud)===stable(local)){
+   lastPushed=stable(local);remoteUpdated=Date.parse(remote?.updated_at)||Date.now();started=true;
+   status('Cloud already matches this device ('+count+' saved parlays).');return;
+  }
+  // Download the existing remote copy before asking to overwrite it. The browser
+  // cannot verify that the user actually saved the download: require explicit confirmation.
+  downloadJSON({version:2,exported_at:new Date().toISOString(),source:'cloud-before-device-upload',storage:currentCloud},
+   'nfl-parlay-cloud-before-upload-'+new Date().toISOString().slice(0,10)+'.json');
+  status('Cloud backup download requested. Verify it is saved before continuing.');
+  if(!confirm('A backup download of the EXISTING CLOUD parlays was requested.\n\nSTOP and check your Downloads/Files folder.\n\nOnly continue if you verified the cloud backup is saved.\n\nPress OK after verification, or Cancel to leave the cloud unchanged.')){
+   status('Upload canceled. Cloud data unchanged.');return;
+  }
+  const typed=prompt('This will REPLACE the cloud saved parlays and draft slips with this device’s copy ('+count+' saved parlays).\n\nType UPLOAD to confirm.');
+  if(typed!=='UPLOAD'){status('Upload canceled. Cloud data unchanged.');return;}
+  status('Uploading this device’s parlays to Supabase…');
+  const jwt=await token();
+  if(remote){
+   // If another device changed the row after our read, abort rather than overwriting it.
+   const path='/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at)+'&select=updated_at';
+   const updated=await api(path,{method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:local,updated_at:new Date().toISOString()})});
+   if(!Array.isArray(updated)||updated.length!==1)throw Error('Cloud changed during upload. Nothing was overwritten. Please retry after checking the cloud copy.');
+   remoteUpdated=Date.parse(updated[0].updated_at)||Date.now();
+  }else{
+   // Insert only if absent; a concurrent insert fails instead of replacing another device.
+   await api('/rest/v1/nfl_parlay_sync',{method:'POST',headers:{Authorization:'Bearer '+jwt,Prefer:'return=minimal'},body:JSON.stringify({user_id:uid,payload:local,updated_at:new Date().toISOString()})});
+   remoteUpdated=Date.now();
+  }
+  lastPushed=stable(local);started=true;
+  status('Upload successful: '+count+' saved parlays sent to Supabase. On iPhone choose “Use cloud data on this device”.');
+ }catch(e){status('Upload failed: '+e.message);console.warn('Manual cloud upload failed',e);}
+ finally{busy=false;}
+};
+$('sbSyncNow').onclick=async()=>{if(!auth){status('Sign in first.');return}await sync(!started)};
+settings();auth=authLoad();
+if(auth&&config.url&&config.key){status('Resuming cloud sync…');setTimeout(()=>sync(true),900)}
+else status('Cloud connection ready. Sign in or create an account to enable sync.');
+setInterval(()=>{if(!started||!auth||busy)return;sync(false)},5000);
+window.addEventListener('online',()=>{if(auth)sync(!started)});
+})();
+</script>
+<script>
+/* Read-only shared NFL automation data. Existing private Supabase sync is unchanged. */
+(()=>{
+ const url='https://wpvuunwtyxycqfjwuzkn.supabase.co';
+ const key='sb_publishable_DK_yNahtv5ErUXtAzjTxCw_p4EowVj3';
+ const $=id=>document.getElementById(id);
+ let lastStatsVersion='', snapshots=[];
+ async function get(path){
+  const res=await fetch(url+'/rest/v1/'+path,{headers:{apikey:key,Authorization:'Bearer '+key,Accept:'application/json'},cache:'no-store'});
+  if(!res.ok)throw Error('Cloud data unavailable (HTTP '+res.status+'). Run the supplied Supabase SQL setup first.');
+  return res.json();
+ }
+ async function stats(){
+  const el=$('autoStatsStatus');
+  try{
+   const rows=await get('nfl_stat_exports?select=season,generated_at,csv_text,record_count&season=eq.'+SEASON+'&limit=1');
+   if(!rows.length){el.textContent='Cloud NFL statistics: no automated export yet. Manual CSV upload is available.';return}
+   const row=rows[0];
+   if(!row.csv_text||row.generated_at===lastStatsVersion)return;
+   // Avoid replacing a newer manual upload with an older cloud export.
+   const manual=localStorage.getItem('nflp-import-upload-date-v1');
+   if(manual&&Date.parse(manual)>Date.parse(row.generated_at)){
+    el.textContent='Cloud stats available ('+new Date(row.generated_at).toLocaleString()+'); newer manual stats retained.';return;
+   }
+   const result=loadCSV(row.csv_text,{persist:false});
+   lastStatsVersion=row.generated_at;
+   el.textContent='Cloud NFL statistics: '+result.loaded+' records, updated '+new Date(row.generated_at).toLocaleString()+' (automatic).';
+  }catch(e){el.textContent='Cloud stats: '+e.message;console.warn(e)}
+ }
+ function gradeArchived(p){
+  const game=(WKS[Number(p.week)]||[]).find(g=>g.a===p.away_team&&g.h===p.home_team&&Array.isArray(g.sc));
+  if(!game)return {result:null,reason:'Final score not available'};
+  const [away,home]=game.sc;
+  if(p.market==='ml'){
+   const value=p.side==='h'?home:away,other=p.side==='h'?away:home;
+   return {result:value>other,reason:'Final '+away+'–'+home};
+  }
+  if(p.market==='sp'){
+   const value=p.side==='h'?home:away,other=p.side==='h'?away:home,diff=value-other+Number(p.line);
+   return {result:diff===0?null:diff>0,reason:diff===0?'Push':'Final '+away+'–'+home};
+  }
+  if(p.market==='tot'){
+   const diff=away+home-Number(p.line);
+   return {result:diff===0?null:(p.side==='o'?diff>0:diff<0),reason:diff===0?'Push':'Final '+away+'–'+home};
+  }
+  if(p.market==='player'){
+   const match=imported.find(r=>r.season===Number(p.season)&&r.week===Number(p.week)&&r.game_status==='COMPLETED'&&r.player.toLowerCase()===String(p.player_name||'').toLowerCase()&&r.team===p.team);
+   if(!match)return {result:null,reason:'Completed player statistics unavailable'};
+   const actual=match[p.stat];
+   if(!Number.isFinite(actual))return {result:null,reason:'Player statistic missing'};
+   if(p.stat==='touchdowns')return {result:actual>=1,reason:'Actual touchdowns '+actual};
+   const diff=actual-Number(p.line);
+   return {result:diff===0?null:(p.side==='o'?diff>0:diff<0),reason:'Actual '+actual+' vs '+p.line};
+  }
+  return {result:null,reason:'Unsupported archived market'};
+ }
+ function renderSnapshots(){
+  const el=$('archivedPerformance');if(!el)return;
+  if(!snapshots.length){el.innerHTML='<b>Archived pregame prediction accuracy</b><p class="mu">No pregame snapshots in Supabase yet. Scheduled snapshots will appear here after the GitHub workflow is configured.</p>';return}
+  const week=Number(document.getElementById('performanceWeek')?.value||wk);
+  const rows=snapshots.filter(s=>Number(s.season)===SEASON).flatMap(s=>(Array.isArray(s.picks)?s.picks:[]).map(p=>({...p,week:s.week,season:s.season,snapshot_at:s.created_at,game_id:s.game_id}))).filter(p=>p.week===week);
+  const graded=rows.map(p=>({p,...gradeArchived(p)}));
+  const hits=graded.filter(x=>x.result===true).length,misses=graded.filter(x=>x.result===false).length,unknown=graded.filter(x=>x.result===null).length;
+  const rate=hits+misses?(100*hits/(hits+misses)).toFixed(1)+'%':'N/A';
+  el.innerHTML='<b>Archived pregame predictions · Week '+week+'</b><div class="performance-metrics"><div><span class="mu">Hit rate</span><strong>'+rate+'</strong></div><div><span class="mu">Hits / Misses</span><strong>'+hits+' / '+misses+'</strong></div><div><span class="mu">Ungraded</span><strong>'+unknown+'</strong></div><div><span class="mu">Archived picks</span><strong>'+rows.length+'</strong></div></div>'+
+   '<p class="mu">These picks use their original saved selection and line. Archived at the timestamp shown; only snapshots created before scheduled kickoff are included. This is distinct from the retrospective performance cards below.</p>'+
+   (graded.length?'<div style="overflow-x:auto"><table class="performance-table"><thead><tr><th>Pick</th><th>Outcome</th><th>Detail</th><th>Saved</th></tr></thead><tbody>'+graded.map(x=>'<tr><td>'+esc(x.p.label||x.p.team+' '+x.p.market)+'</td><td>'+(x.result===true?'HIT':x.result===false?'MISS':'Ungraded')+'</td><td>'+esc(x.reason)+'</td><td>'+new Date(x.p.snapshot_at).toLocaleString()+'</td></tr>').join('')+'</tbody></table></div>':'<p class="mu">No archived picks for this week.</p>');
+ }
+ async function loadSnapshots(){
+  try{snapshots=await get('nfl_prediction_snapshots?select=season,week,game_id,created_at,picks&season=eq.'+SEASON+'&order=created_at.asc&limit=500');renderSnapshots()}
+  catch(e){$('archivedPerformance').innerHTML='<b>Archived pregame prediction accuracy</b><p class="mu">'+esc(e.message)+'</p>'}
+ }
+ // Existing app rerenders the performance section. Refresh archive view after those calls.
+ const old=window.renderPerformance;
+ if(typeof old==='function')window.renderPerformance=function(){old();renderSnapshots()};
+ async function refresh(){await Promise.all([stats(),loadSnapshots()])}
+ setTimeout(refresh,1600);
+ setInterval(refresh,15*60*1000);
+ window.addEventListener('online',refresh);
+})();
+</script>
+
+<script>
+(function(){
+ const $=id=>document.getElementById(id);
+ const KEY='nflp-adv-prediction-tracking-v1';
+ let history=[];
+ try{const v=JSON.parse(localStorage.getItem(KEY)||'[]');if(Array.isArray(v))history=v}catch(e){}
+ function save(){try{localStorage.setItem(KEY,JSON.stringify(history));return true}catch(e){$('advTrackingStatus').textContent='Could not save tracking history; export a backup.';return false}}
+ function tab(which){
+  const perf=which==='performance';
+  $('advRecommendationPanel').hidden=perf;$('advPerformancePanel').hidden=!perf;
+  $('advTabPerformance').setAttribute('aria-selected',String(perf));
+  $('advTabRecommendations').setAttribute('aria-selected',String(!perf));
+  $('advTabPerformance').className=perf?'btn':'btn alt';
+  $('advTabRecommendations').className=perf?'btn alt':'btn';
+  if(perf)render();
+ }
+ $('advTabRecommendations').onclick=()=>tab('recommendations');
+ $('advTabPerformance').onclick=()=>tab('performance');
+ function grade(p){
+  const g=(WKS[p.week]||[]).find(g=>g.a===p.away&&g.h===p.home);
+  if(!g||!Array.isArray(g.sc))return [null,'Game not final'];
+  const stat=p.market==='ps'?'passing_yards':p.market==='ru'?'rushing_yards':'touchdowns';
+  const records=imported.filter(r=>Number(r.season)===p.season&&Number(r.week)===p.week&&r.team===p.team&&String(r.player).toLowerCase()===p.player.toLowerCase()&&r.game_status==='COMPLETED');
+  if(!records.length)return [null,'Completed weekly player CSV needed'];
+  const actual=Number(records[0][stat]);
+  if(!Number.isFinite(actual))return [null,'Stat missing'];
+  if(p.market==='td')return [actual>=1,'Actual TDs: '+actual];
+  if(actual===p.line)return [null,'Push at '+actual];
+  return [actual>p.line,'Actual '+actual+' vs line '+p.line];
+ }
+ function render(){
+  const root=$('advTrackingResults');
+  const rows=history.flatMap(h=>h.picks.map(p=>({...p,created:h.created})));
+  const results=rows.map(p=>({p,result:grade(p)}));
+  const hits=results.filter(x=>x.result[0]===true).length,misses=results.filter(x=>x.result[0]===false).length,ungraded=results.length-hits-misses;
+  const graded=hits+misses;
+  const pct=n=>n.toFixed(1)+'%';
+  const ranges=[[50,60,'50–59%'],[60,70,'60–69%'],[70,80,'70–79%'],[80,101,'80%+']];
+  const bins=ranges.map(([lo,hi,label])=>{
+   const a=results.filter(x=>Number.isFinite(x.p.prob)&&x.p.prob*100>=lo&&x.p.prob*100<hi&&x.result[0]!==null);
+   return {label,n:a.length,actual:a.length?100*a.filter(x=>x.result[0]===true).length/a.length:null,predicted:a.length?100*a.reduce((sum,x)=>sum+x.p.prob,0)/a.length:null};
+  });
+  function barChart(){
+   const width=720,height=315,left=49,right=14,top=20,bottom=57,plotW=width-left-right,plotH=height-top-bottom;
+   let svg=`<svg class="pred-chart-svg" viewBox="0 0 ${width} ${height}" role="img" aria-label="Actual hit rate versus average predicted probability by confidence range. Missing bars mean no graded predictions." xmlns="http://www.w3.org/2000/svg">`;
+   for(let tick=0;tick<=100;tick+=25){const y=top+plotH*(1-tick/100);svg+=`<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="currentColor" opacity=".12" stroke-dasharray="3 5"/><text x="${left-9}" y="${y+4}" font-size="12" text-anchor="end" fill="currentColor" opacity=".65">${tick}%</text>`}
+   const slot=plotW/4,barW=Math.min(60,slot*.32);
+   bins.forEach((b,i)=>{const center=left+slot*(i+.5);svg+=`<text x="${center}" y="${height-24}" text-anchor="middle" font-size="13" fill="currentColor">${b.label}</text>`;
+    if(b.n){for(const [v,dx,color,label] of [[b.actual,-barW-2,'#7596ed','Actual hit rate'],[b.predicted,2,'#8cc78d','Average predicted probability']]){const h=plotH*v/100,y=top+plotH-h;svg+=`<rect x="${center+dx}" y="${y}" width="${barW}" height="${h}" rx="6" fill="${color}"><title>${b.label}: ${label} ${pct(v)}; ${b.n} graded picks</title></rect>`}}
+    else svg+=`<text x="${center}" y="${top+plotH-18}" text-anchor="middle" font-size="12" fill="currentColor" opacity=".55">No data</text>`;
+   });
+   return svg+'</svg>';
+  }
+  const weeks=new Map();
+  for(const x of results){const k=`${x.p.season} W${x.p.week}`;if(!weeks.has(k))weeks.set(k,{season:x.p.season,week:x.p.week,hits:0,misses:0,ungraded:0});
+   const w=weeks.get(k);if(x.result[0]===true)w.hits++;else if(x.result[0]===false)w.misses++;else w.ungraded++}
+  const weekly=[...weeks.values()].sort((a,b)=>a.season-b.season||a.week-b.week);
+  const weeklyRows=weekly.map(w=>`<tr><td>${esc(String(w.season))} · Week ${esc(String(w.week))}</td><td>${w.hits+w.misses}</td><td>${w.hits}</td><td>${w.misses}</td><td>${w.ungraded}</td><td>${w.hits+w.misses?pct(100*w.hits/(w.hits+w.misses)):'N/A'}</td></tr>`).join('');
+  root.innerHTML=`<div class="pred-dashboard">
+   <div class="pred-kpis">
+    <div class="pred-kpi"><span class="pred-label">Predictions tracked</span><strong>${rows.length}</strong><span class="mu">${history.length} saved snapshots</span></div>
+    <div class="pred-kpi"><span class="pred-label">Correct picks</span><strong>${hits}</strong><span class="mu">${misses} misses · ${ungraded} ungraded</span></div>
+    <div class="pred-kpi"><span class="pred-label">Hit rate</span><strong style="color:var(--ok)">${graded?pct(100*hits/graded):'N/A'}</strong><span class="mu">${graded} graded predictions</span></div>
+   </div>
+   <section class="pred-chart-card"><h3>Accuracy by confidence range</h3>${barChart()}
+    <div class="pred-legend"><span><i class="pred-dot" style="background:#7596ed"></i>Actual hit rate</span><span><i class="pred-dot" style="background:#8cc78d"></i>Average predicted probability</span></div>
+    <p class="mu">Only graded, saved pregame predictions are plotted. Empty ranges have no graded picks. Comparing these two series helps assess model calibration.</p>
+   </section>
+   <section class="pred-chart-card"><h3>Weekly prediction performance</h3>
+    ${weekly.length?`<div class="pred-table-scroll"><table class="performance-table"><thead><tr><th>Week</th><th>Graded</th><th>Hits</th><th>Misses</th><th>Ungraded</th><th>Hit rate</th></tr></thead><tbody>${weeklyRows}</tbody></table></div>`:'<p class="mu">No weekly tracking history yet.</p>'}
+   </section>
+   <section class="pred-chart-card"><h3>Tracked prediction history</h3>
+    ${results.length?'<div class="pred-table-scroll"><table class="performance-table"><thead><tr><th>Saved</th><th>Week</th><th>Pick</th><th>Model probability</th><th>Outcome</th><th>Details</th></tr></thead><tbody>'+results.map(x=>'<tr><td>'+new Date(x.p.created).toLocaleString()+'</td><td>'+x.p.week+'</td><td>'+esc(x.p.player+' '+(x.p.market==='td'?'anytime TD':'Over '+x.p.line+' '+(x.p.market==='ps'?'pass':'rush')+' yards'))+'</td><td>'+(x.p.prob*100).toFixed(0)+'%</td><td>'+(x.result[0]===null?'Ungraded':x.result[0]?'Hit':'Miss')+'</td><td>'+esc(x.result[1])+'</td></tr>').join('')+'</tbody></table></div>':'<p class="mu">No tracked predictions yet. Save a snapshot before kickoff, then import completed-game player statistics to grade it.</p>'}
+   </section>
+   </div>`;
+ }
+
+ $('advTrackSnapshot').onclick=()=>{
+  const picks=(window._advPicks||[]).slice(0,12).filter(x=>x.line!==null&&x.line!==undefined&&x.p);
+  if(!picks.length){$('advTrackingStatus').textContent='No eligible predictions for the selected week.';return}
+  const now=new Date();
+  // Conservative: don't record snapshots for games already started or finalized.
+  const eligible=picks.filter(x=>!x.g.sc && (!x.g.date || Number.isNaN(Date.parse(x.g.date)) || Date.parse(x.g.date)>now.getTime()));
+  if(!eligible.length){$('advTrackingStatus').textContent='No upcoming unplayed picks to archive.';return}
+  const snapshot={id:now.toISOString()+'-'+Math.random().toString(36).slice(2),created:now.toISOString(),picks:eligible.map(x=>({season:SEASON,week:wk,away:x.g.a,home:x.g.h,player:x.p.n,team:x.p.tm,market:x.p.k,line:Number(x.line),prob:x.prob}))};
+  history.push(snapshot);if(save())$('advTrackingStatus').textContent='Saved '+snapshot.picks.length+' prediction snapshots on this device. Export a backup for safekeeping.';
+  render();
+ };
+ $('advExportTracking').onclick=()=>{
+  const blob=new Blob([JSON.stringify({format:'nflp-prediction-tracking-v1',history},null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='nfl-prediction-tracking-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);
+ };
+ $('advImportTracking').onclick=()=>$('advImportTrackingFile').click();
+ $('advImportTrackingFile').onchange=async e=>{
+  const f=e.target.files[0];if(!f)return;
+  try{const data=JSON.parse(await f.text());if(data.format!=='nflp-prediction-tracking-v1'||!Array.isArray(data.history))throw Error('Unsupported tracking backup');
+   const ids=new Set(history.map(h=>h.id));for(const h of data.history){if(h&&typeof h.id==='string'&&Array.isArray(h.picks)&&!ids.has(h.id)){history.push(h);ids.add(h.id)}}
+   if(save())$('advTrackingStatus').textContent='Tracking history imported. Existing snapshots preserved.';render();
+  }catch(err){$('advTrackingStatus').textContent='Import failed: '+err.message}e.target.value='';
+ };
+ render();
+})();
+</script>
+</body></html>
+
