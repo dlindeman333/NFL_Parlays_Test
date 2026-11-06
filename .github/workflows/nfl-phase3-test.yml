@@ -1,0 +1,58 @@
+name: NFL Phase 3 Safe Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    steps:
+      - name: Check out development branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements-phase3.txt
+
+      - name: Export NFL statistics
+        run: python export.py
+
+      - name: Verify CSV
+        run: |
+          python - <<'PY'
+          import csv
+          from pathlib import Path
+
+          path = Path("nfl_player_stats.csv")
+          assert path.exists(), "CSV not found"
+
+          with path.open(encoding="utf-8-sig", newline="") as f:
+              reader = csv.DictReader(f)
+              rows = list(reader)
+
+          assert len(rows) >= 1000, "Too few rows"
+          print(f"PASS: {len(rows)} rows")
+          print(f"Columns: {len(reader.fieldnames or [])}")
+          print("SAFE TEST: No database writes")
+          PY
+
+      - name: Save test CSV
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase3-test-csv
+          path: nfl_player_stats.csv
+          retention-days: 7
+
+6. Click Commit changes.
+7. Select Commit directly to the main branc
