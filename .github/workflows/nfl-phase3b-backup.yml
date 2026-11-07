@@ -1,0 +1,35 @@
+name: NFL Phase 3B Statistics Backup
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  backup:
+    name: Read-only Supabase statistics backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Download and validate stored 2026 statistics (read-only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/backup_stats.py
+      - name: Retain verified backup artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-stat-exports-2026-backup
+          path: backup_artifact/
+          if-no-files-found: error
+          retention-days: 30
