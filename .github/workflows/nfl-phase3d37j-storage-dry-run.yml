@@ -1,0 +1,53 @@
+name: NFL Phase 3D37J Storage Dry Run (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Season (blank = current ESPN week)'
+        required: false
+        type: string
+      week:
+        description: 'Week (blank = current ESPN week)'
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: nfl-phase3d37j-readonly
+  cancel-in-progress: false
+jobs:
+  dry-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Unit tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d37j_storage_dry_run.py' -v
+      - name: Generate current full manifest (read only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season }}
+          NFL_WEEK: ${{ inputs.week }}
+        shell: bash
+        run: |
+          args=()
+          if [[ -n "$NFL_SEASON" ]]; then args+=(--season "$NFL_SEASON"); fi
+          if [[ -n "$NFL_WEEK" ]]; then args+=(--week "$NFL_WEEK"); fi
+          python scripts/phase3d37h_full_manifest.py "${args[@]}"
+      - name: Storage compatibility dry run (GET only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3d37j_storage_dry_run.py
+      - name: Upload diagnostic only (no raw CSV)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d37j-storage-dry-run-${{ github.run_id }}
+          path: phase3d37j-output/storage_dry_run.json
+          retention-days: 30
+          if-no-files-found: warn
