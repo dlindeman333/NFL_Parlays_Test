@@ -1,0 +1,40 @@
+name: Phase 3 Test Supabase - Read Only Verification
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - name: Verify isolated project and read-only REST access
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import os, sys, urllib.request, urllib.error, urllib.parse
+          expected='luxezjthznupdghmexyh.supabase.co'
+          url=os.environ.get('SUPABASE_URL','').strip().rstrip('/')
+          key=os.environ.get('SUPABASE_SERVICE_ROLE_KEY','').strip()
+          if urllib.parse.urlparse(url).scheme != 'https' or urllib.parse.urlparse(url).netloc != expected or urllib.parse.urlparse(url).path:
+              sys.exit('FAIL: SUPABASE_URL is not the approved isolated Phase 3 test project. No requests sent.')
+          if not key:
+              sys.exit('FAIL: SUPABASE_SERVICE_ROLE_KEY missing. No requests sent.')
+          tables=['nfl_parlay_sync','nfl_stat_exports','nfl_prediction_snapshots','nfl_prediction_grades','nfl_user_prediction_tracking','nfl_player_injuries','nfl_automation_runs']
+          for table in tables:
+              request=urllib.request.Request(f'{url}/rest/v1/{table}?select=*&limit=0',headers={'apikey':key,'Authorization':'Bearer '+key,'Accept':'application/json'},method='GET')
+              try:
+                  with urllib.request.urlopen(request,timeout=15) as response:
+                      if response.status != 200: raise RuntimeError('Unexpected HTTP status')
+                      response.read(512)
+                  print('PASS:',table,'readable via REST (zero rows requested)')
+              except urllib.error.HTTPError as e:
+                  sys.exit(f'FAIL: {table}: HTTP {e.code}. Check schema, grants, key type and PostgREST exposure. No writes made.')
+              except Exception as e:
+                  sys.exit(f'FAIL: {table}: {type(e).__name__}. No writes made.')
+          print('PASS: Test project identity and seven table REST reads verified. No writes performed.')
+          print('NOTE: This does not verify RLS policy enforcement, backups, or writer compatibility.')
+          PY
