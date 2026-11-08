@@ -1,0 +1,28 @@
+name: NFL Phase 3C-3D7 Injury Source Diagnostics (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run read-only diagnostic
+        run: python scripts/phase3c3d7_injury_diagnostics.py
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d7-injury-diagnostics-report
+          path: phase3c3d7-report/
+          if-no-files-found: warn
+          retention-days: 30
