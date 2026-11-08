@@ -1108,8 +1108,8 @@ const prefix='nflp-cloud-';
 let config={},auth=null,remoteUpdated=0,lastPushed='',busy=false,started=false,lastPoll=0;
 const status=t=>{$('sbStatus').textContent=t;};
 // Public browser key only. Never embed a Supabase secret/service_role key.
-const CLOUD_URL='https://wpvuunwtyxycqfjwuzkn.supabase.co';
-const CLOUD_PUBLIC_KEY='sb_publishable_DK_yNahtv5ErUXtAzjTxCw_p4EowVj3';
+const CLOUD_URL='https://luxezjthznupdghmexyh.supabase.co';
+const CLOUD_PUBLIC_KEY='sb_publishable_XdEEprnezK3kIWahWB1mYw_txnqRXs3';
 function authLoad(){
  try{
   const saved=localStorage.getItem(prefix+'auth')||sessionStorage.getItem(prefix+'auth');
@@ -1540,8 +1540,8 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
 <script>
 /* Read-only shared NFL automation data. Existing private Supabase sync is unchanged. */
 (()=>{
- const url='https://wpvuunwtyxycqfjwuzkn.supabase.co';
- const key='sb_publishable_DK_yNahtv5ErUXtAzjTxCw_p4EowVj3';
+ const url='https://luxezjthznupdghmexyh.supabase.co';
+ const key='sb_publishable_XdEEprnezK3kIWahWB1mYw_txnqRXs3';
  const $=id=>document.getElementById(id);
  let lastStatsVersion='', snapshots=[];
  async function get(path){
@@ -1727,8 +1727,8 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
 /* Phase 3 official grade display: public read only; never calculates or writes grades. */
 (()=>{
  'use strict';
- const url='https://wpvuunwtyxycqfjwuzkn.supabase.co';
- const key='sb_publishable_DK_yNahtv5ErUXtAzjTxCw_p4EowVj3';
+ const url='https://luxezjthznupdghmexyh.supabase.co';
+ const key='sb_publishable_XdEEprnezK3kIWahWB1mYw_txnqRXs3';
  const status=document.getElementById('cloudOfficialGradesStatus');
  const results=document.getElementById('cloudOfficialGradesResults');
  const refresh=document.getElementById('cloudOfficialGradesRefresh');
