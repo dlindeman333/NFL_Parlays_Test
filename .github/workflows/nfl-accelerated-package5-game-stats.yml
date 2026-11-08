@@ -1,0 +1,40 @@
+name: NFL Accelerated Package 5 - Per Game Stats Evidence
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: Season
+        required: true
+        default: '2026'
+      week:
+        description: Week
+        required: true
+        default: '9'
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NFL_SEASON: ${{ inputs.season }}
+      NFL_WEEK: ${{ inputs.week }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Test game evidence contract
+        run: PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_nfl_package5_game_stats.py' -v
+      - name: Read-only final game and boxscore evidence
+        run: python scripts/nfl_package5_game_stats.py
+      - name: Upload sanitized evidence report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-package5-game-stats-evidence-${{ github.run_id }}
+          path: package5-output/game_stats_evidence.json
+          if-no-files-found: warn
+          retention-days: 14
