@@ -1,0 +1,26 @@
+name: NFL Phase 3C-3D20 Database and Official Inactive Readiness (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Read-only schema and official-source readiness audit
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3c3d20_readiness_audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3c3d20-readiness-audit-report
+          path: phase3c3d20-report/
+          if-no-files-found: error
