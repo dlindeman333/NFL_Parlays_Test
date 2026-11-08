@@ -1,0 +1,19 @@
+name: NFL Phase 3 App Smoke Tests (Read Only)
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'index.html'
+      - 'scripts/nfl_grade_contract.py'
+      - 'scripts/test_integrated_html.py'
+      - '.github/workflows/nfl-phase3-app-smoke.yml'
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m unittest discover -s scripts -p 'test_integrated_html.py'
+      - run: python -m unittest discover -s scripts -p 'test_nfl_grade_contract.py'
