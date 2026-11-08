@@ -1,0 +1,38 @@
+name: NFL Phase 3D37C Join Fix Diagnostics (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: NFL season
+        required: true
+        default: '2026'
+      week:
+        description: NFL regular season week
+        required: true
+        default: '10'
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d37c_join_fix.py' -v
+      - name: Read-only staged join
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season }}
+          NFL_WEEK: ${{ inputs.week }}
+        run: python scripts/phase3d37c_join_fix.py --season "$NFL_SEASON" --week "$NFL_WEEK"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3d37c-join-fix-report
+          path: phase3d37c_fix_report.json
+          if-no-files-found: warn
