@@ -1,0 +1,27 @@
+name: NFL Phase 3D37I Supabase Storage Audit (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run unit tests
+        run: PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_phase3d37i_storage_audit.py' -v
+      - name: Audit Supabase via REST GET only
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3d37i_storage_audit.py
+      - name: Upload sanitized audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d37i-storage-audit
+          path: phase3d37i_report/storage_audit.json
+          retention-days: 14
