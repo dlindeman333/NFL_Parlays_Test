@@ -1480,9 +1480,11 @@ $('sbDeleteCloudSaved').onclick=async()=>{
   if(!ids.length){status('No parlays selected. Nothing deleted.');return;}
   const scope=ids.length===all.size?'ALL '+ids.length:'SELECTED '+ids.length;
   downloadJSON({version:2,exported_at:new Date().toISOString(),source:'before-cloud-delete',cloud:cloud,local:snapshot()},'nfl-parlays-before-delete-'+new Date().toISOString().slice(0,10)+'.json');
-  if(!confirm('Backup download requested. Verify it is saved before proceeding.\n\nDelete '+scope+' saved parlays from YOUR cloud account and this device? Drafts and other users are unaffected.'))return;
-  const typed=prompt('Type DELETE '+ids.length+' to confirm permanent deletion.');
-  if(typed!=='DELETE '+ids.length){status('Deletion canceled.');return;}
+  if(!confirm('A backup download was requested. Verify it is saved before continuing.\n\nThis is a backup checkpoint only. No parlays will be deleted until you approve the next confirmation.')){status('Deletion canceled. No changes made.');return;}
+  // One clear button confirmation; no typed phrase. Browser confirm OK is the delete action.
+  if(!confirm('FINAL CONFIRMATION\n\nDelete '+ids.length+' selected saved parlay(s) from your cloud account and this device?\n\nPress OK to DELETE SELECTED PARLAYS, or Cancel to keep everything.')){
+   status('Deletion canceled. No changes made.');return;
+  }
   const current=snapshot();
   const tombstoneKey='nflp-deleted-saved-v1';
   const oldTombstones=parseCollection(current,tombstoneKey)||[];
@@ -1494,7 +1496,18 @@ $('sbDeleteCloudSaved').onclick=async()=>{
   updated[tombstoneKey]=JSON.stringify([...deleted].sort());
   // CAS ensures a simultaneous cloud edit is not overwritten.
   await safePush(uid,updated,remote);
-  // Cloud committed: now reconcile this browser. Reload only after local update.
+  // Read back the authenticated user's cloud row before changing local storage.
+  // Never claim success if the server did not persist the exact deletion ledger.
+  const verified=await readRemote(uid);
+  if(!verified)throw Error('Cloud verification failed: account row was not found. Local parlays unchanged.');
+  const verifiedValues=personalCloudValues(verified.payload);
+  const verifiedSaved=parseCollection(verifiedValues,'nflp-saved-v1');
+  const verifiedDeleted=parseCollection(verifiedValues,tombstoneKey);
+  if(!Array.isArray(verifiedSaved)||!Array.isArray(verifiedDeleted)||
+     ids.some(id=>verifiedSaved.some(x=>String(x.id)===String(id))||!verifiedDeleted.map(String).includes(String(id)))){
+   throw Error('Cloud verification failed. Local parlays unchanged; check cloud state before retrying.');
+  }
+  // Cloud committed and verified: now reconcile this browser.
   const keep=localSaved.filter(x=>!deleted.has(String(x.id)));
   try{
    localStorage.setItem('nflp-saved-v1',JSON.stringify(keep));
