@@ -1892,6 +1892,46 @@ devicePullButton.onclick=async()=>{
  }catch(e){status('Guarded device restore stopped [Safari-safe v5 / '+restoreStage+']: '+(e&&e.message||String(e)));}
  finally{busy=false;}
 };
+// Phase 3 TEST automatic-sync preflight (read-only). This does not enable automatic writes.
+const autoPreflightButton=document.createElement('button');
+autoPreflightButton.type='button';autoPreflightButton.className='btn alt';
+autoPreflightButton.textContent='Preview automatic sync safety (read only)';
+$('sbSyncNow').parentNode.insertBefore(autoPreflightButton,$('sbSyncNow'));
+autoPreflightButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Signed-in account does not own active browser data.');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud account record not found.');
+  const cloud=trialData(personalCloudValues(remote.payload));
+  const local=trialData(snapshot());
+  const part=JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)||'null');
+  if(!part||typeof part!=='object'||Array.isArray(part))throw Error('Account partition unavailable or invalid.');
+  const partition=trialData(part);
+  const validate=(x,side)=>{
+   const ids=new Set();
+   for(const item of x.saved){if(!item||item.id==null)throw Error(side+' has a parlay without ID.');
+    const id=String(item.id);if(ids.has(id))throw Error(side+' has duplicate parlay IDs.');ids.add(id);}
+   if(x.deleted.some(id=>id==null))throw Error(side+' has invalid deletion markers.');
+   return ids;
+  };
+  const cids=validate(cloud,'Cloud'),lids=validate(local,'Device'),pids=validate(partition,'Account partition');
+  const deleted=new Set([...cloud.deleted,...local.deleted].map(String));
+  const collisions=[...cids].filter(id=>lids.has(id)&&JSON.stringify(cloud.saved.find(p=>String(p.id)===id))!==JSON.stringify(local.saved.find(p=>String(p.id)===id)));
+  const resurrection=[...new Set([...cids,...lids])].filter(id=>deleted.has(id));
+  const localOnly=[...lids].filter(id=>!cids.has(id)),cloudOnly=[...cids].filter(id=>!lids.has(id));
+  const partitionMismatch=JSON.stringify(partition.saved)!==JSON.stringify(local.saved);
+  const draftsDiffer=JSON.stringify(cloud.drafts)!==JSON.stringify(local.drafts);
+  const blockers=[];
+  if(collisions.length)blockers.push(collisions.length+' same-ID content conflict(s)');
+  if(resurrection.length)blockers.push(resurrection.length+' deleted-ID resurrection risk(s)');
+  if(partitionMismatch)blockers.push('device/account partition mismatch');
+  if(draftsDiffer)blockers.push('draft divergence (requires explicit policy)');
+  const msg='AUTO-SYNC PREFLIGHT (READ ONLY): cloud '+cids.size+' saved; device '+lids.size+' saved; account partition '+pids.size+' saved; cloud-only '+cloudOnly.length+'; device-only '+localOnly.length+'; changed same-ID '+collisions.length+'; deleted-ID risks '+resurrection.length+'; cloud markers '+cloud.deleted.length+'; device markers '+local.deleted.length+'. '+(blockers.length?'BLOCKED: '+blockers.join('; '):'No immediate parlay-ID or partition conflicts detected. Automatic sync remains OFF.')+' No data changed.';
+  status(msg);
+ }catch(e){status('AUTO-SYNC PREFLIGHT STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
+ finally{busy=false;}
+};
 $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
