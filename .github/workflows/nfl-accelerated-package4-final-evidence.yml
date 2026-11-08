@@ -1,0 +1,52 @@
+name: NFL Accelerated Package 4 - Consolidated Final Evidence Audit
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: Season
+        required: true
+        default: '2026'
+        type: string
+      week:
+        description: Week
+        required: true
+        default: '9'
+        type: string
+permissions:
+  contents: read
+jobs:
+  evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Consolidated offline tests
+        run: |
+          python -m unittest discover -s scripts -p 'test_nfl_package3_live_audit.py' -v
+          python -m unittest discover -s scripts -p 'test_nfl_package4_final_evidence.py' -v
+      - name: Final score evidence (read only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season }}
+          NFL_WEEK: ${{ inputs.week }}
+        run: python scripts/nfl_package4_final_evidence.py
+      - name: Existing player grading audit (read only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season }}
+          NFL_WEEK: ${{ inputs.week }}
+        run: python scripts/nfl_package3_live_audit.py
+      - name: Upload combined evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-package4-consolidated-evidence-${{ github.run_id }}
+          path: |
+            package4-output/final_evidence.json
+            package3-output/grading_audit.json
+          if-no-files-found: warn
