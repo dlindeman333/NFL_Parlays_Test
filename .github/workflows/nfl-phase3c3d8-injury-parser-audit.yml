@@ -1,0 +1,24 @@
+name: NFL Phase 3C-3D8 Injury Parser Audit (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run read-only audit
+        run: python scripts/phase3c3d8_injury_parser_audit.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3c3d8-injury-parser-audit-report
+          path: phase3c3d8-report/
+          if-no-files-found: error
