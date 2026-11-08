@@ -1,0 +1,33 @@
+name: NFL Phase 3 - Backup Integrity and Offline Restore Rehearsal
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  rehearsal:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        run: python -m unittest discover -s scripts -p 'test_nfl_backup_rehearsal.py' -v
+      - name: Generate private backup and rehearse isolated JSON rehydration
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          python scripts/nfl_package13_backup.py > /dev/null
+          python scripts/nfl_backup_rehearsal.py package13-private-backup > backup-rehearsal-result.json
+          python - <<'PY'
+          import json
+          result=json.load(open('backup-rehearsal-result.json'))
+          assert result['result']=='PASS' and result['database_writes']==0
+          print('Offline backup integrity/rehydration:',result['result'])
+          print('Table counts:',result['table_counts'])
+          print('Supabase restore verified:',result['supabase_restore_verified'])
+          PY
+      - name: Delete private export from runner
+        if: always()
+        run: rm -rf package13-private-backup backup-rehearsal-result.json
