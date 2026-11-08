@@ -2113,6 +2113,59 @@ safe6Button.onclick=async()=>{
  }catch(e){status('AUTO-SYNC v6 NOT ENABLED: '+(e&&e.message||String(e)));}
  finally{busy=false}
 };
+// Phase 3 consolidated TEST cloud deletion controls: one, selected, or all.
+// Cloud-first CAS, readback, then device update. Drafts and unrelated payload keys are preserved.
+const safe8Delete=document.createElement('button');safe8Delete.type='button';safe8Delete.className='btn alt';
+safe8Delete.textContent='Manage cloud saved parlays (one / selected / all) — TEST v8';
+$('sbSyncNow').parentNode.insertBefore(safe8Delete,$('sbSyncNow'));
+safe8Delete.onclick=async()=>{
+ if(busy){status('Another cloud operation is running. Try again.');return;}
+ if(!navigator.onLine){status('Cloud deletion requires an online connection. No changes made.');return;}
+ busy=true;
+ const priorRunning=safe6Running;safe6Running=false;
+ try{
+  const uid=await userId();if(!safe6Active(uid))throw Error('Authenticated account ownership mismatch');
+  const remote=await readRemote(uid);if(!remote||!remote.updated_at)throw Error('Cloud revision unavailable');
+  const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
+  const local=safe6View(snapshot(),'Device');
+  const canonical=safe6Canonical(cloud);
+  if(canonical!==safe6Canonical(local))throw Error('Cloud and device differ. Allow auto-sync to reconcile, then retry. No deletion.');
+  const baselineRaw=localStorage.getItem(safe6Key(uid));
+  if(!baselineRaw)throw Error('Guarded auto-sync must be enabled for this account first');
+  const baseline=JSON.parse(baselineRaw);
+  if(!baseline||baseline.uid!==uid||baseline.canonical!==canonical)throw Error('Sync baseline is not current. Wait for sync and retry.');
+  if(!cloud.saved.length){status('No saved parlays to delete for this account.');return;}
+  const selected=await chooseSavedParlays(cloud.saved);
+  if(selected===null){status('Deletion canceled. No changes made.');return;}
+  const ids=[...new Set(selected.map(String))];if(!ids.length){status('No parlays selected. No changes made.');return;}
+  const existing=new Set(cloud.saved.map(p=>String(p.id)));
+  if(ids.some(id=>!existing.has(id)))throw Error('Selection contains an unknown parlay');
+  const all=ids.length===cloud.saved.length;
+  downloadJSON({version:8,source:'test-pre-delete',exported_at:new Date().toISOString(),cloud:personalCloudValues(remote.payload),device:snapshot()},'TEST-parlays-backup-'+new Date().toISOString().slice(0,10)+'.json');
+  if(!confirm('TEST ACCOUNT BACKUP: Save the downloaded JSON backup before continuing. Cancel leaves everything unchanged.'))return;
+  if(!confirm((all?'DELETE ALL '+ids.length:'DELETE '+ids.length+' SELECTED')+' saved parlay(s) from ONLY the signed-in TEST account? This will propagate to your other devices. Drafts, statistics, and prediction data are preserved.'))return;
+  // Revalidate account and cloud revision after the potentially lengthy Safari download.
+  if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==canonical)throw Error('Account/device changed during confirmation; no deletion');
+  const fresh=await readRemote(uid);
+  if(!fresh||fresh.updated_at!==remote.updated_at||safe6Canonical(safe6View(personalCloudValues(fresh.payload),'Cloud'))!==canonical)throw Error('Cloud changed during confirmation; no deletion');
+  const marks=[...new Set([...cloud.deleted,...ids])].sort();
+  const nextSaved=cloud.saved.filter(p=>!ids.includes(String(p.id)));
+  const nextData={saved:nextSaved,deleted:marks};
+  const jwt=await token();
+  const nextPayload={...fresh.payload,'nflp-saved-v1':JSON.stringify(nextSaved),'nflp-deleted-saved-v1':JSON.stringify(marks)};
+  const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(fresh.updated_at)+'&select=payload,updated_at',{
+   method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:nextPayload,updated_at:new Date().toISOString()})
+  });
+  if(!Array.isArray(rows)||rows.length!==1)throw Error('Concurrent cloud change; deletion not confirmed');
+  const check=await readRemote(uid);
+  if(!check||safe6Canonical(safe6View(personalCloudValues(check.payload),'Cloud'))!==safe6Canonical(nextData))throw Error('Cloud readback failed; inspect cloud before retrying');
+  // Cloud is verified; a local storage error cannot undo the cloud operation.
+  try{safe6LocalWrite(uid,nextData);localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:safe6Canonical(nextData)}));}
+  catch(e){throw Error('Cloud deletion VERIFIED, but this device update failed: '+e.message+'. Do not retry deletion; inspect sync status.');}
+  status('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
+ }catch(e){status('TEST v8 deletion: '+(e&&e.message||String(e)));}
+ finally{busy=false;safe6Running=priorRunning&&!!localStorage.getItem(safe6Key(localStorage.getItem(OWNER_KEY)||''));}
+};
 safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_KEY);if(uid)localStorage.removeItem(safe6Key(uid));status('AUTO-SYNC v6 PAUSED on this device. No data deleted.');};
 setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
