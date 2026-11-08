@@ -1105,6 +1105,27 @@ const $=id=>document.getElementById(id);
 // Only personal parlay data belongs in per-user cloud sync. Shared NFL data stays local/read-only.
 const keys=['nflp-saved-v1','nflp-draft-slips-v3','nflp-deleted-saved-v1'];
 const prefix='nflp-cloud-';
+// Fail closed on cross-account browser data. Never silently merge personal data
+// from a previous account into a different authenticated Supabase user.
+const OWNER_KEY='nflp-phase3-test-storage-owner-v1';
+function personalDataPresent(){
+ try{
+  const saved=JSON.parse(localStorage.getItem('nflp-saved-v1')||'[]');
+  if(Array.isArray(saved)&&saved.length)return true;
+  const drafts=JSON.parse(localStorage.getItem('nflp-draft-slips-v3')||'null');
+  if(drafts&&Array.isArray(drafts.slips)&&drafts.slips.some(s=>Array.isArray(s.legs)&&s.legs.length))return true;
+  const deleted=JSON.parse(localStorage.getItem('nflp-deleted-saved-v1')||'[]');
+  return Array.isArray(deleted)&&deleted.length>0;
+ }catch(e){return true} // Unknown data is not safe to merge.
+}
+function enforceStorageOwner(uid){
+ const owner=localStorage.getItem(OWNER_KEY);
+ if(owner&&owner!==uid)throw Error('Account isolation lock: this browser contains another account’s data. No sync or cloud changes were made. Use a fresh private window or separate browser profile for this account.');
+ if(!owner&&personalDataPresent())throw Error('Account isolation lock: existing local parlays have no verified owner. No sync or cloud changes were made. Use a fresh private window or separate browser profile; do not clear this browser’s data.');
+ // Claim only an empty, unowned browser; retain binding through sign-out.
+ if(!owner)localStorage.setItem(OWNER_KEY,uid);
+}
+
 let config={},auth=null,remoteUpdated=0,lastPushed='',busy=false,started=false,lastPoll=0;
 const status=t=>{$('sbStatus').textContent=t;};
 // Public browser key only. Never embed a Supabase secret/service_role key.
@@ -1149,6 +1170,7 @@ async function token(){
 async function userId(){
  const jwt=await token();
  const data=await api('/auth/v1/user',{headers:{Authorization:'Bearer '+jwt}});
+ enforceStorageOwner(data.id);
  return data.id;
 }
 function snapshot(){
@@ -1351,12 +1373,14 @@ async function sign(kind){
   if(!data.access_token){status('Account created. Confirm your email using the Supabase message, then sign in.');return}
   storeAuth({...data,expiresAt:Date.now()+(data.expires_in||3600)*1000});
   $('sbPassword').value='';
+  // Verify ownership before attempting the initial sync.
+  await userId();
   started=false;await sync(true);
  }catch(e){status('Authentication error: '+e.message)}
 }
 $('sbAuthForm').addEventListener('submit',e=>{e.preventDefault();sign('signin')});
 $('sbSignUp').onclick=()=>sign('signup');
-$('sbSignOut').onclick=()=>{storeAuth(null);started=false;status('Signed out. Local data preserved.');};
+$('sbSignOut').onclick=()=>{storeAuth(null);started=false;status('Signed out. Local data remains visible on this device and is locked to its original account. Use a separate browser profile for another account.');};
 $('sbBackup').onclick=download;
 $('sbRestoreCloud').onclick=async()=>{
  if(!auth){status('Sign in first.');return;}
