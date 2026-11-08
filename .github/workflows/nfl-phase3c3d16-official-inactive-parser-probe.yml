@@ -1,0 +1,25 @@
+name: NFL Phase 3C-3D16 Official Inactive Article Parser Probe (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Probe public NFL.com inactive articles (no writes)
+        run: python scripts/phase3c3d16_official_inactive_parser_probe.py
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d16-official-inactive-parser-report
+          path: phase3c3d16-report/
+          if-no-files-found: warn
