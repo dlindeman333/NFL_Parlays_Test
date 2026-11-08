@@ -1,0 +1,28 @@
+name: NFL Phase 3C-3D23 Injury Storage Safeguards (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Refresh Phase 3D22 evidence from ESPN (GET only)
+        run: python scripts/phase3c3d22_initial_load_preview.py
+      - name: Evaluate Phase 3D23 storage safeguards (no DB access)
+        run: python scripts/phase3c3d23_storage_decision_preview.py
+      - name: Upload report even if checks fail
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d23-injury-storage-safeguards-report
+          path: |
+            phase3c3d23-report/
+            phase3c3d22-report/audit.json
+          if-no-files-found: warn
