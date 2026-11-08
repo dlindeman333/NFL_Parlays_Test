@@ -1,0 +1,25 @@
+name: NFL Phase 3C-3D21C ESPN Player ID Parser (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate ESPN player ID extraction with local fixtures
+        run: python scripts/phase3c3d21c_parser_tests.py
+      - name: Run ESPN injury preview without database access
+        run: python scripts/phase3c3d21c_player_id_parser_fixed.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3c3d21c-player-id-parser-report
+          path: phase3c3d21c-report/
+          if-no-files-found: error
