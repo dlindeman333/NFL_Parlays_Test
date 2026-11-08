@@ -1,0 +1,32 @@
+name: NFL Phase 3D36 Live Injury Processing (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  process:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out automation development branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d36_live_processing.py' -v
+      - name: Process live injury and game evidence (GET and HEAD only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3d36_live_processing.py
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d36-live-processing-readonly
+          path: phase3d36_live_processing_report.json
+          if-no-files-found: warn
