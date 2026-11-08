@@ -1,0 +1,560 @@
+{
+  "teams": {
+    "ARI": [
+      "Cardinals",
+      3,
+      5
+    ],
+    "ATL": [
+      "Falcons",
+      3,
+      5
+    ],
+    "BAL": [
+      "Ravens",
+      4,
+      4
+    ],
+    "BUF": [
+      "Bills",
+      6,
+      1
+    ],
+    "CAR": [
+      "Panthers",
+      3,
+      4
+    ],
+    "CHI": [
+      "Bears",
+      6,
+      2
+    ],
+    "CIN": [
+      "Bengals",
+      5,
+      2
+    ],
+    "CLE": [
+      "Browns",
+      5,
+      3
+    ],
+    "DAL": [
+      "Cowboys",
+      3,
+      5
+    ],
+    "DEN": [
+      "Broncos",
+      6,
+      2
+    ],
+    "DET": [
+      "Lions",
+      5,
+      2
+    ],
+    "GB": [
+      "Packers",
+      5,
+      3
+    ],
+    "HOU": [
+      "Texans",
+      2,
+      5
+    ],
+    "IND": [
+      "Colts",
+      2,
+      6
+    ],
+    "JAC": [
+      "Jaguars",
+      5,
+      2
+    ],
+    "KC": [
+      "Chiefs",
+      5,
+      2
+    ],
+    "LV": [
+      "Raiders",
+      4,
+      4
+    ],
+    "LAC": [
+      "Chargers",
+      0,
+      7
+    ],
+    "LA": [
+      "Rams",
+      4,
+      4
+    ],
+    "MIA": [
+      "Dolphins",
+      1,
+      6
+    ],
+    "MIN": [
+      "Vikings",
+      6,
+      1
+    ],
+    "NE": [
+      "Patriots",
+      5,
+      3
+    ],
+    "NO": [
+      "Saints",
+      2,
+      5
+    ],
+    "NYG": [
+      "Giants",
+      4,
+      2
+    ],
+    "NYJ": [
+      "Jets",
+      2,
+      6
+    ],
+    "PHI": [
+      "Eagles",
+      2,
+      6
+    ],
+    "PIT": [
+      "Steelers",
+      6,
+      2
+    ],
+    "SF": [
+      "49ers",
+      6,
+      1
+    ],
+    "SEA": [
+      "Seahawks",
+      4,
+      4
+    ],
+    "TB": [
+      "Buccaneers",
+      3,
+      5
+    ],
+    "TEN": [
+      "Titans",
+      1,
+      7
+    ],
+    "WAS": [
+      "Commanders",
+      2,
+      4
+    ]
+  },
+  "completed_scores": [
+    [
+      "HOU",
+      "NYG",
+      21,
+      27
+    ],
+    [
+      "ARI",
+      "DEN",
+      16,
+      30
+    ],
+    [
+      "LV",
+      "LA",
+      21,
+      35
+    ],
+    [
+      "DET",
+      "GB",
+      20,
+      17
+    ],
+    [
+      "SEA",
+      "KC",
+      20,
+      3
+    ],
+    [
+      "PHI",
+      "DAL",
+      21,
+      38
+    ],
+    [
+      "GB",
+      "CAR",
+      27,
+      19
+    ],
+    [
+      "JAC",
+      "IND",
+      42,
+      7
+    ],
+    [
+      "CIN",
+      "TEN",
+      43,
+      36
+    ],
+    [
+      "PIT",
+      "CLE",
+      27,
+      6
+    ],
+    [
+      "DET",
+      "MIN",
+      19,
+      15
+    ],
+    [
+      "TB",
+      "ATL",
+      16,
+      0
+    ],
+    [
+      "DAL",
+      "ARI",
+      30,
+      33
+    ],
+    [
+      "NYJ",
+      "LV",
+      33,
+      38
+    ],
+    [
+      "BUF",
+      "BAL",
+      36,
+      10
+    ],
+    [
+      "LA",
+      "LAC",
+      24,
+      9
+    ],
+    [
+      "MIA",
+      "NE",
+      19,
+      24
+    ],
+    [
+      "DEN",
+      "KC",
+      28,
+      24
+    ],
+    [
+      "WAS",
+      "PHI",
+      27,
+      10
+    ],
+    [
+      "SEA",
+      "CHI",
+      17,
+      34
+    ]
+  ],
+  "player_pools": {
+    "ps": [
+      [
+        "JAC",
+        "Trevor Lawrence",
+        1690
+      ],
+      [
+        "CIN",
+        "Joe Burrow",
+        2115
+      ],
+      [
+        "DAL",
+        "Dak Prescott",
+        2046
+      ],
+      [
+        "LA",
+        "Matthew Stafford",
+        2146
+      ],
+      [
+        "NO",
+        "Tyler Shough",
+        1721
+      ],
+      [
+        "NYJ",
+        "Geno Smith",
+        1913
+      ],
+      [
+        "DET",
+        "Jared Goff",
+        1964
+      ],
+      [
+        "CAR",
+        "Bryce Young",
+        1921
+      ],
+      [
+        "LV",
+        "Kirk Cousins",
+        2124
+      ],
+      [
+        "SF",
+        "Brock Purdy",
+        1748
+      ],
+      [
+        "GB",
+        "Jordan Love",
+        2246
+      ],
+      [
+        "NE",
+        "Drake Maye",
+        1983
+      ]
+    ],
+    "ru": [
+      [
+        "ATL",
+        "Bijan Robinson",
+        780
+      ],
+      [
+        "DET",
+        "Jahmyr Gibbs",
+        773
+      ],
+      [
+        "KC",
+        "Kenneth Walker",
+        770
+      ],
+      [
+        "TB",
+        "Bucky Irving",
+        728
+      ],
+      [
+        "BUF",
+        "James Cook",
+        707
+      ],
+      [
+        "BAL",
+        "Derrick Henry",
+        632
+      ],
+      [
+        "IND",
+        "Jonathan Taylor",
+        610
+      ],
+      [
+        "NYJ",
+        "Braelon Allen",
+        565
+      ],
+      [
+        "DAL",
+        "Javonte Williams",
+        528
+      ],
+      [
+        "CHI",
+        "D'Andre Swift",
+        476
+      ],
+      [
+        "LA",
+        "Kyren Williams",
+        548
+      ],
+      [
+        "SF",
+        "Christian McCaffrey",
+        389
+      ]
+    ],
+    "td": [
+      [
+        "BUF",
+        "Josh Allen",
+        9
+      ],
+      [
+        "DET",
+        "Jahmyr Gibbs",
+        8
+      ],
+      [
+        "BAL",
+        "Derrick Henry",
+        8
+      ],
+      [
+        "SF",
+        "Christian McCaffrey",
+        8
+      ],
+      [
+        "IND",
+        "Jonathan Taylor",
+        8
+      ],
+      [
+        "DAL",
+        "Javonte Williams",
+        8
+      ],
+      [
+        "BUF",
+        "James Cook",
+        7
+      ],
+      [
+        "CHI",
+        "D'Andre Swift",
+        7
+      ],
+      [
+        "KC",
+        "Kenneth Walker",
+        6
+      ],
+      [
+        "LA",
+        "Kyren Williams",
+        6
+      ],
+      [
+        "TB",
+        "Bucky Irving",
+        5
+      ],
+      [
+        "ATL",
+        "Bijan Robinson",
+        4
+      ],
+      [
+        "SEA",
+        "Jaxon Smith-Njigba",
+        8
+      ],
+      [
+        "CIN",
+        "Ja'Marr Chase",
+        6
+      ],
+      [
+        "CIN",
+        "Mike Gesicki",
+        6
+      ],
+      [
+        "DAL",
+        "CeeDee Lamb",
+        6
+      ],
+      [
+        "GB",
+        "Christian Watson",
+        6
+      ],
+      [
+        "LV",
+        "Brock Bowers",
+        5
+      ],
+      [
+        "WAS",
+        "Stefon Diggs",
+        5
+      ],
+      [
+        "SF",
+        "George Kittle",
+        5
+      ],
+      [
+        "NYG",
+        "Isaiah Likely",
+        5
+      ],
+      [
+        "ARI",
+        "Trey McBride",
+        5
+      ],
+      [
+        "DET",
+        "Amon-Ra St. Brown",
+        5
+      ],
+      [
+        "DET",
+        "Jameson Williams",
+        5
+      ],
+      [
+        "GB",
+        "Matthew Golden",
+        4
+      ],
+      [
+        "CIN",
+        "Tee Higgins",
+        4
+      ],
+      [
+        "LA",
+        "Puka Nacua",
+        3
+      ],
+      [
+        "NYJ",
+        "Garrett Wilson",
+        3
+      ],
+      [
+        "NYJ",
+        "Braelon Allen",
+        3
+      ]
+    ]
+  },
+  "source": "Uploaded index.html, 2026 bundled model baseline; not current standings or verified roster"
+}
