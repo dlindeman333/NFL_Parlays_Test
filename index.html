@@ -1646,6 +1646,36 @@ auditButton.onclick=async()=>{
  }catch(e){status('Read-only cloud audit failed: '+e.message);}
  finally{busy=false;}
 };
+// Phase 3 post-reset safety check: inspect both sides without merging or writing.
+const readinessButton=document.createElement('button');
+readinessButton.type='button';readinessButton.className='btn alt';
+readinessButton.textContent='Check sync readiness (read only)';
+$('sbSyncNow').parentNode.insertBefore(readinessButton,$('sbSyncNow'));
+readinessButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}
+ busy=true;
+ try{
+  if(!auth)throw Error('Sign in before checking sync readiness.');
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch. Cloud writes remain disabled.');
+  const remote=await readRemote(uid);
+  if(!remote)throw Error('No cloud record for this account. Cloud writes remain disabled.');
+  const cloud=personalCloudValues(remote.payload),local=snapshot();
+  const count=(v,key)=>{const x=parseCollection(v,key);if(key==='nflp-draft-slips-v3')return x&&Array.isArray(x.slips)?x.slips.filter(s=>s&&Array.isArray(s.legs)&&s.legs.length).length:0;if(!Array.isArray(x))throw Error('Unexpected '+key+' format.');return x.length;};
+  const cs=count(cloud,'nflp-saved-v1'),ls=count(local,'nflp-saved-v1');
+  const cd=count(cloud,'nflp-draft-slips-v3'),ld=count(local,'nflp-draft-slips-v3');
+  const ct=count(cloud,'nflp-deleted-saved-v1');
+  const message='Sync readiness (read only): cloud '+cs+' saved / '+cd+' nonempty drafts / '+ct+' deletion markers; device '+ls+' saved / '+ld+' nonempty drafts. ';
+  if(cs===0&&cd===0&&(ls>0||ld>0)){
+   status(message+'WARNING: device has data absent from the reset cloud. Do not upload or enable automatic merging. No changes made.');
+  }else if(cs===0&&cd===0){
+   status(message+'Reset cloud confirmed; account ownership verified. Cloud writes remain disabled pending safe-sync update. No changes made.');
+  }else{
+   status(message+'Cloud is no longer empty. Review before enabling sync. No changes made.');
+  }
+ }catch(e){status('Sync readiness check stopped: '+e.message);}
+ finally{busy=false;}
+};
 $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
