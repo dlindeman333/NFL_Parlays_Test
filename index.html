@@ -85,7 +85,6 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 .sports-links{display:inline-flex;gap:7px;flex-wrap:wrap}.sports-links a{display:inline-flex;align-items:center;gap:6px;background:var(--card);min-height:40px}.sports-links img{width:24px;height:24px;object-fit:contain}.sv .row>.btn[data-saved-action="edit"]{margin-right:0}.sv .row>.btn[data-saved-action="delete-parlay"]{margin-left:0}#savedParlaySlips,#draftManagement{scroll-margin-top:12px}#draftManagement{border-top:2px solid var(--bd);padding-top:8px;margin-top:18px}
 .week-group-heading{font-size:1.4rem;font-weight:800;letter-spacing:.02em;margin:20px 0 12px;padding:10px 14px;border-left:5px solid #3b82f6;background:rgba(59,130,246,.09);border-radius:6px}
 .setup-modal{border:1.5px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(760px,96vw);max-height:88vh;padding:0;box-shadow:0 20px 70px #0006}.setup-modal::backdrop{background:#0009}.setup-content{padding:18px;max-height:85vh;overflow:auto}.setup-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.setup-modal input[type=email],.setup-modal input[type=password]{padding:9px;border:1.5px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);max-width:100%}.setup-modal .tools{margin:12px 0}.setup-modal #sbAuthForm label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:650;min-width:min(100%,180px)}.setup-modal #sbAuthForm input{width:100%}.setup-modal section{border-top:1px solid var(--bd);padding-top:12px;margin-top:15px}.setup-modal h2{margin-top:4px}.setup-modal .mu{overflow-wrap:anywhere}
-.navlinks{position:sticky;top:0;z-index:10;padding:7px 0;background:var(--bg);overflow-x:auto;flex-wrap:nowrap;scrollbar-width:thin}.navlinks>*{white-space:nowrap;flex:none}.draft-slip-card{min-width:0}html{scroll-behavior:smooth}h2[id],section[id]{scroll-margin-top:76px}
 </style>
 <style>
 .pred-dashboard{display:grid;gap:16px;margin:14px 0}
@@ -105,7 +104,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 </head><body>
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
-<div class="navlinks"><button id="openSetup" class="btn alt" type="button">⚙ Setup</button><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a><a href="#aiPerformance" id="navPerformance">Prediction Performance</a><a href="#draftManagement">Active slips</a></div>
+<div class="navlinks"><button id="openSetup" class="btn alt" type="button">⚙ Setup</button><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
 
 <dialog id="setupDialog" class="setup-modal" aria-label="Setup"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Setup</h2><button class="btn alt" type="button" id="closeSetup">Close ✕</button></div><section id="cloudSyncPanel">
 <h2 style="margin:0 0 8px">Cloud sync · PC &amp; iPhone</h2>
@@ -128,12 +127,12 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 <div class="card" id="builderControls">
   <div class="row" style="margin-bottom:10px"><b>Week</b> <select id="wk"></select><span class="mu" id="wkn"></span><span class="sports-links"><a href="https://sportsbook.draftkings.com/" target="_blank" rel="noopener noreferrer"><img src="https://www.google.com/s2/favicons?domain=draftkings.com&sz=64" alt="" width="24" height="24" loading="lazy"> <span>DraftKings</span></a> <a href="https://sportsbook.fanduel.com/" target="_blank" rel="noopener noreferrer"><img src="https://www.google.com/s2/favicons?domain=fanduel.com&sz=64" alt="" width="24" height="24" loading="lazy"> <span>FanDuel</span></a></span></div><div class="row"><div class="seg" id="mode"><button data-m="multi" class="on">Multi-game</button><button data-m="same">Same game</button></div></div>
   <div class="row" style="margin-top:10px;justify-content:space-between">
-    <div class="step"><span title="Controls AI suggested parlay size; does not limit manual selections">AI suggestion legs</span><button id="lm">−</button><b id="ln">3</b><button id="lp">+</button></div>
+    <div class="step"><span>Legs</span><button id="lm">−</button><b id="ln">3</b><button id="lp">+</button></div>
     <div class="row">Stake $<input type="number" id="stake" value="10" min="1"></div>
   </div>
   <div class="row" style="margin-top:10px"><b>Kickoff</b></div><div class="row" id="tf" style="margin-top:4px"></div>
 <div class="row" style="margin-top:10px"><b>Picks</b></div><div class="row" id="pf" style="margin-top:4px"></div>
-<div class="mu" style="margin-top:8px">AI suggestion legs set the recommended parlay size only. Add as many manual picks as you wish to your slip.</div><div class="mu" id="hint" style="margin-top:8px"></div>
+<div class="mu" id="hint" style="margin-top:8px"></div>
 </div>
 
 
@@ -151,9 +150,9 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 <p class="mu">Team TD, passing and rushing picks are estimates against standard reference lines. Player picks use season totals from StatsCrew league leaders (Pro-Football-Reference blocks automated access), so only leading QBs, RBs and TD scorers appear, lines are each player’s season average, and TD counts may miss receiving scores for backs. Odds shown are model-estimated (about 4.5% margin built in), and spread/total lines are model reference lines, not sportsbook prices. Check your book for real lines before betting. These are estimates, not guarantees; same-game legs are correlated, so books price them differently. Please bet responsibly.</p>
 
 <h2 id="advancedPredictions">AI Matchup Recommendations</h2>
-<div class="mu">Expanded browsing: Top 12 / Top 20 / All, searchable by player or team, with game-by-game analysis. Additional prop types will appear only when matching statistics and a supported prediction method are available. Data-driven matchup analysis using available model estimates and imported player game logs. Not a live generative AI service. Sportsbook lines are optional and entered manually; no paid API or background odds scraping.</div>
-<div class="tools" role="tablist" aria-label="AI Matchups sections"><button type="button" class="btn" id="advTabRecommendations" aria-selected="true">Recommendations</button><button type="button" class="btn alt" id="advTabPerformance" aria-selected="false">Prediction Performance</button></div><div id="advRecommendationPanel"><div class="card"><div class="tools"><label for="advView"><b>View</b></label><select id="advView"><option value="picks">Top picks</option><option value="games">Game matchups</option><option value="parlays">Suggested parlay</option></select><label for="advLimit"><b>Show</b></label><select id="advLimit" aria-label="Number of recommended picks"><option value="12">Top 12</option><option value="20">Top 20</option><option value="all">All picks</option></select><label for="advPlayerSearch"><b>Player / team</b></label><input id="advPlayerSearch" type="search" placeholder="Search player or team" aria-label="Search player or team" style="min-width:160px;max-width:230px;padding:8px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx)"><label for="advMarket"><b>Market</b></label><select id="advMarket"><option value="all">All</option><option value="ps">Passing yards</option><option value="ru">Rushing yards</option><option value="td">Touchdowns</option></select></div><div id="advStatus" class="mu" role="status"></div><div id="advResults"></div><div id="advEditor" class="card" hidden><b id="advEditTitle">Sportsbook line</b><div class="mu">Enter a line you personally verified at the sportsbook. These values are not automatically refreshed or cloud-synced.</div><div class="tools"><select id="advBook"><option>DraftKings</option><option>FanDuel</option><option>Other</option></select><label>Line <input id="advLine" type="number" min="0" step="0.5" placeholder="225.5"></label><label>American odds <input id="advOdds" type="number" step="1" placeholder="-110"></label><button class="btn" id="advSaveLine" type="button">Save line</button><button class="btn alt" id="advCancelLine" type="button">Cancel</button></div></div></div>
-</div><div id="advPerformancePanel" hidden><div class="card"><b>Tracked AI recommendations</b><p class="mu">Save a pregame snapshot of the currently ranked recommendations. Once final player statistics are imported, this tab grades the original lines without changing the prediction engine. Snapshots stay in this browser; export a backup to preserve them. Only pregame snapshots count.</p><div class="tools"><button type="button" class="btn" id="advTrackSnapshot">Save current Top 12 predictions</button><button type="button" class="btn alt" id="advExportTracking">Export tracking history</button><button type="button" class="btn alt" id="advImportTracking">Import tracking history</button><input type="file" id="advImportTrackingFile" accept=".json,application/json" hidden></div><div id="advTrackingStatus" class="mu" role="status"></div><div id="advTrackingResults"></div></div><h2 id="aiPerformance">Previous Week &amp; Season AI Performance</h2><div id="boxState" class="mu" role="status" aria-live="polite" hidden></div><div id="archivedPerformance" class="card"><b>Archived pregame prediction accuracy</b><div class="mu">Checking for timestamped pregame snapshots…</div></div><div id="performance"></div><dialog id="performanceDetails" class="performance-modal" aria-label="AI performance pick details"><div class="performance-modal-inner"><div class="performance-modal-head"><h3 id="performanceDetailsTitle">Pick details</h3><button type="button" class="btn alt" id="closePerformanceDetails">Close ✕</button></div><div id="performanceDetailsBody"></div></div></dialog><div class="mu">Only predictions with verifiable final results are scored. Player props require matching weekly CSV data. The existing performance cards below are retrospective model evaluations; archived pregame accuracy is shown separately above; unavailable outcomes are excluded from hit percentages.</div>
+<div class="mu">Data-driven matchup analysis using available model estimates and imported player game logs. Not a live generative AI service. Sportsbook lines are optional and entered manually; no paid API or background odds scraping.</div>
+<div class="tools" role="tablist" aria-label="AI Matchups sections"><button type="button" class="btn" id="advTabRecommendations" aria-selected="true">Recommendations</button><button type="button" class="btn alt" id="advTabPerformance" aria-selected="false">Prediction Performance</button></div><div id="advRecommendationPanel"><div class="card"><div class="tools"><label for="advView"><b>View</b></label><select id="advView"><option value="picks">Top picks</option><option value="games">Game matchups</option><option value="parlays">Suggested parlay</option></select><label for="advMarket"><b>Market</b></label><select id="advMarket"><option value="all">All</option><option value="ps">Passing yards</option><option value="ru">Rushing yards</option><option value="td">Touchdowns</option></select></div><div id="advStatus" class="mu" role="status"></div><div id="advResults"></div><div id="advEditor" class="card" hidden><b id="advEditTitle">Sportsbook line</b><div class="mu">Enter a line you personally verified at the sportsbook. These values are not automatically refreshed or cloud-synced.</div><div class="tools"><select id="advBook"><option>DraftKings</option><option>FanDuel</option><option>Other</option></select><label>Line <input id="advLine" type="number" min="0" step="0.5" placeholder="225.5"></label><label>American odds <input id="advOdds" type="number" step="1" placeholder="-110"></label><button class="btn" id="advSaveLine" type="button">Save line</button><button class="btn alt" id="advCancelLine" type="button">Cancel</button></div></div></div>
+</div><div id="advPerformancePanel" hidden><div class="card"><b>Tracked AI recommendations</b><p class="mu">Save a pregame snapshot of the currently ranked recommendations. Once final player statistics are imported, this tab grades the original lines without changing the prediction engine. Snapshots stay in this browser; export a backup to preserve them. Only pregame snapshots count.</p><div class="tools"><button type="button" class="btn" id="advTrackSnapshot">Save current Top 12 predictions</button><button type="button" class="btn alt" id="advExportTracking">Export tracking history</button><button type="button" class="btn alt" id="advImportTracking">Import tracking history</button><input type="file" id="advImportTrackingFile" accept=".json,application/json" hidden></div><div id="advTrackingStatus" class="mu" role="status"></div><div id="advTrackingResults"></div></div><div id="cloudOfficialGrades" class="card" style="margin-top:12px"><b>Official cloud grading</b><p class="mu">Verified cloud grade records are shown separately from browser estimates. No records are changed here.</p><div id="cloudOfficialGradesStatus" class="mu" role="status">Waiting to load cloud grades…</div><div id="cloudOfficialGradesResults"></div><button class="btn alt" type="button" id="cloudOfficialGradesRefresh">Refresh official grades</button></div><h2 id="aiPerformance">Previous Week &amp; Season AI Performance</h2><div id="boxState" class="mu" role="status" aria-live="polite" hidden></div><div id="archivedPerformance" class="card"><b>Archived pregame prediction accuracy</b><div class="mu">Checking for timestamped pregame snapshots…</div></div><div id="performance"></div><dialog id="performanceDetails" class="performance-modal" aria-label="AI performance pick details"><div class="performance-modal-inner"><div class="performance-modal-head"><h3 id="performanceDetailsTitle">Pick details</h3><button type="button" class="btn alt" id="closePerformanceDetails">Close ✕</button></div><div id="performanceDetailsBody"></div></div></dialog><div class="mu">Only predictions with verifiable final results are scored. Player props require matching weekly CSV data. The existing performance cards below are retrospective model evaluations; archived pregame accuracy is shown separately above; unavailable outcomes are excluded from hit percentages.</div>
 
 </div>
 <script>
@@ -251,6 +250,7 @@ function pick(gid,mkt,side){
   const i=legs.findIndex(l=>l.gid===gid&&l.mkt===mkt&&l.side===side);
   if(i>-1){legs.splice(i,1);return draw()}
   if(mode==="same"){legs=legs.filter(l=>!(l.gid===gid&&l.mkt===mkt))}
+  if(legs.length>=N){$("hint").textContent="Slip is full: remove a leg or raise the leg count.";return draw()}
   legs.push({gid,mkt,side});draw()}
 const SLIPS_KEY="nflp-draft-slips-v3";let slips=[],activeSlip=0,slipSeq=1;
 try{const obj=JSON.parse(localStorage.getItem(SLIPS_KEY)||"null");if(obj&&Array.isArray(obj.slips)&&obj.slips.length){slips=obj.slips;activeSlip=obj.active||0;slipSeq=obj.seq||1}}catch(e){}
@@ -268,7 +268,7 @@ function draftLegText(s,l){if(l.custom)return l.t+" ("+(l.m||"Saved selection")+
 function renderSlipTabs(){
  const visible=slips.filter(s=>s.legs.length>0||s.id===activeSlip);
  $('slipTabs').innerHTML=visible.map(s=>`<div class="card draft-slip-card ${s.id===activeSlip?'active':''}">
- <div class="draft-head"><b>${esc(s.name)}</b><span class="tag">${s.legs.length} selected · AI target ${s.N}</span></div>
+ <div class="draft-head"><b>${esc(s.name)}</b><span class="tag">${s.legs.length}/${s.N} legs</span></div>
  <div class="mu">Week ${s.wk} · ${s.mode==='same'?'Same game':'Multi-game'} · Stake $${Number(s.stake||0).toFixed(2)}</div>
  <div class="draft-legs">${s.legs.length?s.legs.map((l,i)=>`<div class="draft-leg" style="display:flex;align-items:center;gap:8px"><span style="flex:1;min-width:0">${i+1}. ${esc(draftLegText(s,l))}</span><button type="button" class="btn alt" style="padding:5px 9px;flex:none" title="Remove selection" aria-label="Remove selection ${i+1}" onclick="removeDraftLeg(${s.id},${i})">🗑️</button></div>`).join(''):'<span class="mu">No selections yet — select picks from Games below.</span>'}</div>
  <div class="tools"><button class="btn ${s.id===activeSlip?'alt':''}" onclick="switchSlip(${s.id});document.getElementById('builderControls').scrollIntoView({behavior:'smooth',block:'start'})">${s.id===activeSlip?'Selected — revise picks':'Revise slip'}</button><button class="btn alt" onclick="duplicateDraftSlip(${s.id})">Duplicate</button><button class="btn alt" onclick="deleteDraftSlip(${s.id})">Delete slip</button></div></div>`).join('');
@@ -322,8 +322,8 @@ function deleteSlip(){deleteDraftSlip(activeSlip)}
 function clearAllSlips(){if(!confirm('Delete ALL draft slips? Saved parlays will not be deleted.'))return;const n=1;slipSeq=1;slips=[{id:n,name:'Slip '+n,wk,mode:'multi',N:3,stake:10,legs:[],focus:null}];initializedSlips=false;switchSlip(n)}
 $('newSlip').onclick=newSlip;$('clearAllSlips').onclick=clearAllSlips;
 function draw(){
-  if(mode==="multi")$("hint").textContent="Multi-game: "+legs.length+" manual picks selected. AI suggested parlay target: "+N+" legs.";
-  else $("hint").textContent=focus?"Same game: add any number of available markets in the highlighted game.":"Same game: tap a game’s “Build here” tag, then pick its markets.";
+  if(mode==="multi")$("hint").textContent=legs.length>N?"Remove "+(legs.length-N)+" selected leg(s) to match the new target.":legs.length===N?"Slip is full.":"Multi-game: choose "+N+" picks across games (multiple picks per game allowed).";
+  else $("hint").textContent=focus?"Same game: pick up to "+N+" legs (one per market) in the highlighted game.":"Same game: tap a game’s “Build here” tag, then pick its markets.";
   $("ln").textContent=N;
   document.querySelectorAll("#mode button").forEach(b=>b.classList.toggle("on",b.dataset.m===mode));
   syncActiveSlip();renderSlipTabs();
@@ -346,7 +346,8 @@ function draw(){
   const st=Math.max(0,+$("stake").value||0);let D=1,P=1;
   const li=legs.map((L,i)=>{const x=legOf(L);D*=x.d;P*=x.p;return`<div class="leg"><div><b>${x.txt}</b><div class="mu">${x.g.a} @ ${x.g.h} · ${am(x.d)}</div></div><button class="x" aria-label="Clear this leg" title="Clear this leg" onclick="legs.splice(${i},1);draw()">✕</button></div>`}).join("");
   $("slip").innerHTML=legs.length?li+`<div class="mu" style="margin-top:8px">Win chance (est.): ${f1(P*100)}%${mode==="same"?" · legs correlated, treat as rough":""}</div>`:`<span class="mu">Your slip is empty.</span>`;
-  $("b1").innerHTML=`${legs.length} selected legs<small>AI suggestion target: ${N} · manual picks unrestricted</small>`;
+  const full=legs.length===N;
+  $("b1").innerHTML=`${legs.length}/${N} legs<small>${full?"Parlay ready":legs.length>N?"Remove "+(legs.length-N)+" leg(s) of your choice":"Add "+(N-legs.length)+" more"}</small>`;
   $("b2").innerHTML=legs.length?`${am(D)} · ${D.toFixed(2)}x<small>$${st} pays $${(st*D).toFixed(2)}</small>`:`—<small></small>`;
 }
 function togglePreviousGames(){showPreviousGames=!showPreviousGames;renderPreviousGames()}
@@ -367,9 +368,9 @@ function renderPreviousGames(){
  }).join('');
 }
 function setFocus(id){if(focus!==id){focus=id;legs=legs.filter(l=>l.gid===id)}draw()}
-$("mode").onclick=e=>{const m=e.target.dataset.m;if(!m)return;mode=m;legs=[];focus=null;draw()};
-$("lm").onclick=()=>{N=Math.max(2,N-1);draw();plays();renderAdvanced()};
-$("lp").onclick=()=>{N=Math.min(12,N+1);draw();plays();renderAdvanced()};
+$("mode").onclick=e=>{const m=e.target.dataset.m;if(!m)return;mode=m;legs=[];focus=null;N=m==="same"?Math.min(N,3):N;draw()};
+$("lm").onclick=()=>{N=Math.max(2,N-1);draw();plays();if(legs.length>N)$("msg").textContent="Choose which "+(legs.length-N)+" leg(s) to remove using the ✕ or trash buttons. Your selections have been preserved.";};
+$("lp").onclick=()=>{N=Math.min(mode==="same"?3:8,N+1);draw();plays()};
 $("stake").oninput=draw;
 // recommendations
 function plays(){if(SEASON!==MODEL_SEASON){$("plays").innerHTML=`<div class="card warn">Predictions are disabled for ${SEASON}: the model still uses 2026 team baselines. Schedule, final scores, and season-specific cloud statistics remain available. Update the model inputs before enabling forecasts for this season.</div>`;window._arr=[];return;}
@@ -434,6 +435,7 @@ function advSaveOdds(key){
 }
 function advAdd(index){
  const x=window._advPicks?.[index];if(!x)return;
+ if(legs.length>=N){$('advStatus').textContent='Slip is full. Increase its leg count or remove a selection first.';return;}
  if(mode==='same'&&focus&&focus!==x.g.id){$('advStatus').textContent='This is a same-game slip for a different matchup. Switch to multi-game mode first.';return;}
  const label=x.p.k==='td'?'Anytime touchdown':(x.p.k==='ps'?'passing yards':'rushing yards');
  if(x.manual){
@@ -480,24 +482,22 @@ function renderAdvanced(){
  const root=$('advResults');if(!root)return;
  if(SEASON!==MODEL_SEASON){root.innerHTML='<div class="warn">Matchup recommendations require updated season-specific model baselines.</div>';return;}
  const market=$('advMarket').value,view=$('advView').value;
- const search=$('advPlayerSearch').value.trim().toLowerCase();
- const limit=$('advLimit').value;
- const all=(WKS[wk]||[]).filter(g=>!g.sc).flatMap(g=>PLY.filter(p=>(p.tm===g.a||p.tm===g.h)&&(market==='all'||p.k===market)&&(!search||p.n.toLowerCase().includes(search)||p.tm.toLowerCase().includes(search)||g.a.toLowerCase().includes(search)||g.h.toLowerCase().includes(search))).map(p=>advMetrics(p,g)).filter(Boolean));
+ const all=(WKS[wk]||[]).filter(g=>!g.sc).flatMap(g=>PLY.filter(p=>(p.tm===g.a||p.tm===g.h)&&(market==='all'||p.k===market)).map(p=>advMetrics(p,g)).filter(Boolean));
  all.sort((a,b)=>b.score-a.score);window._advPicks=all;
  const gamesCount=new Set(all.map(x=>x.g.id)).size;
  $('advStatus').textContent=`${all.length} model candidates across ${gamesCount} upcoming games. Estimates use 2026 baseline data and any available imported player logs; not live sportsbook lines.`;
  let html='';
  if(view==='games'){
   const groups=[...new Set(all.map(x=>x.g.id))];
-  html=groups.map(id=>{const rows=all.filter(x=>x.g.id===id),g=rows[0].g;const shown=limit==='all'?rows:rows.slice(0,Number(limit));return `<h3>${esc(g.a)} @ ${esc(g.h)}</h3><div class="mu">${shown.length} of ${rows.length} candidates · Model margin: ${g.m.toFixed(1)} points toward ${g.m>=0?esc(g.h):esc(g.a)}; total: ${g.tot.toFixed(1)}. These are estimates, not current betting lines.</div>`+shown.map(x=>advCard(x,all.indexOf(x))).join('')}).join('');
+  html=groups.map(id=>{const rows=all.filter(x=>x.g.id===id),g=rows[0].g;return `<h3>${esc(g.a)} @ ${esc(g.h)}</h3><div class="mu">Model margin: ${g.m.toFixed(1)} points toward ${g.m>=0?esc(g.h):esc(g.a)}; total: ${g.tot.toFixed(1)}. These are estimates, not current betting lines.</div>`+rows.slice(0,4).map(x=>advCard(x,all.indexOf(x))).join('')}).join('');
  }else if(view==='parlays'){
-  const unique=[],seen=new Set();for(const x of all){if(seen.has(x.g.id))continue;seen.add(x.g.id);unique.push(x);if(unique.length===N)break;}
+  const unique=[],seen=new Set();for(const x of all){if(seen.has(x.g.id))continue;seen.add(x.g.id);unique.push(x);if(unique.length===5)break;}
   html='<div class="mu">Illustrative multi-game combination. Picks are selected from different games to reduce obvious same-game correlation; independence and combined probability are not guaranteed. Review each selection and current sportsbook line.</div>'+unique.map(x=>advCard(x,all.indexOf(x))).join('');
- }else html=(limit==='all'?all:all.slice(0,Number(limit))).map((x,i)=>advCard(x,i)).join('');
+ }else html=all.slice(0,12).map((x,i)=>advCard(x,i)).join('');
  root.innerHTML=html||'<div class="mu">No eligible upcoming player predictions for the selected week. Refresh the NFL schedule or change the market filter.</div>';
 }
 renderAdvanced();
-$('advView').onchange=renderAdvanced;$('advMarket').onchange=renderAdvanced;$('advLimit').onchange=renderAdvanced;$('advPlayerSearch').oninput=renderAdvanced;
+$('advView').onchange=renderAdvanced;$('advMarket').onchange=renderAdvanced;
 $('advSaveLine').onclick=()=>{const x=window._advPicks?.[Number($('advEditor').dataset.index)];if(x)advSaveOdds(x.key)};
 $('advCancelLine').onclick=()=>{$('advEditor').hidden=true};
 
@@ -516,7 +516,7 @@ const money=n=>(n<0?"-$":"$")+Math.abs(n).toFixed(2);
 const pl=s=>s.status==="won"?(+s.amt||0):s.status==="lost"?-(+s.amt||0):0;
 const typ=s=>s.mode==="same"?"Same game":"Multi-game";
 $("save").onclick=()=>{
- if(!legs.length){$("msg").textContent="Add at least one selection before saving.";return}
+ if(legs.length!==N){$("msg").textContent=legs.length>N?"Remove "+(legs.length-N)+" leg(s) of your choice before saving.":"Fill all "+N+" legs first.";return}
  const st=Math.max(0,+$("stake").value||0);let D=1;
  const L=legs.map(l=>{const x=legOf(l);D*=x.d;return{t:x.txt,m:x.g.a+" @ "+x.g.h,o:am(x.d)}});
  saved.unshift({id:Date.now(),wk,mode,stake:st,dec:D,legs:L,status:"open",amt:0});
@@ -1583,6 +1583,44 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
   }catch(err){$('advTrackingStatus').textContent='Import failed: '+err.message}e.target.value='';
  };
  render();
+})();
+</script>
+
+<script>
+/* Phase 3 official grade display: public read only; never calculates or writes grades. */
+(()=>{
+ 'use strict';
+ const url='https://wpvuunwtyxycqfjwuzkn.supabase.co';
+ const key='sb_publishable_DK_yNahtv5ErUXtAzjTxCw_p4EowVj3';
+ const status=document.getElementById('cloudOfficialGradesStatus');
+ const results=document.getElementById('cloudOfficialGradesResults');
+ const refresh=document.getElementById('cloudOfficialGradesRefresh');
+ if(!status||!results||!refresh)return;
+ let inFlight=false;
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ async function load(){
+  if(inFlight)return;
+  inFlight=true;refresh.disabled=true;status.textContent='Loading official cloud grades…';
+  try{
+   const season=2026;
+   const res=await fetch(url+'/rest/v1/nfl_prediction_grades?select=season,week,game_id,pick_key,outcome,actual_value,grading_note,stats_source,graded_at&season=eq.'+season+'&order=week.desc,graded_at.desc&limit=1000',{
+    headers:{apikey:key,Authorization:'Bearer '+key,Accept:'application/json'},cache:'no-store'});
+   if(!res.ok)throw new Error('Cloud read failed (HTTP '+res.status+'). Check the grades table read policy.');
+   const rows=await res.json();
+   if(!Array.isArray(rows))throw new Error('Unexpected grade response');
+   const final=rows.filter(r=>['hit','miss','push'].includes(r.outcome));
+   const hits=final.filter(r=>r.outcome==='hit').length;
+   const misses=final.filter(r=>r.outcome==='miss').length;
+   const pushes=final.filter(r=>r.outcome==='push').length;
+   const pct=hits+misses?(100*hits/(hits+misses)).toFixed(1)+'%':'N/A';
+   status.textContent='Official cloud records: '+final.length+' finalized; '+rows.length+' total. Accuracy excludes pushes and pending.';
+   results.innerHTML='<div class="performance-metrics"><div><span class="mu">Official hit rate</span><strong>'+pct+'</strong></div><div><span class="mu">Hits / Misses</span><strong>'+hits+' / '+misses+'</strong></div><div><span class="mu">Pushes</span><strong>'+pushes+'</strong></div></div>'+
+    (final.length?'<div style="overflow-x:auto"><table class="performance-table"><thead><tr><th>Week</th><th>Game</th><th>Pick key</th><th>Outcome</th><th>Actual</th></tr></thead><tbody>'+final.slice(0,50).map(r=>'<tr><td>'+esc(r.week)+'</td><td>'+esc(r.game_id)+'</td><td><code title="'+esc(r.pick_key)+'">'+esc(String(r.pick_key).slice(0,18))+'…</code></td><td>'+esc(r.outcome.toUpperCase())+'</td><td>'+esc(r.actual_value)+'</td></tr>').join('')+'</tbody></table></div>':'<p class="mu">No official finalized cloud grades yet. Browser estimates remain separate above.</p>');
+  }catch(e){status.textContent=e.message;results.textContent='';}
+  finally{inFlight=false;refresh.disabled=false;}
+ }
+ refresh.addEventListener('click',load);
+ document.getElementById('advTabPerformance')?.addEventListener('click',load);
 })();
 </script>
 </body></html>
