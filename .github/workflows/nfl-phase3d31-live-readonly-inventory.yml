@@ -1,0 +1,34 @@
+name: NFL Phase 3D31 Live Read-Only Worker Inventory
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nfl-phase3d31-readonly
+  cancel-in-progress: false
+jobs:
+  live-inventory:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run isolated read-only tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d31*.py' -v
+      - name: Inventory four live tables (GET only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3d31_live_worker_preview.py
+      - name: Upload sanitized counts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d31-live-readonly-inventory
+          retention-days: 7
+          path: phase3d31-report/inventory.json
+          if-no-files-found: warn
