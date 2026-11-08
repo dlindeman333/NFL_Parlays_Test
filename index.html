@@ -1739,18 +1739,20 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
   if(inFlight)return;
   inFlight=true;refresh.disabled=true;status.textContent='Loading official cloud grades…';
   try{
-   const season=2026;
+   const season=Number(document.getElementById('seasonSelect')?.value||2026);
+   if(!Number.isInteger(season)||season<2020||season>2100)throw new Error('Invalid selected season');
    const res=await fetch(url+'/rest/v1/nfl_prediction_grades?select=season,week,game_id,pick_key,outcome,actual_value,grading_note,stats_source,graded_at&season=eq.'+season+'&order=week.desc,graded_at.desc&limit=1000',{
     headers:{apikey:key,Authorization:'Bearer '+key,Accept:'application/json'},cache:'no-store'});
    if(!res.ok)throw new Error('Cloud read failed (HTTP '+res.status+'). Check the grades table read policy.');
    const rows=await res.json();
    if(!Array.isArray(rows))throw new Error('Unexpected grade response');
-   const final=rows.filter(r=>['hit','miss','push'].includes(r.outcome));
+   const valid=rows.filter(r=>Number(r.season)===season&&Number.isInteger(Number(r.week))&&Number(r.week)>=1&&Number(r.week)<=22&&typeof r.pick_key==='string'&&/^v1:\d+:[a-f0-9]{64}$/.test(r.pick_key)&&['hit','miss','push','pending','ungraded','void'].includes(r.outcome));
+   const final=valid.filter(r=>['hit','miss','push'].includes(r.outcome));
    const hits=final.filter(r=>r.outcome==='hit').length;
    const misses=final.filter(r=>r.outcome==='miss').length;
    const pushes=final.filter(r=>r.outcome==='push').length;
    const pct=hits+misses?(100*hits/(hits+misses)).toFixed(1)+'%':'N/A';
-   status.textContent='Official cloud records: '+final.length+' finalized; '+rows.length+' total. Accuracy excludes pushes and pending.';
+   status.textContent='Season '+season+' · Official v1 cloud records: '+final.length+' finalized; '+valid.length+' validated of '+rows.length+' returned. Accuracy excludes pushes and pending.';
    results.innerHTML='<div class="performance-metrics"><div><span class="mu">Official hit rate</span><strong>'+pct+'</strong></div><div><span class="mu">Hits / Misses</span><strong>'+hits+' / '+misses+'</strong></div><div><span class="mu">Pushes</span><strong>'+pushes+'</strong></div></div>'+
     (final.length?'<div style="overflow-x:auto"><table class="performance-table"><thead><tr><th>Week</th><th>Game</th><th>Pick key</th><th>Outcome</th><th>Actual</th></tr></thead><tbody>'+final.slice(0,50).map(r=>'<tr><td>'+esc(r.week)+'</td><td>'+esc(r.game_id)+'</td><td><code title="'+esc(r.pick_key)+'">'+esc(String(r.pick_key).slice(0,18))+'…</code></td><td>'+esc(r.outcome.toUpperCase())+'</td><td>'+esc(r.actual_value)+'</td></tr>').join('')+'</tbody></table></div>':'<p class="mu">No official finalized cloud grades yet. Browser estimates remain separate above.</p>');
   }catch(e){status.textContent=e.message;results.textContent='';}
@@ -1758,6 +1760,7 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
  }
  refresh.addEventListener('click',load);
  document.getElementById('advTabPerformance')?.addEventListener('click',load);
+ document.getElementById('seasonSelect')?.addEventListener('change',load);
 })();
 </script>
 </body></html>
