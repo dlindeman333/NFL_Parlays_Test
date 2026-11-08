@@ -46,6 +46,11 @@ def utc(value):
     try:return parse_dt(str(value)).astimezone(timezone.utc) if value else None
     except (ValueError,TypeError,AttributeError):return None
 
+TEAM_ALIASES = {'LA':'LAR','STL':'LAR','OAK':'LV','SD':'LAC','JAC':'JAX','WSH':'WAS'}
+def canonical_team(value):
+    v=str(value or '').strip().upper()
+    return TEAM_ALIASES.get(v,v)
+
 def assess(rows,crosswalk,matches,abbr,season,week,export_time,now):
     by_espn={m['player_id']:m for m in matches if m['status']=='matched'}
     all_espn={m['player_id'] for m in matches}
@@ -61,8 +66,7 @@ def assess(rows,crosswalk,matches,abbr,season,week,export_time,now):
         elif not espn:reason='gsis_not_in_crosswalk'
         elif espn not in all_espn:reason='espn_not_in_current_roster'
         elif not m:reason='roster_has_no_upcoming_game'
-        elif row.get('team','').strip().upper()!=abbr.get(m['team_id'],'').upper():reason='team_mismatch'
-        elif row.get('next_opponent','').strip().upper()!=abbr.get(m['opponent_team_id'],'').upper():reason='opponent_mismatch'
+        elif canonical_team(row.get('team'))!=canonical_team(abbr.get(m['team_id'])):reason='team_mismatch'
         elif not utc(m['kickoff_at']) or utc(m['kickoff_at'])<=now:reason='game_started'
         elif not exp or exp>now or exp>=utc(m['kickoff_at']):reason='export_not_point_in_time'
         elif number(row.get('week')) is None or number(row.get('week'))>=week:reason='source_week_not_prior'
@@ -72,22 +76,22 @@ def assess(rows,crosswalk,matches,abbr,season,week,export_time,now):
         counts[reason]+=1
         if reason!='accepted':
             if len(samples[reason])<3:samples[reason].append({'gsis_id':gsis,'espn_id':espn,'stats_team':row.get('team'),
-                 'roster_team':abbr.get(m['team_id']) if m else None,'stats_opponent':row.get('next_opponent'),
-                 'roster_opponent':abbr.get(m['opponent_team_id']) if m else None})
+                 'roster_team':abbr.get(m['team_id']) if m else None,'historical_row_next_opponent':row.get('next_opponent'),
+                 'verified_upcoming_opponent':abbr.get(m['opponent_team_id']) if m else None})
             continue
         source_week=number(row.get('week'))
         if espn not in accepted or source_week>accepted[espn][0]:
             accepted[espn]=(source_week,{'gsis_id':gsis,'espn_id':espn,'name':c['name'],
-                'team':abbr[m['team_id']],'opponent':abbr[m['opponent_team_id']],
+                'team':canonical_team(abbr[m['team_id']]),'opponent':canonical_team(abbr[m['opponent_team_id']]),
                 'game_id':m['game_id'],'kickoff_at':m['kickoff_at'],'projections':c['projections']})
     return {'stage_counts':dict(counts),'diagnostic_samples':dict(samples),'matched_projection_players':len(accepted),
-            'sample_projections':[v[1] for v in list(accepted.values())[:15]]}
+            'sample_projections':[v[1] for v in list(accepted.values())[:15]], 'deduplication':'highest eligible completed source week per ESPN player ID', 'opponent_logic':'Historical row next_opponent is not compared with verified upcoming schedule opponent', 'projection_warning':'Existing rolling averages not independently recomputed; preview only, not authenticated point-in-time predictions'}
 
 def run(season,week):
     now=datetime.now(timezone.utc)
     report={'phase':'3D37C-crosswalk','mode':'READ_ONLY','season':season,'week':week,'run_at_utc':now.isoformat(),
         'status':'error','database_writes':0,'snapshots_created':0,'grades_created':0,
-        'warning':'Current rosters do not establish historical eligibility; projections are NOT authentic saved pregame predictions.'}
+        'warning':'Current rosters and exported rolling averages do not prove historical point-in-time eligibility; preview only, not authentic saved predictions.'}
     try:
         registry=download_registry(REGISTRY_URL)
         crosswalk,metrics=build_crosswalk(registry)
