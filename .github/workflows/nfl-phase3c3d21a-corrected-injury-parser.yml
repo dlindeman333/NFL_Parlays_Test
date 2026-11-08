@@ -1,0 +1,23 @@
+name: NFL Phase 3C-3D21A Corrected Injury Parser (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run corrected preview (no Supabase credentials)
+        run: python scripts/phase3c3d21a_initial_load_preview_fixed.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3c3d21a-corrected-initial-load-report
+          path: phase3c3d21a-report/
+          if-no-files-found: error
