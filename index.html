@@ -1108,6 +1108,28 @@ const prefix='nflp-cloud-';
 // Fail closed on cross-account browser data. Never silently merge personal data
 // from a previous account into a different authenticated Supabase user.
 const OWNER_KEY='nflp-phase3-test-storage-owner-v1';
+// Phase 3 privacy gate: never display one account's local parlays to a signed-out
+// or different user. This is a conservative lock, NOT a data migration.
+function privacyGate(message){
+ let el=document.getElementById('phase3PrivacyGate');
+ if(!el){
+  el=document.createElement('div');el.id='phase3PrivacyGate';
+  el.setAttribute('role','alertdialog');el.setAttribute('aria-modal','true');
+  el.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#07142c;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font:16px/1.5 system-ui,sans-serif';
+  el.innerHTML='<div style="max-width:550px;background:#142b52;border:1px solid #7496ce;border-radius:14px;padding:24px"><h2 style="color:#fff;margin-top:0">Account privacy lock</h2><p id="phase3PrivacyMessage"></p><p style="font-size:13px">Your saved data has not been deleted or transferred. To use a different account, open the test app in a separate browser profile or private window. Do not clear browser data.</p><button id="phase3PrivacyUnlock" style="background:#fff;color:#10234b;border:0;border-radius:8px;padding:10px 14px;font-weight:700">Sign in as original account</button></div>';
+  document.body.appendChild(el);
+  el.querySelector('#phase3PrivacyUnlock').addEventListener('click',()=>{
+   // Show only the authentication form; keep all parlay content concealed.
+   document.getElementById('setupDialog').showModal();
+   document.getElementById('sbEmail').focus();
+   document.getElementById('setupDialog').addEventListener('close',()=>{if(!auth)privacyGate('Sign in as the original account to view its saved parlays.');},{once:true});
+  });
+ }
+ el.querySelector('#phase3PrivacyMessage').textContent=message;
+ el.style.display='flex';
+}
+function privacyUnlock(){const el=document.getElementById('phase3PrivacyGate');if(el)el.remove();}
+
 function personalDataPresent(){
  try{
   const saved=JSON.parse(localStorage.getItem('nflp-saved-v1')||'[]');
@@ -1171,6 +1193,7 @@ async function userId(){
  const jwt=await token();
  const data=await api('/auth/v1/user',{headers:{Authorization:'Bearer '+jwt}});
  enforceStorageOwner(data.id);
+ privacyUnlock();
  return data.id;
 }
 function snapshot(){
@@ -1376,11 +1399,11 @@ async function sign(kind){
   // Verify ownership before attempting the initial sync.
   await userId();
   started=false;await sync(true);
- }catch(e){status('Authentication error: '+e.message)}
+ }catch(e){status('Authentication error: '+e.message);if(localStorage.getItem(OWNER_KEY))privacyGate('This browser is reserved for its original account. Sign in with that account or use a separate browser profile.')}
 }
 $('sbAuthForm').addEventListener('submit',e=>{e.preventDefault();sign('signin')});
 $('sbSignUp').onclick=()=>sign('signup');
-$('sbSignOut').onclick=()=>{storeAuth(null);started=false;status('Signed out. Local data remains visible on this device and is locked to its original account. Use a separate browser profile for another account.');};
+$('sbSignOut').onclick=()=>{storeAuth(null);started=false;lastPushed='';status('Signed out. Personal data is locked on this device.');privacyGate('Signed out. This browser still contains the original account’s local data, which is now hidden.');};
 $('sbBackup').onclick=download;
 $('sbRestoreCloud').onclick=async()=>{
  if(!auth){status('Sign in first.');return;}
@@ -1555,6 +1578,7 @@ $('sbDeleteCloudSaved').onclick=async()=>{
 
 $('sbSyncNow').onclick=async()=>{if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
+if(localStorage.getItem(OWNER_KEY))privacyGate('Verifying the original account before displaying saved parlays.');
 if(auth&&config.url&&config.key){status('Resuming cloud sync…');setTimeout(()=>sync(true),900)}
 else status('Cloud connection ready. Sign in or create an account to enable sync.');
 setInterval(()=>{if(!started||!auth||busy)return;sync(false)},5000);
