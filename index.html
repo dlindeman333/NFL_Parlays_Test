@@ -2116,7 +2116,6 @@ document.querySelector('#savedParlaySlips .tools:last-child').prepend(safe8Delet
 function safe10DeletionFeedback(message){
  const target=document.getElementById('savedActionStatus');
  if(target){target.textContent=message;target.scrollIntoView({block:'nearest',behavior:'smooth'});}
- safe10DeletionFeedback(message);
 }
 async function safe9DeleteSaved(requestedIds=null){
  safe10DeletionFeedback('Checking signed-in account and cloud sync before deletion…');
