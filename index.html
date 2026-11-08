@@ -529,7 +529,7 @@ $("save").onclick=()=>{
 function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
  if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
  persist();renderSaved()}
-$('deleteAllSaved').addEventListener('click',()=>{safe9DeleteSaved('ALL').catch(e=>safe10DeletionFeedback('Delete All could not start: '+(e&&e.message||String(e))));});
+// Delete All handler is installed beside the guarded cloud manager below.
 const editingSavedParlays=new Set();
 let lastSavedDeletion=null;
 function savedById(id){return saved.find(x=>String(x.id)===String(id))}
@@ -2168,6 +2168,17 @@ async function safe9DeleteSaved(requestedIds=null){
  finally{busy=false;safe6Running=priorRunning&&!!localStorage.getItem(safe6Key(localStorage.getItem(OWNER_KEY)||''));}
 }
 safe8Delete.onclick=()=>{safe9DeleteSaved().catch(e=>safe10DeletionFeedback('Deletion manager could not start: '+(e&&e.message||String(e))));};
+// Bind directly after guarded manager initialization, with synchronous visible click feedback.
+const deleteAllSavedButton=document.getElementById('deleteAllSaved');
+if(deleteAllSavedButton){
+ deleteAllSavedButton.onclick=function(event){
+  event.preventDefault();
+  safe10DeletionFeedback('Delete All clicked — checking cloud account and saved parlays…');
+  try { Promise.resolve(safe9DeleteSaved('ALL')).catch(e=>safe10DeletionFeedback('Delete All blocked: '+(e?.message||String(e)))); }
+  catch(e){safe10DeletionFeedback('Delete All could not start: '+(e?.message||String(e)));}
+ };
+}
+
 safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_KEY);if(uid)localStorage.removeItem(safe6Key(uid));status('AUTO-SYNC v6 PAUSED on this device. No data deleted.');};
 setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
