@@ -1,0 +1,53 @@
+name: NFL Accelerated Package 1 - Integrated Read-Only Gate
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Season (blank = auto)'
+        required: false
+        type: string
+      week:
+        description: 'Week (blank = auto)'
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: nfl-accelerated-package1-readonly
+  cancel-in-progress: false
+jobs:
+  integration:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run consolidated regression tests
+        run: python -m unittest discover -s scripts -p 'test_phase3*.py' -v
+      - name: Build full current-week candidate manifest
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season }}
+          NFL_WEEK: ${{ inputs.week }}
+        shell: bash
+        run: |
+          args=()
+          if [[ -n "$NFL_SEASON" ]]; then args+=(--season "$NFL_SEASON"); fi
+          if [[ -n "$NFL_WEEK" ]]; then args+=(--week "$NFL_WEEK"); fi
+          python scripts/phase3d37h_full_manifest.py "${args[@]}"
+      - name: Run consolidated storage and serializer gate (no writes)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3_consolidated_gate.py
+      - name: Upload sanitized report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-accelerated-package1-report-${{ github.run_id }}
+          path: phase3-consolidated-output/consolidated_report.json
+          if-no-files-found: warn
+          retention-days: 14
