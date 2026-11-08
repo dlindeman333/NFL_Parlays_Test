@@ -1661,7 +1661,7 @@ readinessButton.onclick=async()=>{
   const remote=await readRemote(uid);
   if(!remote)throw Error('No cloud record for this account. Cloud writes remain disabled.');
   const cloud=personalCloudValues(remote.payload),local=snapshot();
-  const count=(v,key)=>{const x=parseCollection(v,key);if(key==='nflp-draft-slips-v3')return x&&Array.isArray(x.slips)?x.slips.filter(s=>s&&Array.isArray(s.legs)&&s.legs.length).length:0;if(!Array.isArray(x))throw Error('Unexpected '+key+' format.');return x.length;};
+  const count=(v,key)=>{const x=parseCollection(v,key);if(!(key in v))return 0;if(key==='nflp-draft-slips-v3'){if(!x||!Array.isArray(x.slips))throw Error('Unexpected '+key+' format.');return x.slips.filter(s=>s&&Array.isArray(s.legs)&&s.legs.length).length;}if(!Array.isArray(x))throw Error('Unexpected '+key+' format.');return x.length;};
   const cs=count(cloud,'nflp-saved-v1'),ls=count(local,'nflp-saved-v1');
   const cd=count(cloud,'nflp-draft-slips-v3'),ld=count(local,'nflp-draft-slips-v3');
   const ct=count(cloud,'nflp-deleted-saved-v1');
@@ -1742,7 +1742,7 @@ trialUploadButton.type='button';trialUploadButton.className='btn alt';
 trialUploadButton.textContent='Upload new test parlay (guarded)';
 $('sbSyncNow').parentNode.insertBefore(trialUploadButton,$('sbSyncNow'));
 function trialData(v){
- const saved=parseCollection(v,'nflp-saved-v1'),deleted=parseCollection(v,'nflp-deleted-saved-v1'),drafts=parseCollection(v,'nflp-draft-slips-v3');
+ const saved=('nflp-saved-v1' in v)?parseCollection(v,'nflp-saved-v1'):[],deleted=('nflp-deleted-saved-v1' in v)?parseCollection(v,'nflp-deleted-saved-v1'):[],drafts=('nflp-draft-slips-v3' in v)?parseCollection(v,'nflp-draft-slips-v3'):{slips:[]};
  if(!Array.isArray(saved)||!Array.isArray(deleted)||!drafts||!Array.isArray(drafts.slips))throw Error('Invalid saved, draft or deletion data; no changes made.');
  return {saved,deleted,drafts};
 }
