@@ -529,7 +529,7 @@ $("save").onclick=()=>{
 function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
  if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
  persist();renderSaved()}
-$('deleteAllSaved').onclick=()=>safe9DeleteSaved('ALL');
+$('deleteAllSaved').addEventListener('click',()=>{safe9DeleteSaved('ALL').catch(e=>safe10DeletionFeedback('Delete All could not start: '+(e&&e.message||String(e))));});
 const editingSavedParlays=new Set();
 let lastSavedDeletion=null;
 function savedById(id){return saved.find(x=>String(x.id)===String(id))}
@@ -2113,9 +2113,15 @@ safe6Button.onclick=async()=>{
 const safe8Delete=document.createElement('button');safe8Delete.type='button';safe8Delete.className='btn alt';
 safe8Delete.textContent='Select and delete saved parlays…';
 document.querySelector('#savedParlaySlips .tools:last-child').prepend(safe8Delete);
+function safe10DeletionFeedback(message){
+ const target=document.getElementById('savedActionStatus');
+ if(target){target.textContent=message;target.scrollIntoView({block:'nearest',behavior:'smooth'});}
+ safe10DeletionFeedback(message);
+}
 async function safe9DeleteSaved(requestedIds=null){
- if(busy){status('Another cloud operation is running. Try again.');return;}
- if(!navigator.onLine){status('Cloud deletion requires an online connection. No changes made.');return;}
+ safe10DeletionFeedback('Checking signed-in account and cloud sync before deletion…');
+ if(busy){safe10DeletionFeedback('Another cloud operation is running. Try again.');return;}
+ if(!navigator.onLine){safe10DeletionFeedback('Cloud deletion requires an online connection. No changes made.');return;}
  busy=true;
  const priorRunning=safe6Running;safe6Running=false;
  try{
@@ -2129,11 +2135,11 @@ async function safe9DeleteSaved(requestedIds=null){
   if(!baselineRaw)throw Error('Guarded auto-sync must be enabled for this account first');
   const baseline=JSON.parse(baselineRaw);
   if(!baseline||baseline.uid!==uid||baseline.canonical!==canonical)throw Error('Sync baseline is not current. Wait for sync and retry.');
-  if(!cloud.saved.length){status('No saved parlays to delete for this account.');return;}
+  if(!cloud.saved.length){safe10DeletionFeedback('No saved parlays to delete for this account.');return;}
   const selected=requestedIds==='ALL'?cloud.saved.map(p=>String(p.id)):
     Array.isArray(requestedIds)?requestedIds:await chooseSavedParlays(cloud.saved);
-  if(selected===null){status('Deletion canceled. No changes made.');return;}
-  const ids=[...new Set(selected.map(String))];if(!ids.length){status('No parlays selected. No changes made.');return;}
+  if(selected===null){safe10DeletionFeedback('Deletion canceled. No changes made.');return;}
+  const ids=[...new Set(selected.map(String))];if(!ids.length){safe10DeletionFeedback('No parlays selected. No changes made.');return;}
   const existing=new Set(cloud.saved.map(p=>String(p.id)));
   if(ids.some(id=>!existing.has(id)))throw Error('Selection contains an unknown parlay');
   const all=ids.length===cloud.saved.length;
@@ -2158,11 +2164,11 @@ async function safe9DeleteSaved(requestedIds=null){
   // Cloud is verified; a local storage error cannot undo the cloud operation.
   try{safe6LocalWrite(uid,nextData);localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:safe6Canonical(nextData)}));}
   catch(e){throw Error('Cloud deletion VERIFIED, but this device update failed: '+e.message+'. Do not retry deletion; inspect sync status.');}
-  status('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
- }catch(e){status('TEST v8 deletion: '+(e&&e.message||String(e)));}
+  safe10DeletionFeedback('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
+ }catch(e){safe10DeletionFeedback('TEST v8 deletion: '+(e&&e.message||String(e)));}
  finally{busy=false;safe6Running=priorRunning&&!!localStorage.getItem(safe6Key(localStorage.getItem(OWNER_KEY)||''));}
 }
-safe8Delete.onclick=()=>safe9DeleteSaved();
+safe8Delete.onclick=()=>{safe9DeleteSaved().catch(e=>safe10DeletionFeedback('Deletion manager could not start: '+(e&&e.message||String(e))));};
 safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_KEY);if(uid)localStorage.removeItem(safe6Key(uid));status('AUTO-SYNC v6 PAUSED on this device. No data deleted.');};
 setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
