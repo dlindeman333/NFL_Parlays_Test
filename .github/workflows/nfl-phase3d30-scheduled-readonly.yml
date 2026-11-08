@@ -1,0 +1,51 @@
+name: NFL Phase 3D30 Scheduled Read-Only Readiness
+on:
+  workflow_dispatch:
+  schedule:
+    # GitHub scheduled events use UTC. Monday 12:15 UTC (7:15 AM EST / 8:15 AM EDT).
+    - cron: '15 12 * * 1'
+permissions:
+  contents: read
+concurrency:
+  group: nfl-phase3d30-readonly
+  cancel-in-progress: false
+jobs:
+  scheduled-readiness:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Refresh unofficial ESPN injury and schedule evidence (read-only)
+        run: python scripts/phase3c3d22_initial_load_preview.py
+      - name: Evaluate storage safeguards (read-only)
+        run: python scripts/phase3c3d23_storage_decision_preview.py
+      - name: Compare Supabase rows (GET only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3c3d24_live_db_comparison.py
+      - name: Produce non-executable candidate manifest
+        run: python scripts/phase3c3d25_backup_authorization_preview.py
+      - name: Run prediction and grading safety unit tests
+        run: python scripts/phase3d27_29_automation_gates.py
+      - name: Verify scheduled run readiness
+        run: python scripts/phase3d30_scheduled_readiness.py
+      - name: Upload sanitized read-only reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d30-scheduled-readiness
+          retention-days: 14
+          path: |
+            phase3d30-report/readiness.json
+            phase3d27-29-report/automation_readiness.json
+            phase3c3d25-report/audit.json
+            phase3c3d24-report/audit.json
+            phase3c3d23-report/audit.json
+            phase3c3d22-report/audit.json
+          if-no-files-found: warn
