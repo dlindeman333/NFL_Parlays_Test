@@ -1,0 +1,28 @@
+name: NFL Phase 3C-3D6 Injury Evidence (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  injury_evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run read-only injury audit
+        run: python scripts/phase3c3d6_injury_evidence.py
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d6-injury-evidence-report
+          path: phase3c3d6-report/
+          if-no-files-found: warn
+          retention-days: 30
