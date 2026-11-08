@@ -113,11 +113,11 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 <div class="mu">Supabase connection is already configured. Sign in with your own account; use the same account on your PC and iPhone. Your existing browser data stays local until you sign in. Requires HTTPS (GitHub Pages).</div>
 <div class="mu" style="margin-top:9px">Cloud connection is preconfigured. Sign in or create your own account below.</div>
 <form id="sbAuthForm" class="tools" autocomplete="on" method="post" action="#" aria-label="Cloud account sign in"><label for="sbEmail">Email <input id="sbEmail" name="username" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Email" required></label><label for="sbPassword">Password <input id="sbPassword" name="password" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" required></label><button class="btn" id="sbSignIn" type="submit">Sign in</button><button class="btn alt" id="sbSignUp" type="button">Create account</button><button class="btn alt" id="sbSignOut" type="button">Sign out</button></form>
-<div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><button class="btn alt" type="button" id="sbDeleteCloudSaved">Manage cloud saved parlays</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
+<div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
 </section>
 <section id="csvSetup"><h2>Upload NFL Stats</h2><div id="autoStatsStatus" class="mu" role="status">Cloud NFL statistics: checking…</div><div class="mu" style="margin:5px 0 8px">Imported player statistics are retained in this browser until you select Clear imported stats.</div><div class="tools"><span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px"><button class="btn" type="button" id="chooseCSV">Choose CSV file</button><span id="csvFileName" class="mu" role="status">Empty</span></span><input id="csvUpload" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-label="Choose player statistics CSV"><button class="btn alt" id="clearCSV">Clear imported stats</button></div><div id="csvState" class="mu">Empty — no imported player statistics.</div><div class="mu" id="csvLastUpload" style="margin-top:7px" role="status">Latest upload: Never</div><div class="mu">Data source: Onboard + uploaded NFL stats (automatic)</div></section></div></dialog>
 <h2 id="myParlays">My parlays</h2><div id="sumry" class="card"></div>
-<section id="savedParlaySlips" style="margin-top:18px"><h2>Saved parlay slips</h2><div class="mu">Showing saved parlays for the selected NFL week. Expand previous weeks to see older slips.</div><div class="tools"><button type="button" class="btn alt" id="toggleSavedPrevious" aria-expanded="false" aria-controls="savedPreviousWeeks">Show previous weeks saved parlays</button></div><div id="saved"></div><div class="mu" id="savedActionStatus" role="status" aria-live="polite"></div><div class="tools" style="margin-top:12px"><button class="btn alt" id="copyAllSaved">Copy all saved parlays</button><button type="button" class="btn alt" id="deleteAllSaved">Delete all saved parlays</button></div></section>
+<section id="savedParlaySlips" style="margin-top:18px"><h2>Saved parlay slips</h2><div class="mu">Showing saved parlays for the selected NFL week. Expand previous weeks to see older slips.</div><div class="tools"><button type="button" class="btn alt" id="toggleSavedPrevious" aria-expanded="false" aria-controls="savedPreviousWeeks">Show previous weeks saved parlays</button></div><div id="saved"></div><div class="mu" id="savedActionStatus" role="status" aria-live="polite"></div><div class="tools" style="margin-top:12px"><button class="btn alt" id="copyAllSaved">Copy all saved parlays</button><button type="button" class="btn alt" id="deleteAllSaved">Delete all my saved parlays…</button></div></section>
 <!-- Active parlay summary and actions above draft slip listing -->
 <div class="bar"><div id="b1">0 / 3 legs<small>Pick legs below</small></div><div id="b2" style="text-align:right">—<small></small></div></div>
 <div class="card" id="slip"></div>
@@ -529,14 +529,7 @@ $("save").onclick=()=>{
 function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
  if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
  persist();renderSaved()}
-$('deleteAllSaved').onclick=()=>{
- if(!saved.length){$('savedActionStatus').textContent='There are no saved parlays to delete.';return;}
- const count=saved.length;
- if(!confirm('Permanently delete ALL '+count+' saved parlays from this browser? This cannot be undone. Active draft slips will not be deleted.'))return;
- saved=[];lastSavedDeletion=null;editingSavedParlays.clear();persist();renderSaved();
- $('savedActionStatus').textContent='All '+count+' saved parlays deleted.';
- $('msg').textContent='All saved parlays deleted.';
-};
+$('deleteAllSaved').onclick=()=>safe9DeleteSaved('ALL');
 const editingSavedParlays=new Set();
 let lastSavedDeletion=null;
 function savedById(id){return saved.find(x=>String(x.id)===String(id))}
@@ -578,7 +571,7 @@ $('saved').addEventListener('click',event=>{
  if(!button)return;
  const action=button.dataset.savedAction,id=button.dataset.savedId;
  if(action==='remove-leg')removeSavedSelection(id,Number(button.dataset.legIndex));
- else if(action==='delete-parlay')del(id);
+ else if(action==='delete-parlay')safe9DeleteSaved([String(id)]);
  else if(action==='edit')editSavedParlay(id);
  else if(action==='duplicate')duplicateSavedToDraft(id);
  else if(action==='rename')renameSavedParlay(id);
@@ -621,7 +614,7 @@ function renderSaved(){const t=stats();
 ${s.legs.map((l,i)=>`<div class="mu" style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="flex:1;min-width:0">• ${esc(l.t)} (${esc(l.m||"")}, ${esc(l.o||"")})</span>${editingSavedParlays.has(String(s.id))?`<button type="button" class="btn alt" style="padding:4px 8px;flex:none" title="Remove this selection" aria-label="Remove ${esc(l.t)}" data-saved-action="remove-leg" data-saved-id="${esc(s.id)}" data-leg-index="${i}">🗑️</button>`:""}</div>`).join("")}
 <div class="row" style="margin-top:8px"><div class="seg" style="flex:none">${["open","won","lost"].map(k=>`<button class="${s.status===k?"on":""}" onclick="setS(${s.id},'status','${k}')">${k[0].toUpperCase()+k.slice(1)}</button>`).join("")}</div>
 ${s.status==="open"?`<span class="mu">Stake $${s.stake} · pays ${money(s.stake*s.dec)}</span>`:`${s.status==="won"?"Won":"Lost"} $<input type="number" min="0" step="0.01" value="${s.amt}" onchange="setS(${s.id},'amt',this.value)">`}
-<button class="btn alt" data-saved-action="rename" data-saved-id="${esc(s.id)}">Rename</button><button class="btn alt" data-saved-action="edit" data-saved-id="${esc(s.id)}">${editingSavedParlays.has(String(s.id))?"Done deleting":"Delete selections"}</button><button class="btn alt" data-saved-action="delete-parlay" data-saved-id="${esc(s.id)}" aria-label="Delete saved parlay">Delete Slip</button><button class="btn alt" data-saved-action="duplicate" data-saved-id="${esc(s.id)}">Duplicate Slip</button><button class="btn alt" onclick="copySaved(${s.id})">Copy slip</button></div></div>`;
+<button class="btn alt" data-saved-action="rename" data-saved-id="${esc(s.id)}">Rename</button><button class="btn alt" data-saved-action="edit" data-saved-id="${esc(s.id)}">${editingSavedParlays.has(String(s.id))?"Done deleting":"Delete selections"}</button><button class="btn alt" data-saved-action="delete-parlay" data-saved-id="${esc(s.id)}" aria-label="Delete saved parlay">Delete saved parlay…</button><button class="btn alt" data-saved-action="duplicate" data-saved-id="${esc(s.id)}">Duplicate Slip</button><button class="btn alt" onclick="copySaved(${s.id})">Copy slip</button></div></div>`;
  const weekHeader=(number,caption)=>`<h3 style="font-size:19px;font-weight:800;margin:18px 0 8px;padding:10px 12px;border-left:5px solid var(--ac);background:var(--sel);border-radius:6px">Week ${number}${caption?` — ${caption}`:""}</h3>`;
  const priorWeeks=[...new Set(previousSaved.map(s=>Number(s.wk)))].sort((a,b)=>b-a);
  const previousMarkup=showPreviousSavedWeeks?`<div id="savedPreviousWeeks">${priorWeeks.length?priorWeeks.map(w=>weekHeader(w,"Previous week")+previousSaved.filter(s=>Number(s.wk)===w).map(savedCard).join("")).join(""):'<div class="mu">No previous-week saved parlays.</div>'}</div>`:"";
@@ -1554,7 +1547,9 @@ function chooseSavedParlays(items){
  });
 }
 
-$('sbDeleteCloudSaved').onclick=async()=>{
+const obsoleteDeleteButton=document.createElement('button');obsoleteDeleteButton.id='sbDeleteCloudSaved';
+obsoleteDeleteButton.onclick=async()=>{
+ status('Cloud deletion has moved to Saved Parlays. Use the guarded manager there.');return;
  if(SAFE_READ_ONLY){status('Cloud deletion disabled until account isolation is verified.');return;}
  if(!auth){status('Sign in before managing cloud saved parlays.');return;}
  if(busy){status('Wait for the current sync to finish.');return;}
@@ -2116,9 +2111,9 @@ safe6Button.onclick=async()=>{
 // Phase 3 consolidated TEST cloud deletion controls: one, selected, or all.
 // Cloud-first CAS, readback, then device update. Drafts and unrelated payload keys are preserved.
 const safe8Delete=document.createElement('button');safe8Delete.type='button';safe8Delete.className='btn alt';
-safe8Delete.textContent='Manage cloud saved parlays (one / selected / all) — TEST v8';
-$('sbSyncNow').parentNode.insertBefore(safe8Delete,$('sbSyncNow'));
-safe8Delete.onclick=async()=>{
+safe8Delete.textContent='Select and delete saved parlays…';
+document.querySelector('#savedParlaySlips .tools:last-child').prepend(safe8Delete);
+async function safe9DeleteSaved(requestedIds=null){
  if(busy){status('Another cloud operation is running. Try again.');return;}
  if(!navigator.onLine){status('Cloud deletion requires an online connection. No changes made.');return;}
  busy=true;
@@ -2135,7 +2130,8 @@ safe8Delete.onclick=async()=>{
   const baseline=JSON.parse(baselineRaw);
   if(!baseline||baseline.uid!==uid||baseline.canonical!==canonical)throw Error('Sync baseline is not current. Wait for sync and retry.');
   if(!cloud.saved.length){status('No saved parlays to delete for this account.');return;}
-  const selected=await chooseSavedParlays(cloud.saved);
+  const selected=requestedIds==='ALL'?cloud.saved.map(p=>String(p.id)):
+    Array.isArray(requestedIds)?requestedIds:await chooseSavedParlays(cloud.saved);
   if(selected===null){status('Deletion canceled. No changes made.');return;}
   const ids=[...new Set(selected.map(String))];if(!ids.length){status('No parlays selected. No changes made.');return;}
   const existing=new Set(cloud.saved.map(p=>String(p.id)));
@@ -2165,7 +2161,8 @@ safe8Delete.onclick=async()=>{
   status('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
  }catch(e){status('TEST v8 deletion: '+(e&&e.message||String(e)));}
  finally{busy=false;safe6Running=priorRunning&&!!localStorage.getItem(safe6Key(localStorage.getItem(OWNER_KEY)||''));}
-};
+}
+safe8Delete.onclick=()=>safe9DeleteSaved();
 safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_KEY);if(uid)localStorage.removeItem(safe6Key(uid));status('AUTO-SYNC v6 PAUSED on this device. No data deleted.');};
 setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
@@ -2185,7 +2182,7 @@ if(auth&&config.url&&config.key){status('Checking signed-in account…');setTime
   const partSaved=part?trialData(part).saved:[];
   if(check.uid===uid&&fresh.some(p=>String(p.id)===check.id))status('POST-RELOAD RESTORE VERIFIED: 1 parlay loaded on this device. Cloud unchanged.');
   else status('POST-RELOAD RESTORE CHECK FAILED: active '+fresh.length+' saved; account partition '+partSaved.length+' saved. No cloud changes.');
- }else status('Signed in · read-only safety mode; cloud sync paused.');
+ }else status('Signed in · guarded auto-sync available; legacy cloud sync disabled.');
  // v7: Resume only a previously user-enabled, account-scoped guarded sync.
  // The v6 in-memory flag was lost on every Safari reload/navigation.
  const resumeRaw=localStorage.getItem(safe6Key(uid));
