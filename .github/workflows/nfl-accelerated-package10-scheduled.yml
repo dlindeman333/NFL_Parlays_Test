@@ -1,0 +1,46 @@
+name: NFL Accelerated Package 10 - Scheduled Grading Evidence (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: Optional season; leave empty to detect current regular-season week
+        required: false
+        default: ''
+      week:
+        description: Optional week; leave empty to detect current regular-season week
+        required: false
+        default: ''
+  schedule:
+    - cron: '17 11,23 * * 0,1,2'
+permissions:
+  contents: read
+concurrency:
+  group: nfl-grading-evidence-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  scheduled-evidence:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NFL_SEASON: ${{ inputs.season }}
+      NFL_WEEK: ${{ inputs.week }}
+      ENABLE_GRADE_WRITES: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run integrated unit tests
+        run: PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_nfl_package10_scheduled_worker.py' -v
+      - name: Generate scheduled grading evidence
+        run: python scripts/nfl_package10_scheduled_worker.py
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-package10-scheduled-${{ github.run_id }}
+          path: package10-output/scheduled_worker_report.json
+          if-no-files-found: warn
+          retention-days: 14
