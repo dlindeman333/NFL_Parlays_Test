@@ -1,0 +1,41 @@
+name: NFL Consolidated Grading Worker - Read Only
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: NFL season
+        required: true
+        default: '2026'
+      week:
+        description: NFL week
+        required: true
+        default: '9'
+permissions:
+  contents: read
+jobs:
+  grade-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NFL_SEASON: ${{ inputs.season }}
+      NFL_WEEK: ${{ inputs.week }}
+      ENABLE_GRADE_WRITES: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run consolidated worker tests
+        run: PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_nfl_package9_consolidated_worker.py' -v
+      - name: Generate final-game grading readiness and contract report
+        run: python scripts/nfl_package9_consolidated_worker.py
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-package9-consolidated-${{ github.run_id }}
+          path: package9-output/grading_readiness.json
+          if-no-files-found: warn
+          retention-days: 14
