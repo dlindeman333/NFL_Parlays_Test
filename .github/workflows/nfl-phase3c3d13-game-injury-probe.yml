@@ -1,0 +1,27 @@
+name: NFL Phase 3C-3D13 Game Injury Source Probe (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  game-injury-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Phase 3 feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run read-only game injury source probe
+        run: python scripts/phase3c3d13_game_injury_probe.py
+      - name: Upload report (including on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d13-game-injury-probe-report
+          path: phase3c3d13-report/
+          if-no-files-found: warn
