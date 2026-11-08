@@ -1984,6 +1984,50 @@ markerUnionButton.onclick=async()=>{
  }catch(e){status('MARKER UNION v4 STOPPED: '+(e&&e.message||String(e))+'. Inspect before retrying.');}
  finally{busy=false;}
 };
+// TEST-only guarded cloud-to-device marker propagation. No cloud writes.
+const markerPullButton=document.createElement('button');
+markerPullButton.type='button';markerPullButton.className='btn alt';
+markerPullButton.textContent='Bring cloud deletion markers to this device (guarded TEST) — v5';
+$('sbSyncNow').parentNode.insertBefore(markerPullButton,$('sbSyncNow'));
+markerPullButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch.');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud record missing.');
+  const cloud=trialData(personalCloudValues(remote.payload));
+  const local=trialData(snapshot());
+  const validate=(data,side)=>{
+   const ids=new Set();
+   for(const p of data.saved){if(!p||p.id==null)throw Error(side+' has invalid saved parlay.');const id=String(p.id);if(ids.has(id))throw Error(side+' has duplicate parlay IDs.');ids.add(id);}
+   for(const m of data.deleted){if(typeof m!=='string'&&typeof m!=='number')throw Error(side+' has invalid deletion marker.');}
+   return ids;
+  };
+  const ci=validate(cloud,'Cloud'),li=validate(local,'Device');
+  if(ci.size!==li.size||[...ci].some(id=>!li.has(id)))throw Error('Cloud and device saved parlay IDs differ. No changes.');
+  for(const id of ci){const a=cloud.saved.find(p=>String(p.id)===id),b=local.saved.find(p=>String(p.id)===id);if(JSON.stringify(a)!==JSON.stringify(b))throw Error('Saved parlay conflict: '+id);}
+  const union=[...new Set([...cloud.deleted,...local.deleted].map(String))].sort();
+  if([...ci].some(id=>union.includes(id)))throw Error('A deletion marker matches a saved parlay ID. No changes.');
+  const rawPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(rawPart!==null){const p=JSON.parse(rawPart);if(!p||typeof p!=='object'||Array.isArray(p))throw Error('Invalid account partition.');
+   const part=trialData(p);if(JSON.stringify(part.saved)!==JSON.stringify(local.saved))throw Error('Account partition saved parlays differ.');}
+  const missing=union.filter(id=>!new Set(local.deleted.map(String)).has(id)).length;
+  if(!missing){status('MARKER PULL v5 VERIFIED: Device already has all '+union.length+' cloud/device deletion markers. No changes made.');return;}
+  if(!confirm('TEST ACCOUNT ONLY: Add '+missing+' cloud deletion marker(s) to this device (total '+union.length+')? No saved parlays, drafts, or cloud data will change.')){status('Marker pull canceled.');return;}
+  // Local write is intentionally network-free after confirmation, for iPhone Safari reliability.
+  if(localStorage.getItem(OWNER_KEY)!==uid||JSON.stringify(trialData(snapshot()).saved)!==JSON.stringify(local.saved)||JSON.stringify(trialData(snapshot()).deleted)!==JSON.stringify(local.deleted))throw Error('Device data changed during confirmation.');
+  const previous=localStorage.getItem('nflp-deleted-saved-v1');
+  try{
+   localStorage.setItem('nflp-deleted-saved-v1',JSON.stringify(union));
+   saveActiveAccount();
+   const check=trialData(snapshot());
+   const part=JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)||'null');
+   if(JSON.stringify(check.deleted.map(String).sort())!==JSON.stringify(union)||!part||JSON.stringify(trialData(part).deleted.map(String).sort())!==JSON.stringify(union))throw Error('Local marker read-back mismatch.');
+  }catch(e){try{if(previous===null)localStorage.removeItem('nflp-deleted-saved-v1');else localStorage.setItem('nflp-deleted-saved-v1',previous);saveActiveAccount();}catch(_){}throw e;}
+  status('MARKER PULL v5 VERIFIED: '+union.length+' deletion markers on this device. Saved parlays and drafts unchanged. Cloud untouched. Automatic sync remains OFF.');
+ }catch(e){status('MARKER PULL v5 STOPPED: '+(e&&e.message||String(e))+'. No cloud changes.');}
+ finally{busy=false;}
+};
 $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
