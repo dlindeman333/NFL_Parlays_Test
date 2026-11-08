@@ -1942,6 +1942,48 @@ autoPreflightButton.onclick=async()=>{
  }catch(e){status('AUTO-SYNC PREFLIGHT STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
  finally{busy=false;}
 };
+// TEST-only explicit marker reconciliation. All legacy automatic writers remain disabled.
+const markerUnionButton=document.createElement('button');
+markerUnionButton.type='button';markerUnionButton.className='btn alt';
+markerUnionButton.textContent='Reconcile deletion markers (guarded TEST) — v4';
+$('sbSyncNow').parentNode.insertBefore(markerUnionButton,$('sbSyncNow'));
+markerUnionButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();
+  if(!auth||localStorage.getItem(OWNER_KEY)!==uid)throw Error('Authenticated account does not own browser storage.');
+  const remote=await readRemote(uid);if(!remote||!remote.updated_at)throw Error('Cloud record or revision missing.');
+  const cloudValues=personalCloudValues(remote.payload),cloud=trialData(cloudValues),local=trialData(snapshot());
+  const rawPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(rawPart!==null){const p=JSON.parse(rawPart);if(!p||typeof p!=='object'||Array.isArray(p))throw Error('Invalid account partition.');
+   const part=trialData(p);if(JSON.stringify(part.saved)!==JSON.stringify(local.saved))throw Error('Account partition saved parlays differ from active device.');}
+  const valid=(x,side)=>{const ids=new Set();for(const p of x.saved){if(!p||p.id==null)throw Error(side+' invalid parlay ID.');const id=String(p.id);if(ids.has(id))throw Error(side+' duplicate parlay ID.');ids.add(id);}for(const m of x.deleted){if(m==null||typeof m!=='string'&&typeof m!=='number')throw Error(side+' invalid marker.');}return ids;};
+  const ci=valid(cloud,'Cloud'),li=valid(local,'Device');
+  if(ci.size!==li.size||[...ci].some(id=>!li.has(id)))throw Error('Cloud and device saved-parlay IDs differ. No changes.');
+  for(const id of ci){const a=cloud.saved.find(p=>String(p.id)===id),b=local.saved.find(p=>String(p.id)===id);if(JSON.stringify(a)!==JSON.stringify(b))throw Error('Saved parlay conflict for ID '+id+'.');}
+  const union=[...new Set([...cloud.deleted,...local.deleted].map(String))].sort();
+  if([...ci].some(id=>union.includes(id)))throw Error('Deletion marker references an existing saved parlay. No changes.');
+  if(union.length===cloud.deleted.length&&union.length===local.deleted.length){status('MARKER UNION v4: Already reconciled. No changes made.');return;}
+  if(!confirm('TEST ACCOUNT ONLY: Safely combine '+cloud.deleted.length+' cloud and '+local.deleted.length+' device deletion markers into '+union.length+' markers? Saved parlays and drafts will not be changed. This writes ONLY to your authenticated TEST cloud record.')){status('Marker reconciliation canceled. No changes made.');return;}
+  // Re-read immediately before the compare-and-swap write. Never overwrite a newer revision.
+  const fresh=await readRemote(uid);
+  if(!fresh||fresh.updated_at!==remote.updated_at||JSON.stringify(fresh.payload)!==JSON.stringify(remote.payload))throw Error('Cloud changed during confirmation. Retry preflight.');
+  if(localStorage.getItem(OWNER_KEY)!==uid||JSON.stringify(trialData(snapshot()).saved)!==JSON.stringify(local.saved)||JSON.stringify(trialData(snapshot()).deleted)!==JSON.stringify(local.deleted))throw Error('Device data changed during confirmation.');
+  const next={...fresh.payload,'nflp-deleted-saved-v1':JSON.stringify(union)};
+  const jwt=await token();
+  const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(fresh.updated_at)+'&select=payload,updated_at',{
+   method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:next,updated_at:new Date().toISOString()})
+  });
+  if(!Array.isArray(rows)||rows.length!==1)throw Error('Cloud revision conflict; no write confirmed.');
+  const verify=await readRemote(uid);if(!verify)throw Error('Cloud read-back failed. Inspect cloud before retrying.');
+  const checked=trialData(personalCloudValues(verify.payload));
+  if(JSON.stringify(checked.deleted.map(String).sort())!==JSON.stringify(union)||JSON.stringify(checked.saved)!==JSON.stringify(cloud.saved)||JSON.stringify(checked.drafts)!==JSON.stringify(cloud.drafts))throw Error('Cloud verification mismatch. Stop and inspect.');
+  localStorage.setItem('nflp-deleted-saved-v1',JSON.stringify(union));
+  saveActiveAccount();
+  status('MARKER UNION v4 VERIFIED: '+union.length+' deletion markers in cloud and this device. Saved parlays and drafts unchanged. Automatic sync remains OFF.');
+ }catch(e){status('MARKER UNION v4 STOPPED: '+(e&&e.message||String(e))+'. Inspect before retrying.');}
+ finally{busy=false;}
+};
 $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
