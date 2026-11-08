@@ -1,0 +1,26 @@
+name: NFL Phase 3C-3D19 Weekly Injury Sync Preview (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Preview ESPN injury sync and optional Supabase comparison (GET only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3c3d19_weekly_injury_sync_preview.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3c3d19-weekly-injury-sync-preview-report
+          path: phase3c3d19-report/
+          if-no-files-found: error
