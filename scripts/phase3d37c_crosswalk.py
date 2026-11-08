@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Read-only GSIS->ESPN identity join; never writes or creates predictions."""
-import argparse,csv,io,json,os,re
+import argparse,csv,io,json,os,re,time,random
+from urllib.error import HTTPError, URLError
 from collections import Counter,defaultdict
 from datetime import datetime,timezone
 from pathlib import Path
@@ -33,14 +34,26 @@ def build_crosswalk(rows):
                     'registry_ambiguous_espn':sum(len(v)>1 for v in reverse.values())}
 
 def download_registry(url):
+    """Retry transient upstream failures; never silently use unverified/stale data."""
     if url != REGISTRY_URL:raise ValueError('unapproved_registry_url')
-    req=Request(url,headers={'User-Agent':'NFLParlayReadOnlyCrosswalk/1.0','Accept':'text/csv'})
-    with urlopen(req,timeout=45) as response:
-        raw=response.read(MAX_REGISTRY_BYTES+1)
-    if len(raw)>MAX_REGISTRY_BYTES:raise ValueError('registry_too_large')
-    reader=csv.DictReader(io.StringIO(raw.decode('utf-8-sig')))
-    if not {'gsis_id','espn_id'}.issubset(reader.fieldnames or []):raise ValueError('registry_missing_id_columns')
-    return list(reader)
+    retryable={429,500,502,503,504}
+    max_attempts=5
+    for attempt in range(max_attempts):
+        try:
+            req=Request(url,headers={'User-Agent':'NFLParlayReadOnlyCrosswalk/1.0','Accept':'text/csv'})
+            with urlopen(req,timeout=45) as response:
+                raw=response.read(MAX_REGISTRY_BYTES+1)
+            if len(raw)>MAX_REGISTRY_BYTES:raise ValueError('registry_too_large')
+            reader=csv.DictReader(io.StringIO(raw.decode('utf-8-sig')))
+            if not {'gsis_id','espn_id'}.issubset(reader.fieldnames or []):raise ValueError('registry_missing_id_columns')
+            return list(reader)
+        except (HTTPError,URLError,TimeoutError) as exc:
+            code=getattr(exc,'code',None)
+            if isinstance(exc,HTTPError) and code not in retryable:raise
+            if attempt==max_attempts-1:raise RuntimeError('player_registry_unavailable_after_5_attempts') from exc
+            delay=min(2**attempt*3,24)+random.uniform(0,1)
+            print(f'Player registry transient download failure (HTTP {code or "network"}); retry {attempt+2}/{max_attempts} in {delay:.1f}s',flush=True)
+            time.sleep(delay)
 
 def utc(value):
     try:return parse_dt(str(value)).astimezone(timezone.utc) if value else None
