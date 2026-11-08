@@ -1,0 +1,25 @@
+name: NFL Phase 3C-3D15 Timed Inactive Source Probe (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Probe NFL.com and ESPN without writes
+        run: python scripts/phase3c3d15_timed_inactive_probe.py
+      - name: Upload diagnostic report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d15-timed-inactive-probe-report
+          path: phase3c3d15-report/
+          if-no-files-found: warn
