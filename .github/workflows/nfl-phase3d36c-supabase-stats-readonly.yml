@@ -1,0 +1,34 @@
+name: NFL Phase 3D36C Direct Supabase Stats Preview (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - name: Check out development branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test direct statistics parser
+        run: python -m unittest discover -s scripts -p 'test_phase3d36c_supabase_stats.py' -v
+      - name: Generate direct Supabase statistics preview
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: '2026'
+        run: python scripts/phase3d36c_supabase_stats.py
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d36c-supabase-stats-preview
+          path: phase3d36c_stats_preview.json
+          if-no-files-found: warn
+          retention-days: 7
