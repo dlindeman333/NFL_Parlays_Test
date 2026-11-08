@@ -1419,6 +1419,40 @@ $('sbUploadLocal').onclick=async()=>{
 };
 // Delete selected or all saved slips from this authenticated user's single cloud row.
 // Never delete the entire row: drafts and unrelated user data must be preserved.
+// Select exact saved parlay IDs in a modal; this function never writes data.
+function chooseSavedParlays(items){
+ return new Promise(resolve=>{
+  const old=document.getElementById('cloudParlayPicker');if(old)old.remove();
+  const shade=document.createElement('div');shade.id='cloudParlayPicker';
+  shade.style.cssText='position:fixed;inset:0;z-index:2147483640;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:14px';
+  const panel=document.createElement('div');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Select saved parlays');
+  panel.style.cssText='background:#172436;color:#fff;border:1px solid #61748a;border-radius:12px;max-width:650px;width:100%;max-height:85vh;overflow:auto;padding:20px;font:15px system-ui,sans-serif';
+  const heading=document.createElement('h2');heading.textContent='Manage cloud saved parlays';panel.append(heading);
+  const hint=document.createElement('p');hint.textContent='Select saved parlays by name and picks. Nothing is deleted until you confirm. Only this signed-in account is affected.';panel.append(hint);
+  const checks=[];
+  for(const item of items){
+   const label=document.createElement('label');label.style.cssText='display:flex;gap:12px;align-items:flex-start;border:1px solid #53677d;border-radius:8px;padding:12px;margin:9px 0;cursor:pointer';
+   const cb=document.createElement('input');cb.type='checkbox';cb.style.marginTop='5px';
+   const details=document.createElement('div');
+   const name=document.createElement('strong');name.textContent=String(item.name||'Untitled Parlay');details.append(name);
+   const meta=document.createElement('div');meta.style.cssText='opacity:.8;font-size:13px;margin:4px 0';meta.textContent='Week '+String(item.wk??'?')+' · '+(Array.isArray(item.legs)?item.legs.length:0)+' legs · ID '+String(item.id);details.append(meta);
+   const picks=document.createElement('div');picks.style.cssText='font-size:13px;white-space:pre-wrap';picks.textContent=(Array.isArray(item.legs)?item.legs:[]).map(l=>String(l.t||l.m||'Pick')).join(' • ')||'No pick details available';details.append(picks);
+   label.append(cb,details);panel.append(label);checks.push({cb,id:String(item.id)});
+  }
+  const summary=document.createElement('p');summary.setAttribute('role','status');panel.append(summary);
+  const update=()=>summary.textContent=checks.filter(x=>x.cb.checked).length+' of '+checks.length+' selected';checks.forEach(x=>x.cb.addEventListener('change',update));update();
+  const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:16px';
+  function button(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='border:1px solid #8293a5;border-radius:7px;padding:10px 12px;background:#304861;color:white;cursor:pointer';b.onclick=fn;controls.append(b);return b;}
+  let settled=false;const finish=value=>{if(settled)return;settled=true;shade.remove();document.removeEventListener('keydown',esc);resolve(value)};
+  const esc=e=>{if(e.key==='Escape')finish(null)};
+  button('Cancel',()=>finish(null));
+  button('Select all',()=>{checks.forEach(x=>x.cb.checked=true);update()});
+  button('Clear selection',()=>{checks.forEach(x=>x.cb.checked=false);update()});
+  button('Review selected for deletion',()=>finish(checks.filter(x=>x.cb.checked).map(x=>x.id)));
+  panel.append(controls);shade.append(panel);document.body.append(shade);document.addEventListener('keydown',esc);
+ });
+}
+
 $('sbDeleteCloudSaved').onclick=async()=>{
  if(!auth){status('Sign in before managing cloud saved parlays.');return;}
  if(busy){status('Wait for the current sync to finish.');return;}
@@ -1434,12 +1468,10 @@ $('sbDeleteCloudSaved').onclick=async()=>{
   const all=new Map();
   for(const item of [...cloudSaved,...localSaved])if(item&&item.id!=null)all.set(String(item.id),item);
   if(!all.size){status('No saved parlays to delete.');return;}
-  const choices=[...all.values()].map(x=>String(x.id)+' — '+(x.name||'Untitled Parlay')+' — Week '+(x.wk??'?')+' — '+(x.legs?.length||0)+' legs — '+(x.legs||[]).slice(0,2).map(l=>l.t||'pick').join('; '));
-  const selection=prompt('Saved parlays (ID — name — week — legs — first picks):\n'+choices.join('\n')+'\n\nEnter comma-separated IDs to delete, or ALL to delete every saved parlay. Cancel to keep everything.');
-  if(selection===null)return;
-  const requested=selection.trim()==='ALL'?[...all.keys()]:selection.split(',').map(x=>x.trim()).filter(Boolean);
-  const ids=[...new Set(requested)];
-  if(!ids.length||ids.some(id=>!all.has(id))){status('Invalid selection. Nothing deleted.');return;}
+  // Display readable records with checkboxes; never require typing raw IDs.
+  const ids=await chooseSavedParlays([...all.values()]);
+  if(ids===null){status('Deletion canceled. No changes made.');return;}
+  if(!ids.length){status('No parlays selected. Nothing deleted.');return;}
   const scope=ids.length===all.size?'ALL '+ids.length:'SELECTED '+ids.length;
   downloadJSON({version:2,exported_at:new Date().toISOString(),source:'before-cloud-delete',cloud:cloud,local:snapshot()},'nfl-parlays-before-delete-'+new Date().toISOString().slice(0,10)+'.json');
   if(!confirm('Backup download requested. Verify it is saved before proceeding.\n\nDelete '+scope+' saved parlays from YOUR cloud account and this device? Drafts and other users are unaffected.'))return;
