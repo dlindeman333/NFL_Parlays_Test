@@ -85,6 +85,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 .sports-links{display:inline-flex;gap:7px;flex-wrap:wrap}.sports-links a{display:inline-flex;align-items:center;gap:6px;background:var(--card);min-height:40px}.sports-links img{width:24px;height:24px;object-fit:contain}.sv .row>.btn[data-saved-action="edit"]{margin-right:0}.sv .row>.btn[data-saved-action="delete-parlay"]{margin-left:0}#savedParlaySlips,#draftManagement{scroll-margin-top:12px}#draftManagement{border-top:2px solid var(--bd);padding-top:8px;margin-top:18px}
 .week-group-heading{font-size:1.4rem;font-weight:800;letter-spacing:.02em;margin:20px 0 12px;padding:10px 14px;border-left:5px solid #3b82f6;background:rgba(59,130,246,.09);border-radius:6px}
 .setup-modal{border:1.5px solid var(--bd);border-radius:14px;background:var(--card);color:var(--tx);width:min(760px,96vw);max-height:88vh;padding:0;box-shadow:0 20px 70px #0006}.setup-modal::backdrop{background:#0009}.setup-content{padding:18px;max-height:85vh;overflow:auto}.setup-head{display:flex;align-items:center;justify-content:space-between;gap:12px}.setup-modal input[type=email],.setup-modal input[type=password]{padding:9px;border:1.5px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);max-width:100%}.setup-modal .tools{margin:12px 0}.setup-modal #sbAuthForm label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:650;min-width:min(100%,180px)}.setup-modal #sbAuthForm input{width:100%}.setup-modal section{border-top:1px solid var(--bd);padding-top:12px;margin-top:15px}.setup-modal h2{margin-top:4px}.setup-modal .mu{overflow-wrap:anywhere}
+#cloudParlayPicker::backdrop{background:rgba(0,0,0,.62)}
 </style>
 <style>
 .pred-dashboard{display:grid;gap:16px;margin:14px 0}
@@ -1422,9 +1423,11 @@ $('sbUploadLocal').onclick=async()=>{
 // Select exact saved parlay IDs in a modal; this function never writes data.
 function chooseSavedParlays(items){
  return new Promise(resolve=>{
-  const old=document.getElementById('cloudParlayPicker');if(old)old.remove();
-  const shade=document.createElement('div');shade.id='cloudParlayPicker';
-  shade.style.cssText='position:fixed;inset:0;z-index:2147483640;background:rgba(0,0,0,.72);display:flex;align-items:center;justify-content:center;padding:14px';
+  const old=document.getElementById('cloudParlayPicker');if(old){if(old.open)old.close();old.remove();}
+  const shade=document.createElement('dialog');shade.id='cloudParlayPicker';
+  // Native modal dialogs enter the browser top layer, above the already-open Setup dialog.
+  shade.setAttribute('aria-label','Manage cloud saved parlays');
+  shade.style.cssText='border:0;border-radius:14px;padding:14px;background:transparent;color:inherit;width:min(700px,96vw);max-width:96vw;max-height:92vh;overflow:auto';
   const panel=document.createElement('div');panel.setAttribute('role','dialog');panel.setAttribute('aria-modal','true');panel.setAttribute('aria-label','Select saved parlays');
   panel.style.cssText='background:#172436;color:#fff;border:1px solid #61748a;border-radius:12px;max-width:650px;width:100%;max-height:85vh;overflow:auto;padding:20px;font:15px system-ui,sans-serif';
   const heading=document.createElement('h2');heading.textContent='Manage cloud saved parlays';panel.append(heading);
@@ -1443,13 +1446,16 @@ function chooseSavedParlays(items){
   const update=()=>summary.textContent=checks.filter(x=>x.cb.checked).length+' of '+checks.length+' selected';checks.forEach(x=>x.cb.addEventListener('change',update));update();
   const controls=document.createElement('div');controls.style.cssText='display:flex;gap:8px;flex-wrap:wrap;margin-top:16px';
   function button(label,fn){const b=document.createElement('button');b.type='button';b.textContent=label;b.style.cssText='border:1px solid #8293a5;border-radius:7px;padding:10px 12px;background:#304861;color:white;cursor:pointer';b.onclick=fn;controls.append(b);return b;}
-  let settled=false;const finish=value=>{if(settled)return;settled=true;shade.remove();document.removeEventListener('keydown',esc);resolve(value)};
-  const esc=e=>{if(e.key==='Escape')finish(null)};
+  let settled=false;const finish=value=>{if(settled)return;settled=true;if(shade.open)shade.close();shade.remove();resolve(value)};
+  shade.addEventListener('cancel',e=>{e.preventDefault();finish(null)});
   button('Cancel',()=>finish(null));
   button('Select all',()=>{checks.forEach(x=>x.cb.checked=true);update()});
   button('Clear selection',()=>{checks.forEach(x=>x.cb.checked=false);update()});
   button('Review selected for deletion',()=>finish(checks.filter(x=>x.cb.checked).map(x=>x.id)));
-  panel.append(controls);shade.append(panel);document.body.append(shade);document.addEventListener('keydown',esc);
+  panel.append(controls);shade.append(panel);document.body.append(shade);
+  // showModal is essential: a fixed div cannot appear above a modal Setup dialog.
+  try{shade.showModal();}catch(e){shade.remove();resolve(null);return;}
+  const first=controls.querySelector('button');if(first)first.focus();
  });
 }
 
