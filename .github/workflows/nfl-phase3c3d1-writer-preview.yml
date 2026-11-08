@@ -1,4 +1,4 @@
- name: NFL Phase 3C-3D1 Protected Writer Preview (Read Only)
+name: NFL Phase 3C-3D1 Protected Writer Preview (Read Only)
 
 on:
   workflow_dispatch:
