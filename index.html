@@ -1866,7 +1866,14 @@ devicePullButton.onclick=async()=>{
     for(const key of keys){if(before[key]===null)localStorage.removeItem(key);else localStorage.setItem(key,before[key]);}}catch(_){}
    throw Error('Device storage failed; attempted rollback: '+e.message);
   }
-  status('Guarded cloud-to-device restore completed for this TEST account. Cloud unchanged. Reloading.');
+  // Verify both active and partition storage before reloading; never report success on an unverified write.
+  const activeCheck=trialData(snapshot());
+  const partitionCheck=JSON.parse(localStorage.getItem(partKey)||'null');
+  const partitionSaved=partitionCheck&&trialData(partitionCheck).saved;
+  if(activeCheck.saved.length!==1||String(activeCheck.saved[0].id)!==String(item.id)||!partitionSaved||partitionSaved.length!==1||String(partitionSaved[0].id)!==String(item.id))
+   throw Error('Restore write verification failed. Cloud unchanged.');
+  sessionStorage.setItem('nflp-phase3-test-pull-check-v1',JSON.stringify({uid,id:String(item.id)}));
+  status('Guarded cloud-to-device restore verified in browser and account storage. Reloading.');
   location.reload();
  }catch(e){status('Guarded device restore stopped: '+e.message);}
  finally{busy=false;}
@@ -1875,7 +1882,20 @@ $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
 privacyGate('Personal parlays are locked until account sign-in is verified.');
-if(auth&&config.url&&config.key){status('Checking signed-in account…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();status('Signed in · read-only safety mode; cloud sync paused.');}catch(e){status('Account verification paused: '+e.message);privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
+if(auth&&config.url&&config.key){status('Checking signed-in account…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();
+ // Refresh the builder's in-memory list from the authenticated account's active storage.
+ const fresh=trialData(snapshot()).saved;
+ saved=fresh;renderSaved();
+ const checkRaw=sessionStorage.getItem('nflp-phase3-test-pull-check-v1');
+ if(checkRaw){
+  sessionStorage.removeItem('nflp-phase3-test-pull-check-v1');
+  const check=JSON.parse(checkRaw);
+  const part=JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)||'null');
+  const partSaved=part?trialData(part).saved:[];
+  if(check.uid===uid&&fresh.some(p=>String(p.id)===check.id))status('POST-RELOAD RESTORE VERIFIED: 1 parlay loaded on this device. Cloud unchanged.');
+  else status('POST-RELOAD RESTORE CHECK FAILED: active '+fresh.length+' saved; account partition '+partSaved.length+' saved. No cloud changes.');
+ }else status('Signed in · read-only safety mode; cloud sync paused.');
+ }catch(e){status('Account verification paused: '+e.message);privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
 else status('Cloud connection ready. Sign in or create an account to enable sync.');
 setInterval(()=>{if(SAFE_READ_ONLY||!started||!auth||busy)return;sync(false)},5000);
 // Do not snapshot on pagehide: a partition switch can occur before old in-memory
