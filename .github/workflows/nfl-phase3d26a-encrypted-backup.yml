@@ -1,1 +1,79 @@
-
+name: NFL Phase 3D26A Encrypted Database Backup
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  encrypted-backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      DATABASE_URL: ${{ secrets.SUPABASE_DATABASE_URL }}
+      BACKUP_PASSPHRASE: ${{ secrets.NFL_BACKUP_PASSPHRASE }}
+    steps:
+      - name: Check required secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ -z "${DATABASE_URL:-}" || -z "${BACKUP_PASSPHRASE:-}" ]]; then
+            echo 'Missing SUPABASE_DATABASE_URL or NFL_BACKUP_PASSPHRASE GitHub Actions secret.' >&2
+            exit 1
+          fi
+          if [[ ${#BACKUP_PASSPHRASE} -lt 20 ]]; then
+            echo 'Backup passphrase must contain at least 20 characters.' >&2
+            exit 1
+          fi
+          mkdir -p private output
+          chmod 700 private
+      - name: Create PostgreSQL custom-format backup (read-only database operation)
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm --network host \
+            -e DATABASE_URL \
+            -v "$PWD/private:/backup" \
+            postgres:18 \
+            sh -ec 'pg_dump --dbname="$DATABASE_URL" --format=custom --no-owner --no-acl --file=/backup/nfl_full_database.dump'
+          test -s private/nfl_full_database.dump
+      - name: Validate backup archive structure
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker run --rm -v "$PWD/private:/backup:ro" postgres:18 \
+            pg_restore --list /backup/nfl_full_database.dump > private/archive_contents.txt
+          test -s private/archive_contents.txt
+          printf 'Archive list validation: PASS\n' > output/verification.txt
+          printf 'Restoration test: NOT PERFORMED\n' >> output/verification.txt
+          printf 'Database writes: NONE\n' >> output/verification.txt
+          printf 'Archive format: PostgreSQL custom format\n' >> output/verification.txt
+          printf 'Encrypted artifact: nfl_database_backup.dump.gpg\n' >> output/verification.txt
+          date -u '+Backup run UTC: %Y-%m-%dT%H:%M:%SZ' >> output/verification.txt
+      - name: Encrypt backup before artifact upload
+        shell: bash
+        run: |
+          set -euo pipefail
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --symmetric --cipher-algo AES256 \
+            --output output/nfl_database_backup.dump.gpg private/nfl_full_database.dump
+          test -s output/nfl_database_backup.dump.gpg
+          sha256sum output/nfl_database_backup.dump.gpg > output/encrypted_sha256.txt
+          # Check that the encrypted file can be decrypted and matches the source.
+          printf '%s' "$BACKUP_PASSPHRASE" | gpg --batch --yes --pinentry-mode loopback \
+            --passphrase-fd 0 --decrypt output/nfl_database_backup.dump.gpg \
+            2>/dev/null | sha256sum | awk '{print $1}' > private/decrypted_sha256.txt
+          sha256sum private/nfl_full_database.dump | awk '{print $1}' > private/source_sha256.txt
+          cmp private/decrypted_sha256.txt private/source_sha256.txt
+          printf 'Encryption/decryption checksum validation: PASS\n' >> output/verification.txt
+      - name: Delete plaintext backup and temporary evidence
+        if: always()
+        shell: bash
+        run: |
+          rm -rf private
+      - name: Upload encrypted backup and sanitized verification report
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d26a-encrypted-backup
+          path: output/
+          retention-days: 1
+          if-no-files-found: error
