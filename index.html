@@ -1895,7 +1895,7 @@ devicePullButton.onclick=async()=>{
 // Phase 3 TEST automatic-sync preflight (read-only). This does not enable automatic writes.
 const autoPreflightButton=document.createElement('button');
 autoPreflightButton.type='button';autoPreflightButton.className='btn alt';
-autoPreflightButton.textContent='Preview automatic sync safety (read only) — v2';
+autoPreflightButton.textContent='Preview saved-parlay sync safety (drafts local) — v3';
 $('sbSyncNow').parentNode.insertBefore(autoPreflightButton,$('sbSyncNow'));
 autoPreflightButton.onclick=async()=>{
  if(busy){status('Another cloud operation is running.');return;}busy=true;
@@ -1933,8 +1933,11 @@ autoPreflightButton.onclick=async()=>{
   if(collisions.length)blockers.push(collisions.length+' same-ID content conflict(s)');
   if(resurrection.length)blockers.push(resurrection.length+' deleted-ID resurrection risk(s)');
   if(partitionMismatch)blockers.push('device/account partition mismatch');
-  if(draftsDiffer)blockers.push('draft divergence (requires explicit policy)');
-  const msg='AUTO-SYNC PREFLIGHT (READ ONLY): cloud '+cids.size+' saved; device '+lids.size+' saved; account partition '+(pids?pids.size+' saved':'not initialized')+'; cloud-only '+cloudOnly.length+'; device-only '+localOnly.length+'; changed same-ID '+collisions.length+'; deleted-ID risks '+resurrection.length+'; cloud markers '+cloud.deleted.length+'; device markers '+local.deleted.length+'. '+(blockers.length?'BLOCKED: '+blockers.join('; '):'No immediate parlay-ID or partition conflicts detected. Automatic sync remains OFF.')+' No data changed.';
+  // Phase 3 agreed policy: unfinished drafts stay device-local and are never automatically uploaded or replaced.
+  // Draft differences are informational, not a blocker for saved-parlay-only synchronization.
+  const markerDifference=local.deleted.filter(id=>!new Set(cloud.deleted.map(String)).has(String(id))).length;
+  if(markerDifference)blockers.push(markerDifference+' device-only deletion marker(s) require safe union before cloud writes');
+  const msg='AUTO-SYNC PREFLIGHT (READ ONLY): cloud '+cids.size+' saved; device '+lids.size+' saved; account partition '+(pids?pids.size+' saved':'not initialized')+'; cloud-only '+cloudOnly.length+'; device-only '+localOnly.length+'; changed same-ID '+collisions.length+'; deleted-ID risks '+resurrection.length+'; cloud markers '+cloud.deleted.length+'; device markers '+local.deleted.length+'; drafts '+(draftsDiffer?'different (device-local policy)':'same')+'. '+(blockers.length?'BLOCKED: '+blockers.join('; '):'Saved-parlay preflight READY under device-local draft policy. Automatic sync remains OFF.')+' No data changed.';
   status(msg);
  }catch(e){status('AUTO-SYNC PREFLIGHT STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
  finally{busy=false;}
