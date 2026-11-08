@@ -1,0 +1,34 @@
+name: NFL Accelerated Package 13 - Private Read-Only Backup
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: nfl-package13-backup
+  cancel-in-progress: false
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      ENABLE_GRADE_WRITES: 'false'
+      ENABLE_PREDICTION_WRITES: 'false'
+      ENABLE_INJURY_WRITES: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify backup logic
+        run: PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_nfl_package13_backup.py' -v
+      - name: Export seven tables without modifications
+        run: python scripts/nfl_package13_backup.py
+      - name: Upload sensitive private backup (restricted access required)
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-package13-private-backup-${{ github.run_id }}
+          path: package13-private-backup/
+          retention-days: 1
+          if-no-files-found: error
