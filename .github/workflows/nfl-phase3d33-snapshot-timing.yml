@@ -1,0 +1,31 @@
+name: NFL Phase 3D33 Snapshot Timing Audit (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test timing classification
+        run: python -m unittest discover -s scripts -p 'test_phase3d33*.py' -v
+      - name: Audit live snapshot timing without writes
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3d33_snapshot_timing.py
+      - name: Upload timing report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d33-snapshot-timing-audit
+          path: phase3d33-report/timing.json
+          retention-days: 7
+          if-no-files-found: warn
