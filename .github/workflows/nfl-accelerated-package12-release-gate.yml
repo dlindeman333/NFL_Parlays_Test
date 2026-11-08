@@ -1,0 +1,46 @@
+name: NFL Accelerated Package 12 - Consolidated Release Gate (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Season (optional, supply with week)'
+        required: false
+        default: ''
+      week:
+        description: 'Week (optional, supply with season)'
+        required: false
+        default: ''
+permissions:
+  contents: read
+concurrency:
+  group: nfl-package12-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  release-gate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NFL_SEASON: ${{ inputs.season }}
+      NFL_WEEK: ${{ inputs.week }}
+      ENABLE_GRADE_WRITES: 'false'
+      ENABLE_PREDICTION_WRITES: 'false'
+      ENABLE_INJURY_WRITES: 'false'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run consolidated tests
+        run: PYTHONPATH=scripts python -m unittest discover -s scripts -p 'test_nfl_package12_release_gate.py' -v
+      - name: Run release gate
+        run: python scripts/nfl_package12_release_gate.py
+      - name: Upload sanitized report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-package12-release-gate-${{ github.run_id }}
+          path: package12-output/release_gate.json
+          if-no-files-found: warn
+          retention-days: 14
