@@ -111,7 +111,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 <div class="mu">Supabase connection is already configured. Sign in with your own account; use the same account on your PC and iPhone. Your existing browser data stays local until you sign in. Requires HTTPS (GitHub Pages).</div>
 <div class="mu" style="margin-top:9px">Cloud connection is preconfigured. Sign in or create your own account below.</div>
 <form id="sbAuthForm" class="tools" autocomplete="on" method="post" action="#" aria-label="Cloud account sign in"><label for="sbEmail">Email <input id="sbEmail" name="username" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Email" required></label><label for="sbPassword">Password <input id="sbPassword" name="password" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" required></label><button class="btn" id="sbSignIn" type="submit">Sign in</button><button class="btn alt" id="sbSignUp" type="button">Create account</button><button class="btn alt" id="sbSignOut" type="button">Sign out</button></form>
-<div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
+<div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><button class="btn alt" type="button" id="sbDeleteCloudSaved">Manage cloud saved parlays</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
 </section>
 <section id="csvSetup"><h2>Upload NFL Stats</h2><div id="autoStatsStatus" class="mu" role="status">Cloud NFL statistics: checking…</div><div class="mu" style="margin:5px 0 8px">Imported player statistics are retained in this browser until you select Clear imported stats.</div><div class="tools"><span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px"><button class="btn" type="button" id="chooseCSV">Choose CSV file</button><span id="csvFileName" class="mu" role="status">Empty</span></span><input id="csvUpload" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-label="Choose player statistics CSV"><button class="btn alt" id="clearCSV">Clear imported stats</button></div><div id="csvState" class="mu">Empty — no imported player statistics.</div><div class="mu" id="csvLastUpload" style="margin-top:7px" role="status">Latest upload: Never</div><div class="mu">Data source: Onboard + uploaded NFL stats (automatic)</div></section></div></dialog>
 <h2 id="myParlays">My parlays</h2><div id="sumry" class="card"></div>
@@ -1090,7 +1090,7 @@ document.getElementById('setupDialog').addEventListener('click',e=>{if(e.target=
 "use strict";
 const $=id=>document.getElementById(id);
 // Only personal parlay data belongs in per-user cloud sync. Shared NFL data stays local/read-only.
-const keys=['nflp-saved-v1','nflp-draft-slips-v3'];
+const keys=['nflp-saved-v1','nflp-draft-slips-v3','nflp-deleted-saved-v1'];
 const prefix='nflp-cloud-';
 let config={},auth=null,remoteUpdated=0,lastPushed='',busy=false,started=false,lastPoll=0;
 const status=t=>{$('sbStatus').textContent=t;};
@@ -1209,6 +1209,12 @@ function parseCollection(values,key){
 function mergePersonal(local,cloud,base){
  const merged={...cloud,...local};
  const savedKey='nflp-saved-v1',draftKey='nflp-draft-slips-v3';
+ // Monotonic deletion tombstones prevent a stale device from resurrecting deleted slips.
+ const deletedKey='nflp-deleted-saved-v1';
+ const localDeleted=parseCollection(local,deletedKey)||[],cloudDeleted=parseCollection(cloud,deletedKey)||[];
+ if(!Array.isArray(localDeleted)||!Array.isArray(cloudDeleted))throw Error('Invalid deletion ledger. Sync paused.');
+ const deleted=new Set([...localDeleted,...cloudDeleted].map(String));
+ merged[deletedKey]=JSON.stringify([...deleted].sort());
  const l=parseCollection(local,savedKey)||[],r=parseCollection(cloud,savedKey)||[];
  if(!Array.isArray(l)||!Array.isArray(r))throw Error('Saved parlay format is invalid. No changes made.');
  const prior=base?parseCollection(base,savedKey):null;
@@ -1229,7 +1235,7 @@ function mergePersonal(local,cloud,base){
   }
   throw Error('Saved parlay '+id+' was edited differently on both devices. No data overwritten; keep backups and resolve manually.');
  }
- merged[savedKey]=JSON.stringify([...result.values()].sort((x,y)=>(Number(y.id)||0)-(Number(x.id)||0)));
+ merged[savedKey]=JSON.stringify([...result.values()].filter(x=>!deleted.has(String(x.id))).sort((x,y)=>(Number(y.id)||0)-(Number(x.id)||0)));
  // Draft IDs are allocated per browser. Preserve both when a collision occurs,
  // assigning the incoming draft a fresh ID. Empty draft placeholders are ignored.
  const ld=parseCollection(local,draftKey),rd=parseCollection(cloud,draftKey);
@@ -1353,6 +1359,13 @@ $('sbUploadLocal').onclick=async()=>{
   status('Checking this device and the current cloud copy…');
   const uid=await userId();
   const local=snapshot();
+  // The manual upload is intentionally disabled when cloud deletion history exists.
+  // An old device cannot overwrite deletion tombstones with stale saved parlays.
+  const existing=await readRemote(uid);
+  const existingValues=existing?personalCloudValues(existing.payload):{};
+  const remoteDeleted=parseCollection(existingValues,'nflp-deleted-saved-v1')||[];
+  if(!Array.isArray(remoteDeleted))throw Error('Invalid cloud deletion ledger.');
+  if(remoteDeleted.length){status('Manual replace is blocked after cloud deletions. Use Sync now to reconcile safely.');return;}
   let count=0;
   try{const parsed=JSON.parse(local['nflp-saved-v1']||'[]');count=Array.isArray(parsed)?parsed.length:0;}catch{}
   if(!count){
@@ -1392,6 +1405,58 @@ $('sbUploadLocal').onclick=async()=>{
  }catch(e){status('Upload failed: '+e.message);console.warn('Manual cloud upload failed',e);}
  finally{busy=false;}
 };
+// Delete selected or all saved slips from this authenticated user's single cloud row.
+// Never delete the entire row: drafts and unrelated user data must be preserved.
+$('sbDeleteCloudSaved').onclick=async()=>{
+ if(!auth){status('Sign in before managing cloud saved parlays.');return;}
+ if(busy){status('Wait for the current sync to finish.');return;}
+ if(!navigator.onLine){status('Deletion requires an online connection.');return;}
+ busy=true;
+ try{
+  const uid=await userId(),remote=await readRemote(uid);
+  if(!remote){status('No cloud record exists for this account.');return;}
+  const cloud=personalCloudValues(remote.payload);
+  const cloudSaved=parseCollection(cloud,'nflp-saved-v1')||[];
+  const localSaved=parseCollection(snapshot(),'nflp-saved-v1')||[];
+  if(!Array.isArray(cloudSaved)||!Array.isArray(localSaved))throw Error('Invalid saved-parlay format; no changes made.');
+  const all=new Map();
+  for(const item of [...cloudSaved,...localSaved])if(item&&item.id!=null)all.set(String(item.id),item);
+  if(!all.size){status('No saved parlays to delete.');return;}
+  const choices=[...all.values()].map(x=>String(x.id)+' — Week '+(x.wk??'?')+' — '+(x.legs?.length||0)+' legs');
+  const selection=prompt('Saved parlays (ID — week — legs):\n'+choices.join('\n')+'\n\nEnter comma-separated IDs to delete, or ALL to delete every saved parlay. Cancel to keep everything.');
+  if(selection===null)return;
+  const requested=selection.trim()==='ALL'?[...all.keys()]:selection.split(',').map(x=>x.trim()).filter(Boolean);
+  const ids=[...new Set(requested)];
+  if(!ids.length||ids.some(id=>!all.has(id))){status('Invalid selection. Nothing deleted.');return;}
+  const scope=ids.length===all.size?'ALL '+ids.length:'SELECTED '+ids.length;
+  downloadJSON({version:2,exported_at:new Date().toISOString(),source:'before-cloud-delete',cloud:cloud,local:snapshot()},'nfl-parlays-before-delete-'+new Date().toISOString().slice(0,10)+'.json');
+  if(!confirm('Backup download requested. Verify it is saved before proceeding.\n\nDelete '+scope+' saved parlays from YOUR cloud account and this device? Drafts and other users are unaffected.'))return;
+  const typed=prompt('Type DELETE '+ids.length+' to confirm permanent deletion.');
+  if(typed!=='DELETE '+ids.length){status('Deletion canceled.');return;}
+  const current=snapshot();
+  const tombstoneKey='nflp-deleted-saved-v1';
+  const oldTombstones=parseCollection(current,tombstoneKey)||[];
+  const cloudTombstones=parseCollection(cloud,tombstoneKey)||[];
+  if(!Array.isArray(oldTombstones)||!Array.isArray(cloudTombstones))throw Error('Invalid deletion ledger; no changes made.');
+  const deleted=new Set([...oldTombstones,...cloudTombstones,...ids].map(String));
+  const updated={...cloud};
+  updated['nflp-saved-v1']=JSON.stringify(cloudSaved.filter(x=>!deleted.has(String(x.id))));
+  updated[tombstoneKey]=JSON.stringify([...deleted].sort());
+  // CAS ensures a simultaneous cloud edit is not overwritten.
+  await safePush(uid,updated,remote);
+  // Cloud committed: now reconcile this browser. Reload only after local update.
+  const keep=localSaved.filter(x=>!deleted.has(String(x.id)));
+  try{
+   localStorage.setItem('nflp-saved-v1',JSON.stringify(keep));
+   localStorage.setItem(tombstoneKey,JSON.stringify([...deleted].sort()));
+  }catch(e){status('Cloud deletion succeeded, but local storage failed. Restore local storage from backup or clear stale saved slips before syncing.');return;}
+  lastPushed='';started=false;
+  status('Deleted '+ids.length+' saved parlays from your cloud account. Reloading…');
+  location.reload();
+ }catch(e){status('Cloud deletion stopped: '+e.message);console.warn('Cloud deletion',e);}
+ finally{busy=false;}
+};
+
 $('sbSyncNow').onclick=async()=>{if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
 if(auth&&config.url&&config.key){status('Resuming cloud sync…');setTimeout(()=>sync(true),900)}
