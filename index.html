@@ -2075,7 +2075,7 @@ async function safe6Cycle(){
    if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==l)throw Error('Device changed during cloud pull');
    safe6LocalWrite(uid,cloud);
    localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:c}));
-   status('AUTO-SYNC v6: Cloud changes received on this device. Drafts preserved.');
+   status('AUTO-SYNC v7: Cloud changes received on this device. Drafts preserved.');
   }else{
    // Device changed, cloud did not. A deleted parlay must have a matching tombstone.
    const prior=JSON.parse(b),priorIds=new Set(prior.saved.map(p=>String(p.id))),nextIds=new Set(local.saved.map(p=>String(p.id))),marks=new Set(local.deleted);
@@ -2094,7 +2094,7 @@ async function safe6Cycle(){
    localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:l}));
    saveActiveAccount();status('AUTO-SYNC v6: Device changes verified in cloud. Drafts preserved.');
   }
- }catch(e){safe6Running=false;status('AUTO-SYNC v6 PAUSED: '+(e&&e.message||String(e))+'. No further automatic writes. Review before resuming.');}
+ }catch(e){safe6Running=false;status('AUTO-SYNC v7 PAUSED: '+(e&&e.message||String(e))+'. No further automatic writes. Review before resuming.');}
  finally{busy=false}
 }
 safe6Button.onclick=async()=>{
@@ -2109,7 +2109,7 @@ safe6Button.onclick=async()=>{
   if(raw!==null){const p=JSON.parse(raw);if(safe6Canonical(safe6View(p,'Account partition'))!==l)throw Error('Account partition mismatch');}
   if(!confirm('TEST ONLY: Enable guarded automatic saved-parlay sync on THIS device? Drafts remain local. Concurrent edits pause sync. Legacy sync remains disabled.'))return;
   localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:l}));safe6Running=true;
-  status('AUTO-SYNC v6 ENABLED for this TEST device. Checks approximately every 15 seconds while this tab is open.');
+  status('AUTO-SYNC v7 ENABLED for this TEST device. Resumes after reload; checks approximately every 15 seconds while tab is active.');
  }catch(e){status('AUTO-SYNC v6 NOT ENABLED: '+(e&&e.message||String(e)));}
  finally{busy=false}
 };
@@ -2133,6 +2133,18 @@ if(auth&&config.url&&config.key){status('Checking signed-in account…');setTime
   if(check.uid===uid&&fresh.some(p=>String(p.id)===check.id))status('POST-RELOAD RESTORE VERIFIED: 1 parlay loaded on this device. Cloud unchanged.');
   else status('POST-RELOAD RESTORE CHECK FAILED: active '+fresh.length+' saved; account partition '+partSaved.length+' saved. No cloud changes.');
  }else status('Signed in · read-only safety mode; cloud sync paused.');
+ // v7: Resume only a previously user-enabled, account-scoped guarded sync.
+ // The v6 in-memory flag was lost on every Safari reload/navigation.
+ const resumeRaw=localStorage.getItem(safe6Key(uid));
+ if(resumeRaw){
+  try{
+   const resume=JSON.parse(resumeRaw);
+   if(!resume||resume.uid!==uid||typeof resume.canonical!=='string')throw Error('Invalid saved-sync baseline');
+   safe6Running=true;
+   status('AUTO-SYNC v7 RESUMED for this TEST account. Checking cloud/device changes; drafts stay local.');
+   setTimeout(()=>{if(safe6Running)safe6Cycle()},1200);
+  }catch(e){safe6Running=false;status('AUTO-SYNC v7 NOT RESUMED: '+e.message+'. No writes.');}
+ }
  }catch(e){status('Account verification paused: '+e.message);privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
 else status('Cloud connection ready. Sign in or create an account to enable sync.');
 setInterval(()=>{if(SAFE_READ_ONLY||!started||!auth||busy)return;sync(false)},5000);
