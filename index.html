@@ -1300,7 +1300,16 @@ function applyMerged(values){
  downloadJSON({version:2,exported_at:new Date().toISOString(),source:'before-auto-merge',storage:fullLocalBackup()},'nfl-parlay-pre-merge-'+new Date().toISOString().slice(0,10)+'.json');
  for(const [key,value] of Object.entries(values))if(keys.includes(key))localStorage.setItem(key,value);
  lastPushed=stable(snapshot());
- status('Cloud and device data merged safely. Refresh this page ONCE to display the updated parlays. No automatic reload.');
+ // Refresh saved-parlay views in memory without reloading Safari or touching active drafts.
+ try{
+  const refreshed=JSON.parse(localStorage.getItem('nflp-saved-v1')||'[]');
+  if(!Array.isArray(refreshed))throw Error('Saved parlay data is not a list');
+  saved=refreshed;
+  renderSaved();
+  status('Cloud and device data merged safely. Saved parlays refreshed automatically.');
+ }catch(e){
+  status('Cloud merge saved locally, but the display could not refresh. Reopen the app once. '+e.message);
+ }
 }
 async function sync(initial=false){
  if(!auth){status('Sign in first.');return;}
