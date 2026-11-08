@@ -1842,6 +1842,11 @@ devicePullButton.onclick=async()=>{
   if(!item||item.id==null)throw Error('Cloud parlay lacks an ID.');
   const tombstones=new Set([...cloud.deleted,...local.deleted].map(String));
   if(tombstones.has(String(item.id)))throw Error('Cloud parlay ID is in deletion history. Restore blocked.');
+  // Validate cloud snapshot before opening Safari's download UI. A file download can
+  // suspend or interrupt in-flight WebKit network requests on iOS.
+  const current=await readRemote(uid);
+  if(!current||current.updated_at!==remote.updated_at||stable(personalCloudValues(current.payload))!==stable(cloudValues))
+   throw Error('Cloud changed during pre-download verification. Nothing restored.');
   const email=auth.user?.email||'current signed-in account';
   if(!confirm('TEST CLOUD-TO-DEVICE RESTORE\n\nAccount: '+email+'\nCloud saved parlays: 1\nThis device saved parlays: 0\n\nDownload a local backup, then restore this account’s one cloud parlay? No cloud data will be modified.'))return;
   downloadJSON({version:2,exported_at:new Date().toISOString(),source:'before-guarded-cloud-pull',uid,storage:snapshot()},'nfl-phase3-before-cloud-pull-'+new Date().toISOString().slice(0,10)+'.json');
@@ -1849,9 +1854,7 @@ devicePullButton.onclick=async()=>{
   // Recheck account, browser baseline and remote revision after the confirmations.
   if(await userId()!==uid||localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account changed during confirmation.');
   if(!trialEmpty(trialData(snapshot())))throw Error('Browser data changed during confirmation.');
-  const current=await readRemote(uid);
-  if(!current||current.updated_at!==remote.updated_at||stable(personalCloudValues(current.payload))!==stable(cloudValues))
-   throw Error('Cloud changed during confirmation. Nothing restored.');
+  // Restore is local-only. No network request is needed after Safari's backup dialog.
   const before=Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]));
   const partKey=ACCOUNT_PREFIX+uid,oldPart=localStorage.getItem(partKey);
   let oldPartObject={};
@@ -1875,7 +1878,7 @@ devicePullButton.onclick=async()=>{
   sessionStorage.setItem('nflp-phase3-test-pull-check-v1',JSON.stringify({uid,id:String(item.id)}));
   status('Guarded cloud-to-device restore verified in browser and account storage. Reloading.');
   location.reload();
- }catch(e){status('Guarded device restore stopped: '+e.message);}
+ }catch(e){status('Guarded device restore stopped [Safari-safe v4]: '+(e&&e.message||String(e)));}
  finally{busy=false;}
 };
 $('sbSyncNow').onclick=async()=>{
