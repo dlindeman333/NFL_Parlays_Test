@@ -1,0 +1,202 @@
+[
+  {
+    "team": "ARI",
+    "player": "Trey McBride",
+    "espn_id": "4361307"
+  },
+  {
+    "team": "ATL",
+    "player": "Bijan Robinson",
+    "espn_id": "4430807"
+  },
+  {
+    "team": "BAL",
+    "player": "Derrick Henry",
+    "espn_id": "3043078"
+  },
+  {
+    "team": "BUF",
+    "player": "James Cook",
+    "espn_id": "4379399"
+  },
+  {
+    "team": "BUF",
+    "player": "Josh Allen",
+    "espn_id": "3918298"
+  },
+  {
+    "team": "CAR",
+    "player": "Bryce Young",
+    "espn_id": "4685720"
+  },
+  {
+    "team": "CHI",
+    "player": "D'Andre Swift",
+    "espn_id": "4259545"
+  },
+  {
+    "team": "CIN",
+    "player": "Ja'Marr Chase",
+    "espn_id": "4362628"
+  },
+  {
+    "team": "CIN",
+    "player": "Joe Burrow",
+    "espn_id": "3915511"
+  },
+  {
+    "team": "CIN",
+    "player": "Mike Gesicki",
+    "espn_id": "3116164"
+  },
+  {
+    "team": "CIN",
+    "player": "Tee Higgins",
+    "espn_id": "4239993"
+  },
+  {
+    "team": "DAL",
+    "player": "CeeDee Lamb",
+    "espn_id": "4241389"
+  },
+  {
+    "team": "DAL",
+    "player": "Dak Prescott",
+    "espn_id": "2577417"
+  },
+  {
+    "team": "DAL",
+    "player": "Javonte Williams",
+    "espn_id": "4361579"
+  },
+  {
+    "team": "DET",
+    "player": "Amon-Ra St. Brown",
+    "espn_id": "4374302"
+  },
+  {
+    "team": "DET",
+    "player": "Jahmyr Gibbs",
+    "espn_id": "4429795"
+  },
+  {
+    "team": "DET",
+    "player": "Jameson Williams",
+    "espn_id": "4426388"
+  },
+  {
+    "team": "DET",
+    "player": "Jared Goff",
+    "espn_id": "3046779"
+  },
+  {
+    "team": "GB",
+    "player": "Christian Watson",
+    "espn_id": "4248528"
+  },
+  {
+    "team": "GB",
+    "player": "Jordan Love",
+    "espn_id": "4036378"
+  },
+  {
+    "team": "GB",
+    "player": "Matthew Golden",
+    "espn_id": "4701936"
+  },
+  {
+    "team": "IND",
+    "player": "Jonathan Taylor",
+    "espn_id": "4242335"
+  },
+  {
+    "team": "KC",
+    "player": "Kenneth Walker",
+    "espn_id": "4567048"
+  },
+  {
+    "team": "LA",
+    "player": "Kyren Williams",
+    "espn_id": "4430737"
+  },
+  {
+    "team": "LA",
+    "player": "Matthew Stafford",
+    "espn_id": "12483"
+  },
+  {
+    "team": "LA",
+    "player": "Puka Nacua",
+    "espn_id": "4426515"
+  },
+  {
+    "team": "LV",
+    "player": "Brock Bowers",
+    "espn_id": "4432665"
+  },
+  {
+    "team": "LV",
+    "player": "Kirk Cousins",
+    "espn_id": "14880"
+  },
+  {
+    "team": "NE",
+    "player": "Drake Maye",
+    "espn_id": "4431452"
+  },
+  {
+    "team": "NO",
+    "player": "Tyler Shough",
+    "espn_id": "4360689"
+  },
+  {
+    "team": "NYG",
+    "player": "Isaiah Likely",
+    "espn_id": "4361050"
+  },
+  {
+    "team": "NYJ",
+    "player": "Braelon Allen",
+    "espn_id": "4685247"
+  },
+  {
+    "team": "NYJ",
+    "player": "Garrett Wilson",
+    "espn_id": "4569618"
+  },
+  {
+    "team": "NYJ",
+    "player": "Geno Smith",
+    "espn_id": "15864"
+  },
+  {
+    "team": "SEA",
+    "player": "Jaxon Smith-Njigba",
+    "espn_id": "4430878"
+  },
+  {
+    "team": "SF",
+    "player": "Brock Purdy",
+    "espn_id": "4361741"
+  },
+  {
+    "team": "SF",
+    "player": "Christian McCaffrey",
+    "espn_id": "3117251"
+  },
+  {
+    "team": "SF",
+    "player": "George Kittle",
+    "espn_id": "3040151"
+  },
+  {
+    "team": "TB",
+    "player": "Bucky Irving",
+    "espn_id": "4596448"
+  },
+  {
+    "team": "WAS",
+    "player": "Stefon Diggs",
+    "espn_id": "2976212"
+  }
+]
