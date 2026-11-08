@@ -1,0 +1,26 @@
+name: NFL Phase 3C-3D10 Completeness Audit (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run read-only audit
+        run: python scripts/phase3c3d10_completeness_audit.py
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d10-completeness-audit-report
+          path: phase3c3d10-report/
+          if-no-files-found: warn
