@@ -1,0 +1,38 @@
+name: NFL Phase 3D37C GSIS ESPN Crosswalk (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: NFL season
+        required: true
+        default: '2026'
+      week:
+        description: NFL regular season week
+        required: true
+        default: '10'
+permissions:
+  contents: read
+jobs:
+  crosswalk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run local unit tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d37c_crosswalk.py' -v
+      - name: Crosswalk preview (no database writes)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season }}
+          NFL_WEEK: ${{ inputs.week }}
+        run: python scripts/phase3d37c_crosswalk.py --season "$NFL_SEASON" --week "$NFL_WEEK"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3d37c-crosswalk-report
+          path: phase3d37c_crosswalk_report.json
+          if-no-files-found: warn
