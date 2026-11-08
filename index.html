@@ -1661,10 +1661,24 @@ readinessButton.onclick=async()=>{
   const remote=await readRemote(uid);
   if(!remote)throw Error('No cloud record for this account. Cloud writes remain disabled.');
   const cloud=personalCloudValues(remote.payload),local=snapshot();
-  const count=(v,key)=>{const x=parseCollection(v,key);if(!(key in v))return 0;if(key==='nflp-draft-slips-v3'){if(!x||!Array.isArray(x.slips))throw Error('Unexpected '+key+' format.');return x.slips.filter(s=>s&&Array.isArray(s.legs)&&s.legs.length).length;}if(!Array.isArray(x))throw Error('Unexpected '+key+' format.');return x.length;};
-  const cs=count(cloud,'nflp-saved-v1'),ls=count(local,'nflp-saved-v1');
-  const cd=count(cloud,'nflp-draft-slips-v3'),ld=count(local,'nflp-draft-slips-v3');
-  const ct=count(cloud,'nflp-deleted-saved-v1');
+  const count=(v,key,source)=>{
+   if(!Object.prototype.hasOwnProperty.call(v,key))return 0;
+   const raw=v[key];
+   // A missing or explicitly empty entry represents an unused browser, not corrupt data.
+   if(raw===null||raw===undefined||raw==='')return 0;
+   let x;
+   try{x=JSON.parse(raw)}catch{throw Error(source+' '+key+' contains invalid JSON. Data left unchanged. [diagnostic v2]')}
+   if(x===null)return 0;
+   if(key==='nflp-draft-slips-v3'){
+    if(!x||typeof x!=='object'||!Array.isArray(x.slips))throw Error(source+' '+key+' has '+(Array.isArray(x)?'array':typeof x)+' instead of drafts.slips array. Data left unchanged. [diagnostic v2]');
+    return x.slips.filter(s=>s&&Array.isArray(s.legs)&&s.legs.length).length;
+   }
+   if(!Array.isArray(x))throw Error(source+' '+key+' has '+typeof x+' instead of array. Data left unchanged. [diagnostic v2]');
+   return x.length;
+  };
+  const cs=count(cloud,'nflp-saved-v1','Cloud'),ls=count(local,'nflp-saved-v1','Device');
+  const cd=count(cloud,'nflp-draft-slips-v3','Cloud'),ld=count(local,'nflp-draft-slips-v3','Device');
+  const ct=count(cloud,'nflp-deleted-saved-v1','Cloud');
   const message='Sync readiness (read only): cloud '+cs+' saved / '+cd+' nonempty drafts / '+ct+' deletion markers; device '+ls+' saved / '+ld+' nonempty drafts. ';
   if(cs===0&&cd===0&&(ls>0||ld>0)){
    status(message+'WARNING: device has data absent from the reset cloud. Do not upload or enable automatic merging. No changes made.');
@@ -1673,7 +1687,7 @@ readinessButton.onclick=async()=>{
   }else{
    status(message+'Cloud is no longer empty. Review before enabling sync. No changes made.');
   }
- }catch(e){status('Sync readiness check stopped: '+e.message);}
+ }catch(e){status('Sync readiness check stopped: '+e.message+' [diagnostic v2]');}
  finally{busy=false;}
 };
 // Explicit TEST-only local cleanup. Never calls a cloud write endpoint.
