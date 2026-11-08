@@ -104,12 +104,12 @@ def preview():
                 opp=away if team==home else home
                 defense=clamp(.85,1.15,S[opp]['opp']/22.5)
                 last5=sum(vals[:5])/min(5,len(vals)) if vals else None
-                recent=1 if last5 is None or v<=0 else clamp(.8,1.2,last5/v)
+                recent=1 if last5 is None or original<=0 else clamp(.8,1.2,last5/original)
                 projection=max(0,base_proj*defense*(.75+.25*recent))
                 if len(vals)>=3:
                     mean=sum(vals)/len(vals)
                     spread=max(1,math.sqrt(sum((z-mean)**2 for z in vals)/len(vals)))
-                else:spread=max(.5 if market=='td' else 10,v*(.22 if market=='ps' else .38))
+                else:spread=max(.5 if market=='td' else 10,original*(.22 if market=='ps' else .38))
                 probability=clamp(.05,.95,1-math.exp(-projection)) if baseline is None else clamp(.05,.95,sigmoid(1.7*(projection-baseline)/spread))
                 score=(probability-.5)*100+(min(5,len(vals)) if len(vals)>=3 else 0)
                 output.append({'week':week,'game':away+' @ '+home,'kickoff_utc':start.isoformat(),'player':name,'team':team,'market':market,'reference_line':baseline,'projection':round(projection,3),'model_over_probability':round(probability,5),'score':round(score,4),'historical_games':len(vals),'source':'bundled player baseline + available completed CSV logs','warning':'NOT parity-certified; roster and sportsbook line unverified'})
