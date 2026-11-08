@@ -1431,9 +1431,11 @@ async function sign(kind){
   // Authenticate first, then activate only this account's browser partition.
   const uid=await userId();
   const changed=activateAccount(uid);
+  // The builder's saved/slips arrays were initialized before authentication.
+  // Never unlock this document after changing partitions: reload first.
+  if(changed){location.reload();return;}
   privacyUnlock();
   status('Signed in. Cloud writes paused for safety; only this account’s local data is active.');
-  if(changed){saveActiveAccount();location.reload();}
  }catch(e){status('Authentication error: '+e.message);if(localStorage.getItem(OWNER_KEY))privacyGate('This browser is reserved for its original account. Sign in with that account or use a separate browser profile.')}
 }
 $('sbAuthForm').addEventListener('submit',e=>{e.preventDefault();sign('signin')});
@@ -1618,10 +1620,12 @@ $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
 privacyGate('Personal parlays are locked until account sign-in is verified.');
-if(auth&&config.url&&config.key){status('Checking signed-in account…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);privacyUnlock();status('Signed in · read-only safety mode; cloud sync paused.');if(changed){saveActiveAccount();location.reload();}}catch(e){status('Account verification paused: '+e.message);privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
+if(auth&&config.url&&config.key){status('Checking signed-in account…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();status('Signed in · read-only safety mode; cloud sync paused.');}catch(e){status('Account verification paused: '+e.message);privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
 else status('Cloud connection ready. Sign in or create an account to enable sync.');
 setInterval(()=>{if(SAFE_READ_ONLY||!started||!auth||busy)return;sync(false)},5000);
-window.addEventListener('pagehide',()=>{try{if(auth&&localStorage.getItem(OWNER_KEY))saveActiveAccount()}catch(e){console.warn('Account partition save failed',e)}});
+// Do not snapshot on pagehide: a partition switch can occur before old in-memory
+// arrays are discarded, and pagehide would overwrite the new account partition.
+// Explicit sign-out saves; switching accounts snapshots active localStorage.
 window.addEventListener('online',()=>{if(auth)sync(!started)});
 })();
 </script>
