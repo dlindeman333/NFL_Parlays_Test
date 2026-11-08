@@ -1,0 +1,33 @@
+name: NFL Phase 3D36B Stats Candidate Preview (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out development branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline candidate tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d36b_stats_candidates.py' -v
+      - name: Inspect live Supabase stats export metadata and optionally process CSV
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          STATS_CSV: data/nfl_player_stats_2026.csv
+        run: python scripts/phase3d36b_stats_candidates.py
+      - name: Upload preview report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d36b-stats-preview-readonly
+          path: phase3d36b_stats_preview.json
+          if-no-files-found: warn
