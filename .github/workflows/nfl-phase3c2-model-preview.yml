@@ -1,0 +1,32 @@
+name: NFL Phase 3C-2 Model Preview (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out Phase 3 feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+          persist-credentials: false
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Preview model predictions without saving
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3c2_preview.py
+      - name: Downloadable preview report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c2-model-preview
+          path: phase3c2-report/
+          if-no-files-found: warn
+          retention-days: 30
