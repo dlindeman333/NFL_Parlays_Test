@@ -1,0 +1,289 @@
+[
+  {
+    "team": "ARI",
+    "player": "Trey McBride",
+    "espn_id": "4361307",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "ATL",
+    "player": "Bijan Robinson",
+    "espn_id": "4430807",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "BAL",
+    "player": "Derrick Henry",
+    "espn_id": "3043078",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "BUF",
+    "player": "James Cook",
+    "espn_id": "4379399",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "BUF",
+    "player": "Josh Allen",
+    "espn_id": "3918298",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "CAR",
+    "player": "Bryce Young",
+    "espn_id": "4685720",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "CHI",
+    "player": "D'Andre Swift",
+    "espn_id": "4259545",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "CIN",
+    "player": "Ja'Marr Chase",
+    "espn_id": "4362628",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "CIN",
+    "player": "Joe Burrow",
+    "espn_id": "3915511",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "CIN",
+    "player": "Mike Gesicki",
+    "espn_id": "3116164",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "CIN",
+    "player": "Tee Higgins",
+    "espn_id": "4239993",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "DAL",
+    "player": "CeeDee Lamb",
+    "espn_id": "4241389",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "DAL",
+    "player": "Dak Prescott",
+    "espn_id": "2577417",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "DAL",
+    "player": "Javonte Williams",
+    "espn_id": "4361579",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "DET",
+    "player": "Amon-Ra St. Brown",
+    "espn_id": "4374302",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "DET",
+    "player": "Jahmyr Gibbs",
+    "espn_id": "4429795",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "DET",
+    "player": "Jameson Williams",
+    "espn_id": "4426388",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "DET",
+    "player": "Jared Goff",
+    "espn_id": "3046779",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "GB",
+    "player": "Christian Watson",
+    "espn_id": "4248528",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "GB",
+    "player": "Jordan Love",
+    "espn_id": "4036378",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "GB",
+    "player": "Matthew Golden",
+    "espn_id": "4701936",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "IND",
+    "player": "Jonathan Taylor",
+    "espn_id": "4242335",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "JAC",
+    "player": "Trevor Lawrence",
+    "espn_id": "4360310",
+    "source": "3D11_UNIQUE_ROSTER_CANDIDATE_REQUIRES_REVIEW",
+    "approved_for_write": false
+  },
+  {
+    "team": "KC",
+    "player": "Kenneth Walker",
+    "espn_id": "4567048",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "LA",
+    "player": "Kyren Williams",
+    "espn_id": "4430737",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "LA",
+    "player": "Matthew Stafford",
+    "espn_id": "12483",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "LA",
+    "player": "Puka Nacua",
+    "espn_id": "4426515",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "LV",
+    "player": "Brock Bowers",
+    "espn_id": "4432665",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "LV",
+    "player": "Kirk Cousins",
+    "espn_id": "14880",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "NE",
+    "player": "Drake Maye",
+    "espn_id": "4431452",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "NO",
+    "player": "Tyler Shough",
+    "espn_id": "4360689",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "NYG",
+    "player": "Isaiah Likely",
+    "espn_id": "4361050",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "NYJ",
+    "player": "Braelon Allen",
+    "espn_id": "4685247",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "NYJ",
+    "player": "Garrett Wilson",
+    "espn_id": "4569618",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "NYJ",
+    "player": "Geno Smith",
+    "espn_id": "15864",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "SEA",
+    "player": "Jaxon Smith-Njigba",
+    "espn_id": "4430878",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "SF",
+    "player": "Brock Purdy",
+    "espn_id": "4361741",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "SF",
+    "player": "Christian McCaffrey",
+    "espn_id": "3117251",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "SF",
+    "player": "George Kittle",
+    "espn_id": "3040151",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "TB",
+    "player": "Bucky Irving",
+    "espn_id": "4596448",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  },
+  {
+    "team": "WAS",
+    "player": "Stefon Diggs",
+    "espn_id": "2976212",
+    "source": "3D8_MAPPING",
+    "approved_for_write": false
+  }
+]
