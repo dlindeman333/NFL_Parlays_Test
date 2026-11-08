@@ -1,0 +1,26 @@
+name: NFL Phase 3D34 Offline Worker Tests
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out automation development branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline safety tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d34_workers.py' -v
+      - name: Run fixture planning
+        run: python scripts/phase3d34_workers.py --input scripts/phase3d34_fixture.json --output phase3d34_report.json
+      - name: Upload non-sensitive fixture report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3d34-offline-worker-report
+          path: phase3d34_report.json
