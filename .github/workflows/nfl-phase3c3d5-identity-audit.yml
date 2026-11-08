@@ -1,0 +1,31 @@
+name: NFL Phase 3C-3D5 Player Identity Audit (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  identity_audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out feature branch
+        uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run read-only identity audit
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3c3d5_identity_audit.py
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d5-identity-audit-report
+          path: phase3c3d5-report/
+          if-no-files-found: warn
+          retention-days: 30
