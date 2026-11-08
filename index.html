@@ -1616,6 +1616,36 @@ $('sbDeleteCloudSaved').onclick=async()=>{
  finally{busy=false;}
 };
 
+// Read-only account-specific cloud audit; does not merge, restore or upload.
+const auditButton=document.createElement('button');
+auditButton.type='button';auditButton.className='btn alt';
+auditButton.textContent='Inspect my cloud record (read only)';
+$('sbSyncNow').parentNode.insertBefore(auditButton,$('sbSyncNow'));
+auditButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}
+ busy=true;
+ try{
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account storage ownership is not verified.');
+  const remote=await readRemote(uid);
+  if(!remote){status('Cloud audit: no saved cloud row for this account. No changes made.');return;}
+  const values=personalCloudValues(remote.payload);
+  const saved=parseCollection(values,'nflp-saved-v1');
+  const deleted=parseCollection(values,'nflp-deleted-saved-v1');
+  const drafts=parseCollection(values,'nflp-draft-slips-v3');
+  if(saved!==null&&!Array.isArray(saved))throw Error('Unexpected saved-parlay format.');
+  if(deleted!==null&&!Array.isArray(deleted))throw Error('Unexpected deletion-ledger format.');
+  const draftCount=Array.isArray(drafts)?drafts.length:
+   (drafts&&Array.isArray(drafts.slips)?drafts.slips.length:0);
+  const count=Array.isArray(saved)?saved.length:0;
+  const hasLegacy=JSON.stringify(values).includes('RLS ACCOUNT A TEST');
+  status('Read-only cloud audit: '+count+' saved, '+draftCount+' drafts, '+
+   (Array.isArray(deleted)?deleted.length:0)+' deletion markers. '+
+   'Legacy duplicate test label: '+(hasLegacy?'PRESENT':'not found')+
+   '. No cloud or local data changed.');
+ }catch(e){status('Read-only cloud audit failed: '+e.message);}
+ finally{busy=false;}
+};
 $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
