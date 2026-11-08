@@ -1,0 +1,26 @@
+name: NFL Phase 3D37K Pick JSON Compatibility (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Unit tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d37k_pick_compat_audit.py' -v
+      - name: Read-only structural audit
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3d37k_pick_compat_audit.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase3d37k-pick-compat-audit
+          path: phase3d37k-output/pick_compatibility_audit.json
+          retention-days: 14
