@@ -1,0 +1,7 @@
+{
+ "now":"2026-11-08T12:00:00Z",
+ "injury_candidates":[{"season":2026,"week":10,"game_id":"example-game","player_id":"example-player","source":"fixture","designation":"Questionable","source_updated_at":"2026-11-08T10:00:00Z"}],
+ "existing_injuries":[],
+ "games":[{"season":2026,"week":10,"game_id":"example-game","away_team":"BUF","home_team":"MIA","kickoff_at":"2026-11-09T01:00:00Z","kickoff_verified":true,"model_output_verified":true,"model_version":"fixture-only","picks":[{"pick_key":"example-pick","stat_mapping_verified":true}]}],
+ "existing_snapshots":[],"final_games":[],"existing_grades":[]
+}
