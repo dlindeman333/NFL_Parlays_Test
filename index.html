@@ -2028,6 +2028,94 @@ markerPullButton.onclick=async()=>{
  }catch(e){status('MARKER PULL v5 STOPPED: '+(e&&e.message||String(e))+'. No cloud changes.');}
  finally{busy=false;}
 };
+
+// Phase 3 TEST opt-in saved-parlay synchronization v6. Legacy writers remain disabled.
+// Strict three-way baseline: never infer deletions from a missing ID without a baseline.
+const safe6Key=uid=>'nflp-phase3-test-saved-sync-v6-'+uid;
+let safe6Running=false;
+const safe6Button=document.createElement('button');safe6Button.type='button';safe6Button.className='btn alt';
+safe6Button.textContent='Enable guarded saved-parlay auto-sync (TEST) — v6';
+$('sbSyncNow').parentNode.insertBefore(safe6Button,$('sbSyncNow'));
+const safe6Stop=document.createElement('button');safe6Stop.type='button';safe6Stop.className='btn alt';
+safe6Stop.textContent='Pause guarded auto-sync (TEST) — v6';
+$('sbSyncNow').parentNode.insertBefore(safe6Stop,$('sbSyncNow'));
+function safe6View(x,side){
+ const d=trialData(x),ids=new Set(),markers=new Set();
+ for(const p of d.saved){if(!p||p.id==null)throw Error(side+' invalid parlay');const id=String(p.id);if(ids.has(id))throw Error(side+' duplicate parlay ID');ids.add(id)}
+ for(const m of d.deleted){if(typeof m!=='string'&&typeof m!=='number')throw Error(side+' invalid deletion marker');markers.add(String(m))}
+ if([...ids].some(id=>markers.has(id)))throw Error(side+' saved parlay has deletion marker');
+ return {saved:d.saved,deleted:[...markers].sort()};
+}
+function safe6Canonical(d){return JSON.stringify({saved:[...d.saved].sort((a,b)=>String(a.id).localeCompare(String(b.id))),deleted:[...d.deleted].sort()});}
+function safe6Active(uid){return localStorage.getItem(OWNER_KEY)===uid&&!!auth;}
+function safe6LocalWrite(uid,d){
+ const oldSaved=localStorage.getItem('nflp-saved-v1'),oldMarkers=localStorage.getItem('nflp-deleted-saved-v1'),oldPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+ try{
+  localStorage.setItem('nflp-saved-v1',JSON.stringify(d.saved));localStorage.setItem('nflp-deleted-saved-v1',JSON.stringify(d.deleted));saveActiveAccount();
+  const actual=safe6View(snapshot(),'Device readback');
+  if(safe6Canonical(actual)!==safe6Canonical(d))throw Error('Device readback mismatch');
+  saved=actual.saved;renderSaved();
+ }catch(e){try{for(const [k,v] of [['nflp-saved-v1',oldSaved],['nflp-deleted-saved-v1',oldMarkers],[ACCOUNT_PREFIX+uid,oldPart]]){if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}}catch(_){}throw e}
+}
+async function safe6Cycle(){
+ if(!safe6Running||busy||!auth||!navigator.onLine||document.hidden)return;
+ busy=true;
+ try{
+  const uid=await userId();if(!safe6Active(uid))throw Error('Account ownership changed');
+  const raw=localStorage.getItem(safe6Key(uid));if(!raw){safe6Running=false;return;}
+  const base=JSON.parse(raw);if(!base||base.uid!==uid||typeof base.canonical!=='string')throw Error('Missing baseline');
+  const remote=await readRemote(uid);if(!remote||!remote.updated_at)throw Error('Cloud revision unavailable');
+  const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
+  const local=safe6View(snapshot(),'Device');
+  const c=safe6Canonical(cloud),l=safe6Canonical(local),b=base.canonical;
+  if(c===l){if(b!==c)localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:c}));return;}
+  if(c!==b&&l!==b)throw Error('Both cloud and device changed; manual review required');
+  if(l===b){
+   // Cloud changed, local did not. Do not discard local drafts or account ownership.
+   if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==l)throw Error('Device changed during cloud pull');
+   safe6LocalWrite(uid,cloud);
+   localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:c}));
+   status('AUTO-SYNC v6: Cloud changes received on this device. Drafts preserved.');
+  }else{
+   // Device changed, cloud did not. A deleted parlay must have a matching tombstone.
+   const prior=JSON.parse(b),priorIds=new Set(prior.saved.map(p=>String(p.id))),nextIds=new Set(local.saved.map(p=>String(p.id))),marks=new Set(local.deleted);
+   for(const id of priorIds)if(!nextIds.has(id)&&!marks.has(id))throw Error('Parlay removed without deletion marker: '+id);
+   const fresh=await readRemote(uid);
+   if(!fresh||fresh.updated_at!==remote.updated_at||safe6Canonical(safe6View(personalCloudValues(fresh.payload),'Cloud'))!==c)throw Error('Cloud changed before write');
+   if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==l)throw Error('Device changed before write');
+   const jwt=await token();
+   const next={...fresh.payload,'nflp-saved-v1':JSON.stringify(local.saved),'nflp-deleted-saved-v1':JSON.stringify(local.deleted)};
+   const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(fresh.updated_at)+'&select=payload,updated_at',{
+    method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:next,updated_at:new Date().toISOString()})
+   });
+   if(!Array.isArray(rows)||rows.length!==1)throw Error('Concurrent cloud update; write not confirmed');
+   const checked=await readRemote(uid);
+   if(!checked||safe6Canonical(safe6View(personalCloudValues(checked.payload),'Cloud'))!==l)throw Error('Cloud readback mismatch');
+   localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:l}));
+   saveActiveAccount();status('AUTO-SYNC v6: Device changes verified in cloud. Drafts preserved.');
+  }
+ }catch(e){safe6Running=false;status('AUTO-SYNC v6 PAUSED: '+(e&&e.message||String(e))+'. No further automatic writes. Review before resuming.');}
+ finally{busy=false}
+}
+safe6Button.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();if(!safe6Active(uid))throw Error('Account ownership mismatch');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud record missing');
+  const cloud=safe6View(personalCloudValues(remote.payload),'Cloud'),local=safe6View(snapshot(),'Device');
+  const c=safe6Canonical(cloud),l=safe6Canonical(local);
+  if(c!==l)throw Error('Cloud/device saved parlays or deletion markers differ. Run read-only preflight first');
+  const raw=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(raw!==null){const p=JSON.parse(raw);if(safe6Canonical(safe6View(p,'Account partition'))!==l)throw Error('Account partition mismatch');}
+  if(!confirm('TEST ONLY: Enable guarded automatic saved-parlay sync on THIS device? Drafts remain local. Concurrent edits pause sync. Legacy sync remains disabled.'))return;
+  localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:l}));safe6Running=true;
+  status('AUTO-SYNC v6 ENABLED for this TEST device. Checks approximately every 15 seconds while this tab is open.');
+ }catch(e){status('AUTO-SYNC v6 NOT ENABLED: '+(e&&e.message||String(e)));}
+ finally{busy=false}
+};
+safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_KEY);if(uid)localStorage.removeItem(safe6Key(uid));status('AUTO-SYNC v6 PAUSED on this device. No data deleted.');};
+setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
+
 $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
