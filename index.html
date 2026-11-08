@@ -105,6 +105,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 </head><body>
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
+<div class="card" style="border-color:#b45309"><b>Account isolation test · safe read-only mode</b><div class="mu">Sign-in works; cloud syncing, cloud restore, and cloud deletion are paused until existing cross-account duplicates are reviewed. No cloud data will be modified by this version.</div></div>
 <div class="navlinks"><button id="openSetup" class="btn alt" type="button">⚙ Setup</button><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
 
 <dialog id="setupDialog" class="setup-modal" aria-label="Setup"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Setup</h2><button class="btn alt" type="button" id="closeSetup">Close ✕</button></div><section id="cloudSyncPanel">
@@ -1108,6 +1109,9 @@ const prefix='nflp-cloud-';
 // Fail closed on cross-account browser data. Never silently merge personal data
 // from a previous account into a different authenticated Supabase user.
 const OWNER_KEY='nflp-phase3-test-storage-owner-v1';
+const SAFE_READ_ONLY=true; // Temporary: existing cloud records contain cross-account duplicates.
+const ACCOUNT_PREFIX='nflp-phase3-test-account-v2-';
+const LEGACY_PREFIX='nflp-phase3-test-legacy-quarantine-v2-';
 // Phase 3 privacy gate: never display one account's local parlays to a signed-out
 // or different user. This is a conservative lock, NOT a data migration.
 function privacyGate(message){
@@ -1146,11 +1150,32 @@ function personalDataPresent(){
  }catch(e){return true} // Unknown data is not safe to merge.
 }
 function enforceStorageOwner(uid){
- const owner=localStorage.getItem(OWNER_KEY);
- if(owner&&owner!==uid)throw Error('Account isolation lock: this browser contains another account’s data. No sync or cloud changes were made. Use a fresh private window or separate browser profile for this account.');
- if(!owner&&personalDataPresent())throw Error('Account isolation lock: existing local parlays have no verified owner. No sync or cloud changes were made. Use a fresh private window or separate browser profile; do not clear this browser’s data.');
- // Claim only an empty, unowned browser; retain binding through sign-out.
- if(!owner)localStorage.setItem(OWNER_KEY,uid);
+ // Authentication must not depend on whether legacy browser data has an owner.
+ // Account data is activated only by activateAccount(), never by a cloud merge.
+ if(!uid)throw Error('Missing authenticated user ID.');
+}
+function activateAccount(uid){
+ const active=localStorage.getItem(OWNER_KEY);
+ if(active===uid)return false;
+ // Preserve unverified browser data under a quarantine key; never assign it to a user.
+ // Preserve each previous user's browser data under their own user ID.
+ const values={};for(const key of keys)values[key]=localStorage.getItem(key);
+ const target=active?ACCOUNT_PREFIX+active:LEGACY_PREFIX+'original';
+ if(!localStorage.getItem(target))localStorage.setItem(target,JSON.stringify(values));
+ const ownRaw=localStorage.getItem(ACCOUNT_PREFIX+uid);
+ let own={};if(ownRaw){own=JSON.parse(ownRaw);if(!own||typeof own!=='object'||Array.isArray(own))throw Error('Invalid account storage; no data changed.');}
+ // Check storage can be restored before changing active keys.
+ const previous=Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]));
+ try{
+  for(const key of keys){if(typeof own[key]==='string')localStorage.setItem(key,own[key]);else localStorage.removeItem(key);}
+  localStorage.setItem(OWNER_KEY,uid);
+ }catch(e){for(const key of keys){try{if(previous[key]===null)localStorage.removeItem(key);else localStorage.setItem(key,previous[key])}catch{}}throw e}
+ return true;
+}
+function saveActiveAccount(){
+ const uid=localStorage.getItem(OWNER_KEY);if(!uid)return;
+ const values={};for(const key of keys)values[key]=localStorage.getItem(key);
+ localStorage.setItem(ACCOUNT_PREFIX+uid,JSON.stringify(values));
 }
 
 let config={},auth=null,remoteUpdated=0,lastPushed='',busy=false,started=false,lastPoll=0;
@@ -1198,7 +1223,6 @@ async function userId(){
  const jwt=await token();
  const data=await api('/auth/v1/user',{headers:{Authorization:'Bearer '+jwt}});
  enforceStorageOwner(data.id);
- privacyUnlock();
  return data.id;
 }
 function snapshot(){
@@ -1237,6 +1261,7 @@ async function readRemote(uid){
  return rows[0]||null;
 }
 async function push(uid,values){
+ if(SAFE_READ_ONLY)throw Error('Cloud writes temporarily disabled.');
  const jwt=await token();
  await api('/rest/v1/nfl_parlay_sync?on_conflict=user_id',{method:'POST',headers:{Authorization:'Bearer '+jwt,Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify({user_id:uid,payload:values,updated_at:new Date().toISOString()})});
  lastPushed=stable(values);remoteUpdated=Date.now();
@@ -1331,6 +1356,7 @@ function mergePersonal(local,cloud,base){
  return merged;
 }
 async function safePush(uid,values,remote){
+ if(SAFE_READ_ONLY)throw Error('Cloud writes temporarily disabled during account-isolation verification.');
  const jwt=await token();
  if(remote){
   const path='/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at)+'&select=updated_at';
@@ -1362,6 +1388,7 @@ function applyMerged(values){
  }
 }
 async function sync(initial=false){
+ if(SAFE_READ_ONLY){status('Safety mode: cloud writes and automatic merges paused; account data stays separate.');return;}
  if(!auth){status('Sign in first.');return;}
  if(busy){status('Sync already in progress. Please wait.');return;}
  if(!navigator.onLine){status('Offline: cannot sync.');return;}
@@ -1401,16 +1428,20 @@ async function sign(kind){
   if(!data.access_token){status('Account created. Confirm your email using the Supabase message, then sign in.');return}
   storeAuth({...data,expiresAt:Date.now()+(data.expires_in||3600)*1000});
   $('sbPassword').value='';
-  // Verify ownership before attempting the initial sync.
-  await userId();
-  started=false;await sync(true);
+  // Authenticate first, then activate only this account's browser partition.
+  const uid=await userId();
+  const changed=activateAccount(uid);
+  privacyUnlock();
+  status('Signed in. Cloud writes paused for safety; only this account’s local data is active.');
+  if(changed){saveActiveAccount();location.reload();}
  }catch(e){status('Authentication error: '+e.message);if(localStorage.getItem(OWNER_KEY))privacyGate('This browser is reserved for its original account. Sign in with that account or use a separate browser profile.')}
 }
 $('sbAuthForm').addEventListener('submit',e=>{e.preventDefault();sign('signin')});
 $('sbSignUp').onclick=()=>sign('signup');
-$('sbSignOut').onclick=()=>{storeAuth(null);started=false;lastPushed='';status('Signed out. Personal data is locked on this device.');const dialog=document.getElementById('setupDialog');if(dialog.open)dialog.close();privacyGate('Signed out. This browser still contains the original account’s local data, which is now hidden.');};
+$('sbSignOut').onclick=()=>{try{saveActiveAccount()}catch(e){status('Could not preserve account storage; sign-out stopped: '+e.message);return;}storeAuth(null);started=false;lastPushed='';status('Signed out. Personal data is locked on this device.');const dialog=document.getElementById('setupDialog');if(dialog.open)dialog.close();privacyGate('Signed out. Personal data is hidden. Sign in to access your account partition.');location.reload();};
 $('sbBackup').onclick=download;
 $('sbRestoreCloud').onclick=async()=>{
+ if(SAFE_READ_ONLY){status('Cloud restore paused: cloud records contain known cross-account duplicates. No data changed.');return;}
  if(!auth){status('Sign in first.');return;}
  if(busy){status('Sync is already running. Please wait.');return;}
  busy=true;
@@ -1425,6 +1456,7 @@ $('sbRestoreCloud').onclick=async()=>{
 // Explicit recovery path when this PC has the desired saved parlays and cloud has an older copy.
 // Remote update uses an optimistic concurrency condition to avoid overwriting a concurrent edit.
 $('sbUploadLocal').onclick=async()=>{
+ if(SAFE_READ_ONLY){status('Cloud upload disabled until account isolation is verified.');return;}
  if(!auth){status('Sign in first.');return;}
  if(busy){status('Another sync operation is running. Please wait.');return;}
  if(!navigator.onLine){status('Offline: cannot upload.');return;}
@@ -1521,6 +1553,7 @@ function chooseSavedParlays(items){
 }
 
 $('sbDeleteCloudSaved').onclick=async()=>{
+ if(SAFE_READ_ONLY){status('Cloud deletion disabled until account isolation is verified.');return;}
  if(!auth){status('Sign in before managing cloud saved parlays.');return;}
  if(busy){status('Wait for the current sync to finish.');return;}
  if(!navigator.onLine){status('Deletion requires an online connection.');return;}
@@ -1581,12 +1614,14 @@ $('sbDeleteCloudSaved').onclick=async()=>{
  finally{busy=false;}
 };
 
-$('sbSyncNow').onclick=async()=>{if(!auth){status('Sign in first.');return}await sync(!started)};
+$('sbSyncNow').onclick=async()=>{
+ if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
-if(localStorage.getItem(OWNER_KEY))privacyGate('Verifying the original account before displaying saved parlays.');
-if(auth&&config.url&&config.key){status('Resuming cloud sync…');setTimeout(()=>sync(true),900)}
+privacyGate('Personal parlays are locked until account sign-in is verified.');
+if(auth&&config.url&&config.key){status('Checking signed-in account…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);privacyUnlock();status('Signed in · read-only safety mode; cloud sync paused.');if(changed){saveActiveAccount();location.reload();}}catch(e){status('Account verification paused: '+e.message);privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
 else status('Cloud connection ready. Sign in or create an account to enable sync.');
-setInterval(()=>{if(!started||!auth||busy)return;sync(false)},5000);
+setInterval(()=>{if(SAFE_READ_ONLY||!started||!auth||busy)return;sync(false)},5000);
+window.addEventListener('pagehide',()=>{try{if(auth&&localStorage.getItem(OWNER_KEY))saveActiveAccount()}catch(e){console.warn('Account partition save failed',e)}});
 window.addEventListener('online',()=>{if(auth)sync(!started)});
 })();
 </script>
