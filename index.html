@@ -1753,12 +1753,22 @@ trialButton.onclick=async()=>{
   const uid=await userId();if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch.');
   const remote=await readRemote(uid);if(!remote)throw Error('Cloud record missing.');
   const c=trialData(personalCloudValues(remote.payload)),l=trialData(snapshot());
-  if(!trialEmpty(c)||!trialEmpty(l))throw Error('Both cloud and browser must have zero saved parlays and nonempty drafts before initialization.');
+  if(!trialEmpty(c))throw Error('Cloud must have zero saved parlays and nonempty drafts before initialization.');
+  if(l.drafts.slips.some(s=>s&&Array.isArray(s.legs)&&s.legs.length))throw Error('Browser contains a nonempty draft. No initialization.');
+  if(l.saved.length>1)throw Error('Browser has '+l.saved.length+' saved parlays. Trial permits at most one.');
+  if(l.saved.length===1){
+   const item=l.saved[0];
+   if(!item||item.id==null)throw Error('Local test parlay has no ID.');
+   if(new Set([...c.deleted,...l.deleted].map(String)).has(String(item.id)))throw Error('Local parlay ID is in deletion history. No initialization.');
+   if(!confirm('TEST ACCOUNT ONLY: This browser already has ONE saved parlay. Confirm this is the NEW disposable test parlay you want to upload. This does NOT upload it yet. Continue initialization?'))return;
+  }
+  // Extra LOCAL tombstones are permitted for this one-parlay trial. They are never uploaded,
+  // deleted, or used to replace the cloud deletion ledger.
   const markerSet=new Set(c.deleted.map(String));
-  if(l.deleted.some(id=>!markerSet.has(String(id))))throw Error('Browser contains deletion markers not yet in cloud. Stop for review.');
-  const baseline={uid,updated_at:remote.updated_at,markers:c.deleted.map(String).sort(),initialized_at:new Date().toISOString()};
+  const extraLocalMarkers=l.deleted.filter(id=>!markerSet.has(String(id))).length;
+  const baseline={uid,updated_at:remote.updated_at,markers:c.deleted.map(String).sort(),initialized_at:new Date().toISOString(),candidateId:l.saved.length?String(l.saved[0].id):null};
   localStorage.setItem(trialKey(uid),JSON.stringify(baseline));
-  status('Safe-sync trial initialized for this account and browser. Cloud untouched. Create ONE disposable saved parlay, then use Upload new test parlay (guarded).');
+  status('Safe-sync trial initialized for this account. '+extraLocalMarkers+' extra browser-only deletion marker(s) retained locally. Cloud untouched. '+(l.saved.length?'Your existing ONE disposable parlay is ready for guarded upload.':'Create ONE disposable saved parlay, then upload.') );
  }catch(e){status('Safe-sync initialization stopped: '+e.message)}finally{busy=false}
 };
 trialUploadButton.onclick=async()=>{
@@ -1776,8 +1786,8 @@ trialUploadButton.onclick=async()=>{
   if(l.drafts.slips.some(s=>s&&Array.isArray(s.legs)&&s.legs.length))throw Error('Nonempty local drafts detected. Trial upload paused.');
   const item=l.saved[0];if(!item||item.id==null)throw Error('Saved parlay has no ID.');
   if(new Set([...c.deleted,...l.deleted].map(String)).has(String(item.id)))throw Error('Parlay ID appears in deletion history. Upload blocked.');
-  const markerSet=new Set(c.deleted.map(String));
-  if(l.deleted.some(id=>!markerSet.has(String(id))))throw Error('Local deletion markers differ from cloud. Upload blocked.');
+  if(base.candidateId!==null&&base.candidateId!==undefined&&String(item.id)!==String(base.candidateId))throw Error('Saved parlay changed since initialization. Reinitialize before uploading.');
+  // Cloud deletion ledger is preserved verbatim; local-only tombstones remain local.
   if(!confirm('TEST ONLY: Upload exactly ONE newly created saved parlay to this authenticated TEST account? Cloud must still be empty. No drafts or deletion markers will be overwritten.'))return;
   // The cloud's existing drafts and deletion ledger are preserved verbatim.
   const next={...cloud,'nflp-saved-v1':JSON.stringify([item])};
