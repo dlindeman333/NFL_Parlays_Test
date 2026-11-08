@@ -1,0 +1,33 @@
+name: NFL Phase 3D37B Roster Match (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      week:
+        description: '2026 regular-season week (1-18)'
+        required: true
+        default: '10'
+      season:
+        description: 'Season'
+        required: true
+        default: '2026'
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Unit tests
+        run: python -m unittest discover -s scripts -p 'test_phase3d37b_roster_match.py' -v
+      - name: Verify rosters and schedule
+        run: python scripts/phase3d37b_roster_match.py --season '${{ inputs.season }}' --week '${{ inputs.week }}' --output phase3d37b_report.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3d37b-roster-match-readonly
+          path: phase3d37b_report.json
+          if-no-files-found: warn
