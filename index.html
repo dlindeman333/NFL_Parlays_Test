@@ -105,7 +105,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 </head><body>
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
-<div class="card" style="border-color:#b45309"><b>Account isolation test · safe read-only mode</b><div class="mu">Sign-in works; cloud syncing, cloud restore, and cloud deletion are paused until existing cross-account duplicates are reviewed. No cloud data will be modified by this version.</div></div>
+<div class="card" style="border-color:#b45309"><b>Account isolation test · local cleanup available, cloud writes paused</b><div class="mu">Sign-in and read-only cloud checks work. You can explicitly clear old local TEST parlays after verifying the reset cloud. Cloud writes, restore, merging, and cloud deletion remain paused.</div></div>
 <div class="navlinks"><button id="openSetup" class="btn alt" type="button">⚙ Setup</button><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
 
 <dialog id="setupDialog" class="setup-modal" aria-label="Setup"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Setup</h2><button class="btn alt" type="button" id="closeSetup">Close ✕</button></div><section id="cloudSyncPanel">
@@ -1674,6 +1674,60 @@ readinessButton.onclick=async()=>{
    status(message+'Cloud is no longer empty. Review before enabling sync. No changes made.');
   }
  }catch(e){status('Sync readiness check stopped: '+e.message);}
+ finally{busy=false;}
+};
+// Explicit TEST-only local cleanup. Never calls a cloud write endpoint.
+const clearOldLocalButton=document.createElement('button');
+clearOldLocalButton.type='button';clearOldLocalButton.className='btn alt';
+clearOldLocalButton.textContent='Clear old LOCAL test parlays';
+$('sbSyncNow').parentNode.insertBefore(clearOldLocalButton,$('sbSyncNow'));
+clearOldLocalButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}
+ busy=true;
+ try{
+  if(!auth)throw Error('Sign in first.');
+  const uid=await userId();
+  if(!uid||localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account storage ownership could not be verified.');
+  const remote=await readRemote(uid);
+  if(!remote)throw Error('No cloud row for this account. No local changes made.');
+  const cloud=personalCloudValues(remote.payload);
+  const cloudSaved=parseCollection(cloud,'nflp-saved-v1');
+  const cloudDrafts=parseCollection(cloud,'nflp-draft-slips-v3');
+  const cloudDeleted=parseCollection(cloud,'nflp-deleted-saved-v1');
+  if(!Array.isArray(cloudSaved)||cloudSaved.length||!cloudDrafts||!Array.isArray(cloudDrafts.slips)||cloudDrafts.slips.some(s=>s&&Array.isArray(s.legs)&&s.legs.length)||!Array.isArray(cloudDeleted))
+   throw Error('Cloud no longer matches the verified reset baseline. No local changes made.');
+  const raw=localStorage.getItem('nflp-saved-v1')||'[]';
+  const localSaved=JSON.parse(raw);
+  const localDeleted=JSON.parse(localStorage.getItem('nflp-deleted-saved-v1')||'[]');
+  if(!Array.isArray(localSaved)||!Array.isArray(localDeleted))throw Error('Local data has an unexpected format. No changes made.');
+  if(!localSaved.length){status('No local saved parlays to clear for this account. Cloud is clean.');return;}
+  const email=auth.user&&auth.user.email?auth.user.email:'current signed-in account';
+  if(!confirm('TEST ACCOUNT LOCAL CLEANUP\\n\\nAccount: '+email+'\\nSaved parlays to permanently remove from this browser: '+localSaved.length+'\\n\\nNo new backup or quarantine copy will be created. Cloud records, other accounts, drafts and NFL data will NOT be changed.\\n\\nContinue?'))return;
+  if(!confirm('FINAL CONFIRMATION: Permanently clear '+localSaved.length+' local saved parlay(s) from this TEST account?'))return;
+  // Remove active list and partitioned copy together. No stale partition can rehydrate it.
+  const partitionKey=ACCOUNT_PREFIX+uid;
+  const existingPartition=localStorage.getItem(partitionKey);
+  let partition={};
+  if(existingPartition){partition=JSON.parse(existingPartition);if(!partition||typeof partition!=='object'||Array.isArray(partition))throw Error('Invalid account partition; no changes made.');}
+  const updated={...partition,'nflp-saved-v1':'[]'};
+  // Keep both cloud and local deletion markers; record discarded IDs to block resurrection.
+  const markers=[...new Set([...cloudDeleted,...localDeleted,...localSaved.filter(p=>p&&p.id!==undefined&&p.id!==null).map(p=>String(p.id))].map(String))];
+  updated['nflp-deleted-saved-v1']=JSON.stringify(markers);
+  const previousActive=localStorage.getItem('nflp-saved-v1');
+  const previousMarkers=localStorage.getItem('nflp-deleted-saved-v1');
+  try{
+   localStorage.setItem(partitionKey,JSON.stringify(updated));
+   localStorage.setItem('nflp-saved-v1','[]');
+   localStorage.setItem('nflp-deleted-saved-v1',JSON.stringify(markers));
+  }catch(e){
+   try{if(existingPartition===null)localStorage.removeItem(partitionKey);else localStorage.setItem(partitionKey,existingPartition);
+    if(previousActive===null)localStorage.removeItem('nflp-saved-v1');else localStorage.setItem('nflp-saved-v1',previousActive);
+    if(previousMarkers===null)localStorage.removeItem('nflp-deleted-saved-v1');else localStorage.setItem('nflp-deleted-saved-v1',previousMarkers);}catch(_){}
+   throw Error('Browser storage update failed. Check local data before retrying. '+e.message);
+  }
+  status('Cleared '+localSaved.length+' local TEST parlay(s). Cloud unchanged. Reloading to discard old in-memory data.');
+  location.reload();
+ }catch(e){status('Local cleanup stopped: '+e.message);}
  finally{busy=false;}
 };
 $('sbSyncNow').onclick=async()=>{
