@@ -1,0 +1,38 @@
+name: NFL Phase 3C-3D25 Backup Authorization Preparation (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Refresh ESPN source evidence (GET only)
+        run: python scripts/phase3c3d22_initial_load_preview.py
+      - name: Refresh safeguards
+        run: python scripts/phase3c3d23_storage_decision_preview.py
+      - name: Refresh live Supabase comparison (GET only)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3c3d24_live_db_comparison.py
+      - name: Generate non-executable manifest and backup checklist
+        run: python scripts/phase3c3d25_backup_authorization_preview.py
+      - name: Upload diagnostics even on failure
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3c3d25-backup-authorization-preparation-report
+          path: |
+            phase3c3d25-report/
+            phase3c3d24-report/audit.json
+            phase3c3d23-report/audit.json
+            phase3c3d22-report/audit.json
+          if-no-files-found: warn
