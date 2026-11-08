@@ -1,0 +1,37 @@
+name: NFL Accelerated Package 14 - Schema Mapped Grade Staging (Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: NFL season (blank = automatic)
+        required: false
+        type: string
+      week:
+        description: NFL week (blank = automatic)
+        required: false
+        type: string
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NFL_SEASON: ${{ inputs.season }}
+      NFL_WEEK: ${{ inputs.week }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run grading unit tests
+        run: python -m unittest discover -s scripts -p 'test_nfl_package14_grade_payload.py' -v
+      - name: Produce verified-schema staging report (no writes)
+        run: python scripts/nfl_package14_integrated.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nfl-package14-schema-staging-${{ github.run_id }}
+          path: package14-output/grade_schema_staging.json
+          retention-days: 7
