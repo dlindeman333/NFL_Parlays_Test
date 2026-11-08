@@ -1,0 +1,23 @@
+name: NFL Phase 3C-3D21B Injury Parser Diagnostics (Read Only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/phase3-automation
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run ESPN parser diagnostics (no Supabase credentials)
+        run: python scripts/phase3c3d21b_injury_parser_diagnostics.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: phase3c3d21b-injury-parser-diagnostics-report
+          path: phase3c3d21b-report/
+          if-no-files-found: error
