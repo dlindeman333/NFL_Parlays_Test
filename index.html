@@ -519,7 +519,10 @@ $("save").onclick=()=>{
  if(legs.length!==N){$("msg").textContent=legs.length>N?"Remove "+(legs.length-N)+" leg(s) of your choice before saving.":"Fill all "+N+" legs first.";return}
  const st=Math.max(0,+$("stake").value||0);let D=1;
  const L=legs.map(l=>{const x=legOf(l);D*=x.d;return{t:x.txt,m:x.g.a+" @ "+x.g.h,o:am(x.d)}});
- saved.unshift({id:Date.now(),wk,mode,stake:st,dec:D,legs:L,status:"open",amt:0});
+ const proposedName=prompt('Optional parlay name (up to 80 characters). Leave blank for Untitled Parlay:','');
+ if(proposedName===null)return;
+ const parlayName=proposedName.trim().slice(0,80);
+ saved.unshift({id:Date.now(),name:parlayName,wk,mode,stake:st,dec:D,legs:L,status:"open",amt:0});
  persist();legs=[];draw();renderSaved();$("msg").textContent="Saved."};
 function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
  if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
@@ -576,10 +579,19 @@ $('saved').addEventListener('click',event=>{
  else if(action==='delete-parlay')del(id);
  else if(action==='edit')editSavedParlay(id);
  else if(action==='duplicate')duplicateSavedToDraft(id);
+ else if(action==='rename')renameSavedParlay(id);
  else if(action==='undo')undoSavedDeletion();
 });
 function stats(){const d=saved.filter(s=>s.status!=="open");const w=d.filter(s=>s.status==="won").length;const net=d.reduce((a,s)=>a+pl(s),0);const stk=d.reduce((a,s)=>a+s.stake,0);return{w,l:d.length-w,open:saved.length-d.length,net,stk,roi:stk?net/stk*100:0}}
-function savedCopyText(s){return `Saved parlay — Week ${s.wk} (${typ(s)})\n`+s.legs.map((l,i)=>`${i+1}. ${l.t} (${l.m}, ${l.o})`).join('\n')+`\nCombined estimated odds ${am(s.dec)} · Stake $${Number(s.stake).toFixed(2)} · Potential payout ${money(s.stake*s.dec)} · Status ${s.status.toUpperCase()}\nModel estimates only; verify sportsbook lines.`}
+function savedCopyText(s){return `${s.name||"Untitled Parlay"} — Week ${s.wk} (${typ(s)})\n`+s.legs.map((l,i)=>`${i+1}. ${l.t} (${l.m}, ${l.o})`).join('\n')+`\nCombined estimated odds ${am(s.dec)} · Stake $${Number(s.stake).toFixed(2)} · Potential payout ${money(s.stake*s.dec)} · Status ${s.status.toUpperCase()}\nModel estimates only; verify sportsbook lines.`}
+function renameSavedParlay(id){
+ const item=savedById(id);if(!item)return;
+ const value=prompt('Parlay name (up to 80 characters):',item.name||'');
+ if(value===null)return;
+ item.name=value.trim().slice(0,80);
+ persist();renderSaved();
+ $('savedActionStatus').textContent='Name saved on this device. Click Sync now to share it with your other device.';
+}
 function duplicateSavedToDraft(id){
  const original=savedById(id);if(!original)return;
  syncActiveSlip();
@@ -603,11 +615,11 @@ function renderSaved(){const t=stats();
  const toggle=$("toggleSavedPrevious");toggle.textContent=showPreviousSavedWeeks?"Hide previous weeks saved parlays":"Show previous weeks saved parlays";toggle.setAttribute("aria-expanded",String(showPreviousSavedWeeks));
 
  $("sumry").innerHTML=`<div class="sm"><div><b>${t.w}-${t.l}</b><span class="mu">Record</span></div><div><b>${t.open}</b><span class="mu">Open</span></div><div><b class="${t.net>=0?"pos":"neg"}">${money(t.net)}</b><span class="mu">Net P/L</span></div><div><b>${f1(t.roi)}%</b><span class="mu">ROI</span></div></div>`;
- const savedCard=s=>`<div class="card sv ${s.status}"><div class="gh"><b>Wk ${s.wk} · ${s.legs.length}-leg ${s.mode==="same"?"same-game":"multi"} · ${am(s.dec)}</b><span class="tag ${s.status}">${s.status.toUpperCase()}</span></div>
+ const savedCard=s=>`<div class="card sv ${s.status}"><div class="gh"><b>${esc(s.name||"Untitled Parlay")} · Wk ${s.wk} · ${s.legs.length}-leg ${s.mode==="same"?"same-game":"multi"} · ${am(s.dec)}</b><span class="tag ${s.status}">${s.status.toUpperCase()}</span></div>
 ${s.legs.map((l,i)=>`<div class="mu" style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="flex:1;min-width:0">• ${esc(l.t)} (${esc(l.m||"")}, ${esc(l.o||"")})</span>${editingSavedParlays.has(String(s.id))?`<button type="button" class="btn alt" style="padding:4px 8px;flex:none" title="Remove this selection" aria-label="Remove ${esc(l.t)}" data-saved-action="remove-leg" data-saved-id="${esc(s.id)}" data-leg-index="${i}">🗑️</button>`:""}</div>`).join("")}
 <div class="row" style="margin-top:8px"><div class="seg" style="flex:none">${["open","won","lost"].map(k=>`<button class="${s.status===k?"on":""}" onclick="setS(${s.id},'status','${k}')">${k[0].toUpperCase()+k.slice(1)}</button>`).join("")}</div>
 ${s.status==="open"?`<span class="mu">Stake $${s.stake} · pays ${money(s.stake*s.dec)}</span>`:`${s.status==="won"?"Won":"Lost"} $<input type="number" min="0" step="0.01" value="${s.amt}" onchange="setS(${s.id},'amt',this.value)">`}
-<button class="btn alt" data-saved-action="edit" data-saved-id="${esc(s.id)}">${editingSavedParlays.has(String(s.id))?"Done deleting":"Delete selections"}</button><button class="btn alt" data-saved-action="delete-parlay" data-saved-id="${esc(s.id)}" aria-label="Delete saved parlay">Delete Slip</button><button class="btn alt" data-saved-action="duplicate" data-saved-id="${esc(s.id)}">Duplicate Slip</button><button class="btn alt" onclick="copySaved(${s.id})">Copy slip</button></div></div>`;
+<button class="btn alt" data-saved-action="rename" data-saved-id="${esc(s.id)}">Rename</button><button class="btn alt" data-saved-action="edit" data-saved-id="${esc(s.id)}">${editingSavedParlays.has(String(s.id))?"Done deleting":"Delete selections"}</button><button class="btn alt" data-saved-action="delete-parlay" data-saved-id="${esc(s.id)}" aria-label="Delete saved parlay">Delete Slip</button><button class="btn alt" data-saved-action="duplicate" data-saved-id="${esc(s.id)}">Duplicate Slip</button><button class="btn alt" onclick="copySaved(${s.id})">Copy slip</button></div></div>`;
  const weekHeader=(number,caption)=>`<h3 style="font-size:19px;font-weight:800;margin:18px 0 8px;padding:10px 12px;border-left:5px solid var(--ac);background:var(--sel);border-radius:6px">Week ${number}${caption?` — ${caption}`:""}</h3>`;
  const priorWeeks=[...new Set(previousSaved.map(s=>Number(s.wk)))].sort((a,b)=>b-a);
  const previousMarkup=showPreviousSavedWeeks?`<div id="savedPreviousWeeks">${priorWeeks.length?priorWeeks.map(w=>weekHeader(w,"Previous week")+previousSaved.filter(s=>Number(s.wk)===w).map(savedCard).join("")).join(""):'<div class="mu">No previous-week saved parlays.</div>'}</div>`:"";
@@ -1422,8 +1434,8 @@ $('sbDeleteCloudSaved').onclick=async()=>{
   const all=new Map();
   for(const item of [...cloudSaved,...localSaved])if(item&&item.id!=null)all.set(String(item.id),item);
   if(!all.size){status('No saved parlays to delete.');return;}
-  const choices=[...all.values()].map(x=>String(x.id)+' — Week '+(x.wk??'?')+' — '+(x.legs?.length||0)+' legs');
-  const selection=prompt('Saved parlays (ID — week — legs):\n'+choices.join('\n')+'\n\nEnter comma-separated IDs to delete, or ALL to delete every saved parlay. Cancel to keep everything.');
+  const choices=[...all.values()].map(x=>String(x.id)+' — '+(x.name||'Untitled Parlay')+' — Week '+(x.wk??'?')+' — '+(x.legs?.length||0)+' legs — '+(x.legs||[]).slice(0,2).map(l=>l.t||'pick').join('; '));
+  const selection=prompt('Saved parlays (ID — name — week — legs — first picks):\n'+choices.join('\n')+'\n\nEnter comma-separated IDs to delete, or ALL to delete every saved parlay. Cancel to keep everything.');
   if(selection===null)return;
   const requested=selection.trim()==='ALL'?[...all.keys()]:selection.split(',').map(x=>x.trim()).filter(Boolean);
   const ids=[...new Set(requested)];
