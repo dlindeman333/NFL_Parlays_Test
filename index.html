@@ -1805,6 +1805,58 @@ trialUploadButton.onclick=async()=>{
   status('GUARDED TEST UPLOAD VERIFIED: 1 parlay in this account cloud; deletion markers preserved. Automatic sync is still OFF.');
  }catch(e){status('Guarded upload stopped: '+e.message)}finally{busy=false}
 };
+// Phase 3 TEST: explicitly approved cloud-to-device restore; never uploads or merges.
+// This trial is intentionally limited to a clean destination device and one cloud parlay.
+const devicePullButton=document.createElement('button');
+devicePullButton.type='button';devicePullButton.className='btn alt';
+devicePullButton.textContent='Restore one cloud TEST parlay to this device (guarded)';
+$('sbSyncNow').parentNode.insertBefore(devicePullButton,$('sbSyncNow'));
+devicePullButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  if(!auth)throw Error('Sign in to your TEST account first.');
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch; no changes made.');
+  const local=trialData(snapshot());
+  if(!trialEmpty(local))throw Error('This device already has saved parlays or nonempty drafts. No restore or merge attempted.');
+  const remote=await readRemote(uid);
+  if(!remote)throw Error('No cloud record for this account.');
+  const cloudValues=personalCloudValues(remote.payload),cloud=trialData(cloudValues);
+  if(cloud.saved.length!==1||cloud.drafts.slips.some(x=>x&&Array.isArray(x.legs)&&x.legs.length))
+   throw Error('This trial requires exactly one cloud parlay and no nonempty cloud drafts. No changes made.');
+  const item=cloud.saved[0];
+  if(!item||item.id==null)throw Error('Cloud parlay lacks an ID.');
+  const tombstones=new Set([...cloud.deleted,...local.deleted].map(String));
+  if(tombstones.has(String(item.id)))throw Error('Cloud parlay ID is in deletion history. Restore blocked.');
+  const email=auth.user?.email||'current signed-in account';
+  if(!confirm('TEST CLOUD-TO-DEVICE RESTORE\n\nAccount: '+email+'\nCloud saved parlays: 1\nThis device saved parlays: 0\n\nDownload a local backup, then restore this account’s one cloud parlay? No cloud data will be modified.'))return;
+  downloadJSON({version:2,exported_at:new Date().toISOString(),source:'before-guarded-cloud-pull',uid,storage:snapshot()},'nfl-phase3-before-cloud-pull-'+new Date().toISOString().slice(0,10)+'.json');
+  if(!confirm('A local backup download was requested. Verify the file was saved.\n\nPress OK only after verifying the backup, or Cancel to leave this device unchanged.'))return;
+  // Recheck account, browser baseline and remote revision after the confirmations.
+  if(await userId()!==uid||localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account changed during confirmation.');
+  if(!trialEmpty(trialData(snapshot())))throw Error('Browser data changed during confirmation.');
+  const current=await readRemote(uid);
+  if(!current||current.updated_at!==remote.updated_at||stable(personalCloudValues(current.payload))!==stable(cloudValues))
+   throw Error('Cloud changed during confirmation. Nothing restored.');
+  const before=Object.fromEntries(keys.map(k=>[k,localStorage.getItem(k)]));
+  const partKey=ACCOUNT_PREFIX+uid,oldPart=localStorage.getItem(partKey);
+  let oldPartObject={};
+  if(oldPart!==null){oldPartObject=JSON.parse(oldPart);if(!oldPartObject||typeof oldPartObject!=='object'||Array.isArray(oldPartObject))throw Error('Invalid account partition.');}
+  // Preserve the union of deletion markers, including browser-only markers.
+  const restored={...oldPartObject,...cloudValues,'nflp-deleted-saved-v1':JSON.stringify([...tombstones])};
+  try{
+   localStorage.setItem(partKey,JSON.stringify(restored));
+   for(const key of keys){if(typeof restored[key]==='string')localStorage.setItem(key,restored[key]);else localStorage.removeItem(key);}
+  }catch(e){
+   try{if(oldPart===null)localStorage.removeItem(partKey);else localStorage.setItem(partKey,oldPart);
+    for(const key of keys){if(before[key]===null)localStorage.removeItem(key);else localStorage.setItem(key,before[key]);}}catch(_){}
+   throw Error('Device storage failed; attempted rollback: '+e.message);
+  }
+  status('Guarded cloud-to-device restore completed for this TEST account. Cloud unchanged. Reloading.');
+  location.reload();
+ }catch(e){status('Guarded device restore stopped: '+e.message);}
+ finally{busy=false;}
+};
 $('sbSyncNow').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();
