@@ -1,0 +1,22 @@
+name: NFL Phase 3 - TEST Authenticated API Isolation
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  api-isolation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Run TEST authenticated API isolation
+        env:
+          NFL_TEST_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NFL_TEST_SUPABASE_PUBLISHABLE_KEY }}
+          NFL_TEST_USER_A_EMAIL: ${{ secrets.NFL_TEST_USER_A_EMAIL }}
+          NFL_TEST_USER_A_PASSWORD: ${{ secrets.NFL_TEST_USER_A_PASSWORD }}
+          NFL_TEST_USER_B_EMAIL: ${{ secrets.NFL_TEST_USER_B_EMAIL }}
+          NFL_TEST_USER_B_PASSWORD: ${{ secrets.NFL_TEST_USER_B_PASSWORD }}
+        run: python scripts/nfl_phase3_api_isolation.py
