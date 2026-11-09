@@ -1,0 +1,27 @@
+name: NFL Phase 3 - TEST Supabase RLS Read-Only Audit
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install PostgreSQL driver
+        run: python -m pip install 'psycopg[binary]>=3.2,<4'
+      - name: Run catalog-only RLS audit (TEST database only)
+        env:
+          NFL_TEST_DATABASE_URL: ${{ secrets.NFL_TEST_DATABASE_URL }}
+        run: python scripts/nfl_phase3_rls_readonly_audit.py
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase3-rls-audit-${{ github.run_id }}
+          path: rls-audit-report.json
+          if-no-files-found: warn
