@@ -7,7 +7,7 @@ from pathlib import Path
 import psycopg
 
 OUTPUT = Path('rls-audit-report.json')
-TABLES = ('nfl_parlay_sync', 'nfl_prediction_tracking')
+TABLES = ('nfl_parlay_sync', 'nfl_user_prediction_tracking')
 
 
 def main():
