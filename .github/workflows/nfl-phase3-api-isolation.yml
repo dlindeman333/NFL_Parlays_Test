@@ -19,4 +19,5 @@ jobs:
           NFL_TEST_USER_A_PASSWORD: ${{ secrets.NFL_TEST_USER_A_PASSWORD }}
           NFL_TEST_USER_B_EMAIL: ${{ secrets.NFL_TEST_USER_B_EMAIL }}
           NFL_TEST_USER_B_PASSWORD: ${{ secrets.NFL_TEST_USER_B_PASSWORD }}
+          NFL_TEST_ALLOW_WRITE_ISOLATION: YES_TEST_ONLY
         run: python scripts/nfl_phase3_api_isolation.py
