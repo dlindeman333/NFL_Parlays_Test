@@ -35,6 +35,8 @@ def plan(export, existing, user_id):
         seen.add(key)
         if row.get('grade') not in ('HIT', 'MISS', 'PUSH') or row.get('provenance_status') != 'VERIFIED_PREGAME':
             raise ValueError('Export contains unverified or ungradeable rows')
+        if row.get('synthetic') is True or row.get('exclude_from_grading') is True or row.get('exclude_from_accuracy') is True or row.get('record_type') == 'RLS_SECURITY_TEST':
+            raise ValueError('Synthetic security-test records cannot enter prediction persistence')
         payload = dict(row)
         if key not in known:
             proposed.append({'user_id': user_id, 'tracking_id': key, 'payload': payload})

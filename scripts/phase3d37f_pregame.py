@@ -7,6 +7,7 @@ from phase3d37b_roster_match import BASE, fetch
 from phase3d37c_crosswalk import utc
 from phase3d37d_readiness import run as readiness_run
 from phase3d36c_supabase_stats import fetch_latest
+from phase3_test_boundary import validate as validate_test_boundary
 
 UTC=timezone.utc
 
@@ -65,6 +66,8 @@ def main():
     parser.add_argument('--output',default='phase3d37f-report.json')
     args=parser.parse_args()
     if not 0<args.max_export_age_hours<=168:raise ValueError('Invalid freshness window')
+    # Verify the TEST boundary before any external data request or privileged-key use.
+    validate_test_boundary(os.getenv("GITHUB_REPOSITORY", ""), os.getenv("SUPABASE_URL", ""))
     now=datetime.now(UTC)
     if args.season is None or args.week is None:
         detected_season,detected_week=current_week(fetch(BASE+'/scoreboard?limit=100'))
@@ -76,8 +79,11 @@ def main():
     if not source or not isinstance(source.get('csv_text'),str):raise ValueError('Missing source export')
     # Do not let the independent audit's second fetch substitute an unobserved source silently.
     readiness=readiness_run(season,week)
-    if readiness.get('export_generated_at')!=source.get('generated_at'):
-        raise ValueError('Source changed between acquisition and readiness audit; retry')
+    # A timestamp match is insufficient: two different exports can share generated_at.
+    observed_hash = hashlib.sha256(source['csv_text'].encode('utf-8')).hexdigest()
+    if (readiness.get('export_generated_at') != source.get('generated_at')
+            or readiness.get('source_csv_sha256') != observed_hash):
+        raise ValueError('Source changed or cannot be verified between acquisition and audit; retry')
     report=prepare(readiness,source,now,args.max_export_age_hours)
     Path(args.output).write_text(json.dumps(report,indent=2)+'\n',encoding='utf-8')
     print(json.dumps({k:report[k] for k in ('season','week','readiness','matched_players','recomputed_players','blocking_reasons','database_writes')}))

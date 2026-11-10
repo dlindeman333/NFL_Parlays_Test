@@ -1,5 +1,7 @@
 name: NFL Phase 3D37H Full Candidate Manifest (Read Only)
 on:
+  schedule:
+    - cron: '37 */3 * * *'
   workflow_dispatch:
     inputs:
       season:
@@ -17,6 +19,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   full-manifest:
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
@@ -26,6 +29,10 @@ jobs:
           python-version: '3.11'
       - name: Run unit tests
         run: python -m unittest discover -s scripts -p 'test_phase3d37h_full_manifest.py' -v
+      - name: Verify privileged TEST-only boundary
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: python scripts/phase3_test_boundary.py
       - name: Generate full read-only manifest
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

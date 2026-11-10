@@ -44,7 +44,10 @@ def prepare_write(plan, user_id):
             raise ValueError('Invalid tracking ID')
         ids.add(tracking_id)
         payload = row.get('payload')
-        if not isinstance(payload, dict) or payload.get('provenance_status') != 'VERIFIED_PREGAME' or payload.get('grade') not in ('HIT', 'MISS', 'PUSH'):
+        if (not isinstance(payload, dict) or payload.get('provenance_status') != 'VERIFIED_PREGAME'
+                or payload.get('grade') not in ('HIT', 'MISS', 'PUSH')
+                or payload.get('synthetic') is True or payload.get('exclude_from_grading') is True
+                or payload.get('exclude_from_accuracy') is True or payload.get('record_type') == 'RLS_SECURITY_TEST'):
             raise ValueError('Unverified grade payload')
     return rows
 

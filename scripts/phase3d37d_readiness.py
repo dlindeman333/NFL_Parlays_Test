@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Phase 3D37D: read-only point-in-time readiness audit. No prediction snapshots."""
-import argparse,csv,io,json,os
+import argparse,csv,io,json,os,hashlib
 from collections import defaultdict,Counter
 from datetime import datetime,timezone
 from pathlib import Path
@@ -127,6 +127,7 @@ def run(season,week):
    return result
   result.update(audit(rows,export.get('generated_at'),season,week,now,crosswalk,matches,abbr))
   result.update(status='ok',export_generated_at=export.get('generated_at'),
+    source_csv_sha256=hashlib.sha256(export['csv_text'].encode('utf-8')).hexdigest(),
     roster_players=len(roster),games_found=len(schedule),**registry_info)
  except Exception as exc:
   result['error_type']=type(exc).__name__

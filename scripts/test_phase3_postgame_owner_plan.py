@@ -38,6 +38,32 @@ class TestOwnerPlan(unittest.TestCase):
             self.assertFalse(result['ready'])
             self.assertFalse(old.exists())
 
+    def test_conflicting_owner_plan_invalidates_grade_export(self):
+        with tempfile.TemporaryDirectory() as d:
+            existing = Path(d) / 'existing.json'
+            existing.write_text(json.dumps([{'user_id': USER, 'tracking_id': 'a'*64,
+                                             'payload': {'grade': 'MISS'}}]))
+            grade_path = Path(d) / 'phase3-grade-export.json'
+            with patch('phase3_postgame_owner_plan.produce', return_value={'ready': True}):
+                grade_path.write_text(json.dumps({'mode': 'OFFLINE_GRADE_EXPORT',
+                    'ready': True, 'database_writes': 0, 'rows': [ROW]}))
+                result = build('a', 'b', existing, USER, d)
+            self.assertFalse(result['ready'])
+            self.assertFalse(grade_path.exists())
+
+    def test_invalid_existing_records_invalidate_grade_export(self):
+        with tempfile.TemporaryDirectory() as d:
+            existing = Path(d) / 'existing.json'
+            existing.write_text('{invalid json')
+            grade_path = Path(d) / 'phase3-grade-export.json'
+            with patch('phase3_postgame_owner_plan.produce', return_value={'ready': True}):
+                grade_path.write_text(json.dumps({'mode': 'OFFLINE_GRADE_EXPORT',
+                    'ready': True, 'database_writes': 0, 'rows': [ROW]}))
+                with self.assertRaises(json.JSONDecodeError):
+                    build('a', 'b', existing, USER, d)
+            self.assertFalse(grade_path.exists())
+            self.assertFalse((Path(d) / 'phase3-owner-tracking-plan.json').exists())
+
     def test_valid_offline_export_produces_locked_owner_plan(self):
         with tempfile.TemporaryDirectory() as d:
             existing = Path(d) / 'existing.json'
