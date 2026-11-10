@@ -67,3 +67,35 @@ jobs:
           NFL_TEST_USER_B_PASSWORD: ${{ secrets.NFL_TEST_USER_B_PASSWORD }}
           NFL_TEST_ALLOW_WRITE_ISOLATION: YES_TEST_ONLY
         run: python scripts/nfl_phase3_api_isolation.py
+
+  operational-readiness:
+    needs: offline-release-gate
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Generate offline postgame readiness (no credentials or writes)
+        env:
+          PYTHONPATH: scripts
+        run: python scripts/phase3_postgame_artifact_pipeline.py --output-dir operational-readiness
+      - name: Generate live read-only injury readiness (not a completed sync)
+        env:
+          PYTHONPATH: scripts
+          NFL_PHASE3_INJURY_REPORT: operational-readiness/phase3-injury-preview-report.json
+          NFL_PHASE3_INJURY_VALIDATED_OUTPUT: operational-readiness/phase3-injury-validated-observations.json
+          NFL_PHASE3_INJURY_FEED_URL: ${{ vars.NFL_PHASE3_INJURY_FEED_URL }}
+          NFL_PHASE3_INJURY_FEED_HOST: ${{ vars.NFL_PHASE3_INJURY_FEED_HOST }}
+        run: python scripts/phase3_weekly_injury_preview.py
+      - name: Upload operational readiness evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase3-operational-readiness
+          path: operational-readiness/*.json
+          if-no-files-found: warn
