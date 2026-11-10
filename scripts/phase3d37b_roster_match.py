@@ -4,11 +4,23 @@ import argparse, csv, io, json, os, sys, time
 from collections import defaultdict
 from datetime import datetime, timezone
 from urllib.request import Request, urlopen
+from urllib.error import HTTPError, URLError
 
 BASE='https://site.api.espn.com/apis/site/v2/sports/football/nfl'
-def fetch(url):
-    with urlopen(Request(url,headers={'User-Agent':'NFLParlayReadOnlyAudit/1.0','Accept':'application/json'}),timeout=25) as r:
-        return json.load(r)
+def fetch(url, attempts=3, delay=0.5):
+    """Retry transient ESPN failures; preserve fail-closed behavior on exhaustion."""
+    for attempt in range(attempts):
+        try:
+            with urlopen(Request(url,headers={'User-Agent':'NFLParlayReadOnlyAudit/1.0','Accept':'application/json'}),timeout=25) as response:
+                return json.load(response)
+        except HTTPError as exc:
+            # ESPN has occasionally returned a temporary 404 for valid roster URLs.
+            if exc.code not in (404,408,429,500,502,503,504) or attempt == attempts-1:
+                raise RuntimeError(f'ESPN request failed: {url} (HTTP {exc.code})') from exc
+        except (URLError,TimeoutError) as exc:
+            if attempt == attempts-1:
+                raise RuntimeError(f'ESPN request failed after {attempts} attempts: {url}') from exc
+        time.sleep(delay * (2 ** attempt))
 def teams(data):
     leagues=data.get('sports',[])
     entries=[]
