@@ -40,6 +40,11 @@ def audit(url, key):
     return report
 
 def main():
+    from phase3_test_boundary import validate
+    try:
+        validate(os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("SUPABASE_URL", ""))
+    except ValueError:
+        return 2
     url=os.environ.get('SUPABASE_URL',''); key=os.environ.get('SUPABASE_SERVICE_ROLE_KEY','')
     if not url.startswith('https://') or not key:
         print('Required Supabase GitHub secrets missing',file=sys.stderr);return 2

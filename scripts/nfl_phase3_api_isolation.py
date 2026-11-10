@@ -120,6 +120,26 @@ def main():
                 prefer='return=representation')
             check(status in (400, 401, 403, 409), f'{name} foreign prediction INSERT rejected')
 
+            # Non-destructive tracking checks: no user-created records or cleanup required.
+            # A cross-account PATCH must affect zero rows even if the other user has data.
+            tracking_path = ('/rest/v1/nfl_user_prediction_tracking?user_id=eq.'
+                             + urllib.parse.quote(other) + '&select=user_id,tracking_id')
+            status, result = call('PATCH', tracking_path, token,
+                body={'payload': {'phase3_security_gate': 'ILLEGAL_FOREIGN_UPDATE'}},
+                prefer='return=representation')
+            check(status == 200 and result == [], f'{name} foreign prediction UPDATE blocked')
+
+            # Authenticated users must not have DELETE permission on prediction evidence.
+            # Filter to an impossible marker as defense in depth, even if grants regress.
+            delete_path = ('/rest/v1/nfl_user_prediction_tracking?user_id=eq.'
+                           + urllib.parse.quote(own)
+                           + '&tracking_id=eq.phase3_impossible_delete_guard_20261109'
+                           + '&select=user_id,tracking_id')
+            status, result = call('DELETE', delete_path, token,
+                prefer='return=representation')
+            check(status in (400, 401, 403, 405),
+                  f'{name} authenticated prediction DELETE permission denied')
+
         for name, token, own, _ in users:
             status, result = call('PATCH', parlay_path(own) + '&select=user_id,payload', token,
                 body={'payload': {**payload_marker(name), 'updated': True}},
@@ -154,7 +174,8 @@ def main():
         if cleanup_errors:
             raise AssertionError('; '.join(cleanup_errors))
     print('PASS: TEST authenticated parlay write isolation and cleanup')
-    print('PENDING: positive prediction-tracking write isolation (requires safe cleanup design)')
+    print('PASS: negative prediction-tracking INSERT/UPDATE/DELETE isolation')
+    print('PENDING: positive owner prediction-tracking INSERT/UPDATE (requires safe cleanup design)')
 
 
 if __name__ == '__main__':

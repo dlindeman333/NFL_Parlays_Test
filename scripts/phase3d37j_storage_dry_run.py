@@ -34,6 +34,8 @@ def group_candidates(candidates,manifest,now,existing_keys,minimum_lead_minutes=
     return plans,dict(reject)
 
 def fetch_existing():
+    from phase3_test_boundary import validate
+    validate(os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("SUPABASE_URL", ""))
     url=os.environ['SUPABASE_URL'].rstrip('/')
     key=os.environ['SUPABASE_SERVICE_ROLE_KEY']
     parsed=urllib.parse.urlsplit(url)

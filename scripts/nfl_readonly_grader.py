@@ -5,7 +5,7 @@ from collections import Counter
 
 STATS = {'pass_attempts','pass_completions','pass_yards','pass_tds','pass_interceptions','rush_attempts','rush_yards','rush_tds','targets','receptions','rec_yards','rec_tds','touchdowns'}
 
-def grade_pick(p, rows):
+def grade_pick(p, rows, expected_game_id=None):
     if p.get('market') != 'player':
         return {'status':'UNAVAILABLE','reason':'Non-player markets require verified final game scores'}
     stat=p.get('stat'); side=p.get('side'); line=p.get('line')
@@ -19,7 +19,10 @@ def grade_pick(p, rows):
     name=str(p.get('player_name') or '').strip().casefold(); team=str(p.get('team') or '').strip().upper()
     if not name or not team: return {'status':'UNAVAILABLE','reason':'Missing player/team identity'}
     matches=[r for r in rows if str(r.get('name') or r.get('player') or '').strip().casefold()==name and str(r.get('team') or '').strip().upper()==team and str(r.get('game_status') or '').upper()=='COMPLETED']
-    if len(matches)!=1: return {'status':'UNAVAILABLE','reason':'Missing or ambiguous completed player row'}
+    if expected_game_id is not None:
+        # Fail closed: game identity must be present on the final statistics row.
+        matches=[r for r in matches if str(r.get('game_id') or '').strip()==str(expected_game_id).strip()]
+    if len(matches)!=1: return {'status':'UNAVAILABLE','reason':'Missing or ambiguous completed player row for the expected game'}
     row=matches[0]
     try:
         if stat=='touchdowns':
@@ -45,7 +48,7 @@ def audit(snapshots, stats):
     for snap in snapshots:
         season,week=int(snap['season']),int(snap['week'])
         for i,p in enumerate(snap.get('picks') or []):
-            result=grade_pick(p,indexed.get((season,week),[]))
+            result=grade_pick(p,indexed.get((season,week),[]),expected_game_id=snap.get('game_id'))
             output.append({'season':season,'week':week,'game_id':str(snap.get('game_id','')),'pick_index':i,'status':result['status'],'reason':result.get('reason'),'actual':result.get('actual')})
     counts=Counter(r['status'] for r in output)
     return {'mode':'READ_ONLY_OFFLINE_GRADING_PREVIEW','summary':dict(sorted(counts.items())),'total_picks':len(output),'results':output,'database_writes':0,'readiness':'NO_WRITE_APPROVAL'}
