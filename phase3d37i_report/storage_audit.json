@@ -1,0 +1,31 @@
+{
+  "phase": "3D37I",
+  "mode": "READ_ONLY_SCHEMA_AUDIT",
+  "audited_at_utc": "2026-11-09T23:18:44.351664+00:00",
+  "tables": [
+    {
+      "table": "nfl_prediction_snapshots",
+      "error_type": "TypeError",
+      "status": "UNAVAILABLE_OR_QUERY_FAILED"
+    },
+    {
+      "table": "nfl_prediction_grades",
+      "error_type": "TypeError",
+      "status": "UNAVAILABLE_OR_QUERY_FAILED"
+    },
+    {
+      "table": "nfl_user_prediction_tracking",
+      "error_type": "TypeError",
+      "status": "UNAVAILABLE_OR_QUERY_FAILED"
+    }
+  ],
+  "write_operations": 0,
+  "readiness": "BLOCKED_PENDING_SQL_POLICY_AND_SCHEMA_REVIEW",
+  "limitations": [
+    "REST GET cannot prove RLS enforcement or policy definitions.",
+    "REST sample cannot prove a unique index or existing logical-key coverage.",
+    "No rows are exported and no prediction writes are attempted.",
+    "A service-role key bypasses RLS; never expose it to client-side code.",
+    "Do not overwrite or backfill historical predictions."
+  ]
+}
