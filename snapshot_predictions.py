@@ -45,6 +45,8 @@ def schedule():
 
 
 def main():
+    from scripts.phase3_snapshot_write_boundary import require_snapshot_write_authorization
+    require_snapshot_write_authorization()
     if SEASON != MODEL_SEASON:
         raise RuntimeError(f"Pregame snapshots disabled for {SEASON}: browser model inputs are still based on {MODEL_SEASON}. Update and validate the model before archiving forecasts.")
     events = schedule()

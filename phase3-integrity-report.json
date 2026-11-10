@@ -1,0 +1,401 @@
+{
+  "workflow_count": 83,
+  "entrypoints_checked": 98,
+  "missing_count": 62,
+  "missing": [
+    {
+      "workflow": "nfl-phase3-safe-compare.yml",
+      "script": "scripts/upload_stats.py"
+    },
+    {
+      "workflow": "nfl-phase3b-backup.yml",
+      "script": "scripts/backup_stats.py"
+    },
+    {
+      "workflow": "nfl-phase3b-protected-upload.yml",
+      "script": "scripts/backup_stats.py"
+    },
+    {
+      "workflow": "nfl-phase3b-protected-upload.yml",
+      "script": "scripts/protected_stats_upload.py"
+    },
+    {
+      "workflow": "nfl-phase3c1-pregame-validation.yml",
+      "script": "scripts/phase3c_validate.py"
+    },
+    {
+      "workflow": "nfl-phase3c2-model-preview.yml",
+      "script": "scripts/phase3c2_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c2b-parity.yml",
+      "script": "scripts/phase3c2b_parity.py"
+    },
+    {
+      "workflow": "nfl-phase3c3a-snapshot-safety.yml",
+      "script": "scripts/phase3c3a_snapshot_safety.py"
+    },
+    {
+      "workflow": "nfl-phase3c3b-audit.yml",
+      "script": "scripts/phase3c3b_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d1-writer-preview.yml",
+      "script": "scripts/phase3c3d1_writer_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d10-completeness-audit.yml",
+      "script": "scripts/phase3c3d10_completeness_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d11-source-validation.yml",
+      "script": "scripts/phase3c3d11_source_validation.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d12-game-evidence.yml",
+      "script": "scripts/phase3c3d12_game_evidence.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d13-game-injury-probe.yml",
+      "script": "scripts/phase3c3d13_game_injury_probe.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d14-inactive-source-probe.yml",
+      "script": "scripts/phase3c3d14_inactive_source_probe.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d15-timed-inactive-probe.yml",
+      "script": "scripts/phase3c3d15_timed_inactive_probe.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d16-official-inactive-parser-probe.yml",
+      "script": "scripts/phase3c3d16_official_inactive_parser_probe.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d17-inactive-matching.yml",
+      "script": "scripts/phase3c3d17_inactive_matching.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d18-eligibility-tests.yml",
+      "script": "scripts/phase3c3d18_eligibility_tests.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d19-weekly-injury-sync-preview.yml",
+      "script": "scripts/phase3c3d19_weekly_injury_sync_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d2-game-id-audit.yml",
+      "script": "scripts/phase3c3d2_game_id_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d20-readiness-audit.yml",
+      "script": "scripts/phase3c3d20_readiness_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d21-initial-load-preview.yml",
+      "script": "scripts/phase3c3d21_initial_load_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d21a-corrected-injury-parser.yml",
+      "script": "scripts/phase3c3d21a_initial_load_preview_fixed.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d21b-injury-parser-diagnostics.yml",
+      "script": "scripts/phase3c3d21b_injury_parser_diagnostics.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d21c-player-id-parser.yml",
+      "script": "scripts/phase3c3d21c_parser_tests.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d21c-player-id-parser.yml",
+      "script": "scripts/phase3c3d21c_player_id_parser_fixed.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d22-initial-load-preview.yml",
+      "script": "scripts/phase3c3d22_initial_load_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d23-injury-storage-safeguards.yml",
+      "script": "scripts/phase3c3d22_initial_load_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d23-injury-storage-safeguards.yml",
+      "script": "scripts/phase3c3d23_storage_decision_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d24-live-supabase-comparison.yml",
+      "script": "scripts/phase3c3d22_initial_load_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d24-live-supabase-comparison.yml",
+      "script": "scripts/phase3c3d23_storage_decision_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d24-live-supabase-comparison.yml",
+      "script": "scripts/phase3c3d24_live_db_comparison.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d25-backup-authorization-preparation.yml",
+      "script": "scripts/phase3c3d22_initial_load_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d25-backup-authorization-preparation.yml",
+      "script": "scripts/phase3c3d23_storage_decision_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d25-backup-authorization-preparation.yml",
+      "script": "scripts/phase3c3d24_live_db_comparison.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d25-backup-authorization-preparation.yml",
+      "script": "scripts/phase3c3d25_backup_authorization_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d3-final-eligibility.yml",
+      "script": "scripts/phase3c3d3_final_eligibility.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d4-roster-injury-audit.yml",
+      "script": "scripts/phase3c3d4_roster_injury_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d5-identity-audit.yml",
+      "script": "scripts/phase3c3d5_identity_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d6-injury-evidence.yml",
+      "script": "scripts/phase3c3d6_injury_evidence.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d7-injury-diagnostics.yml",
+      "script": "scripts/phase3c3d7_injury_diagnostics.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d8-injury-parser-audit.yml",
+      "script": "scripts/phase3c3d8_injury_parser_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3c3d9-injury-eligibility-audit.yml",
+      "script": "scripts/phase3c3d9_injury_eligibility_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3d27-29-consolidated-development-preview.yml",
+      "script": "scripts/phase3c3d22_initial_load_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d27-29-consolidated-development-preview.yml",
+      "script": "scripts/phase3c3d23_storage_decision_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d27-29-consolidated-development-preview.yml",
+      "script": "scripts/phase3c3d24_live_db_comparison.py"
+    },
+    {
+      "workflow": "nfl-phase3d27-29-consolidated-development-preview.yml",
+      "script": "scripts/phase3c3d25_backup_authorization_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d27-29-consolidated-development-preview.yml",
+      "script": "scripts/phase3d27_29_automation_gates.py"
+    },
+    {
+      "workflow": "nfl-phase3d30-scheduled-readonly.yml",
+      "script": "scripts/phase3c3d22_initial_load_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d30-scheduled-readonly.yml",
+      "script": "scripts/phase3c3d23_storage_decision_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d30-scheduled-readonly.yml",
+      "script": "scripts/phase3c3d24_live_db_comparison.py"
+    },
+    {
+      "workflow": "nfl-phase3d30-scheduled-readonly.yml",
+      "script": "scripts/phase3c3d25_backup_authorization_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d30-scheduled-readonly.yml",
+      "script": "scripts/phase3d27_29_automation_gates.py"
+    },
+    {
+      "workflow": "nfl-phase3d30-scheduled-readonly.yml",
+      "script": "scripts/phase3d30_scheduled_readiness.py"
+    },
+    {
+      "workflow": "nfl-phase3d31-live-readonly-inventory.yml",
+      "script": "scripts/phase3d31_live_worker_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d32-snapshot-schema-audit.yml",
+      "script": "scripts/phase3d32_snapshot_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3d33-snapshot-timing.yml",
+      "script": "scripts/phase3d33_snapshot_timing.py"
+    },
+    {
+      "workflow": "nfl-phase3d34-offline-worker-tests.yml",
+      "script": "scripts/phase3d34_workers.py"
+    },
+    {
+      "workflow": "nfl-phase3d35-live-evidence-readonly.yml",
+      "script": "scripts/phase3d35_live_evidence.py"
+    },
+    {
+      "workflow": "nfl-phase3d36-live-processing-readonly.yml",
+      "script": "scripts/phase3d36_live_processing.py"
+    },
+    {
+      "workflow": "nfl-phase3d37a-pregame-readiness.yml",
+      "script": "scripts/phase3d37_prediction_readiness.py"
+    }
+  ],
+  "present": [
+    {
+      "workflow": "nfl-accelerated-package1-readonly.yml",
+      "script": "scripts/phase3_consolidated_gate.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package1-readonly.yml",
+      "script": "scripts/phase3d37h_full_manifest.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package10-scheduled.yml",
+      "script": "scripts/nfl_package10_scheduled_worker.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package11-integrated.yml",
+      "script": "scripts/nfl_package11_integrated.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package12-release-gate.yml",
+      "script": "scripts/nfl_package12_release_gate.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package13-backup.yml",
+      "script": "scripts/nfl_package13_backup.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package14-schema-staging.yml",
+      "script": "scripts/nfl_package14_integrated.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package3-live-audit.yml",
+      "script": "scripts/nfl_package3_live_audit.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package4-final-evidence.yml",
+      "script": "scripts/nfl_package3_live_audit.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package4-final-evidence.yml",
+      "script": "scripts/nfl_package4_final_evidence.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package5-game-stats.yml",
+      "script": "scripts/nfl_package5_game_stats.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package6-pick-match.yml",
+      "script": "scripts/nfl_package6_pick_match.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package7-integrated.yml",
+      "script": "scripts/nfl_package7_integrated_preview.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package8-market-grading.yml",
+      "script": "scripts/nfl_package8_market_grader.py"
+    },
+    {
+      "workflow": "nfl-accelerated-package9-consolidated-worker.yml",
+      "script": "scripts/nfl_package9_consolidated_worker.py"
+    },
+    {
+      "workflow": "nfl-phase3-api-isolation.yml",
+      "script": "scripts/nfl_phase3_api_isolation.py"
+    },
+    {
+      "workflow": "nfl-phase3-backup-rehearsal.yml",
+      "script": "scripts/nfl_backup_rehearsal.py"
+    },
+    {
+      "workflow": "nfl-phase3-backup-rehearsal.yml",
+      "script": "scripts/nfl_package13_backup.py"
+    },
+    {
+      "workflow": "nfl-phase3-rls-readonly-audit.yml",
+      "script": "scripts/nfl_phase3_rls_readonly_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3-weekly-injury-readiness.yml",
+      "script": "scripts/phase3_weekly_injury_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d36b-stats-preview-readonly.yml",
+      "script": "scripts/phase3d36b_stats_candidates.py"
+    },
+    {
+      "workflow": "nfl-phase3d36c-supabase-stats-readonly.yml",
+      "script": "scripts/phase3d36c_supabase_stats.py"
+    },
+    {
+      "workflow": "nfl-phase3d37b-roster-match-readonly.yml",
+      "script": "scripts/phase3d37b_roster_match.py"
+    },
+    {
+      "workflow": "nfl-phase3d37c-crosswalk-readonly.yml",
+      "script": "scripts/phase3d37c_crosswalk.py"
+    },
+    {
+      "workflow": "nfl-phase3d37c-join-fix-readonly.yml",
+      "script": "scripts/phase3d37c_join_fix.py"
+    },
+    {
+      "workflow": "nfl-phase3d37c-joined-preview-readonly.yml",
+      "script": "scripts/phase3d37c_join_preview.py"
+    },
+    {
+      "workflow": "nfl-phase3d37c-matchup-fix-readonly.yml",
+      "script": "scripts/phase3d37c_crosswalk.py"
+    },
+    {
+      "workflow": "nfl-phase3d37d-readiness-readonly.yml",
+      "script": "scripts/phase3d37d_readiness.py"
+    },
+    {
+      "workflow": "nfl-phase3d37e-evidence-readonly.yml",
+      "script": "scripts/phase3d37e_capture.py"
+    },
+    {
+      "workflow": "nfl-phase3d37f-pregame-readonly.yml",
+      "script": "scripts/phase3d37f_pregame.py"
+    },
+    {
+      "workflow": "nfl-phase3d37g-forward-gate-readonly.yml",
+      "script": "scripts/phase3d37g_forward_gate.py"
+    },
+    {
+      "workflow": "nfl-phase3d37h-full-manifest-readonly.yml",
+      "script": "scripts/phase3d37h_full_manifest.py"
+    },
+    {
+      "workflow": "nfl-phase3d37i-storage-audit-readonly.yml",
+      "script": "scripts/phase3d37i_storage_audit.py"
+    },
+    {
+      "workflow": "nfl-phase3d37j-storage-dry-run.yml",
+      "script": "scripts/phase3d37h_full_manifest.py"
+    },
+    {
+      "workflow": "nfl-phase3d37j-storage-dry-run.yml",
+      "script": "scripts/phase3d37j_storage_dry_run.py"
+    },
+    {
+      "workflow": "nfl-phase3d37k-pick-compat-readonly.yml",
+      "script": "scripts/phase3d37k_pick_compat_audit.py"
+    }
+  ]
+}

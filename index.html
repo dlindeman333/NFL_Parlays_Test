@@ -101,9 +101,18 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 .pred-chart-svg{display:block;width:100%;height:auto;max-height:330px}
 .pred-table-scroll{overflow-x:auto}
 @media(max-width:480px){.pred-kpis{gap:6px}.pred-kpi{padding:10px}.pred-chart-card{padding:10px}}
+#topAccountPanel #sbAuthForm{display:flex;align-items:end;flex-wrap:wrap;gap:8px}#topAccountPanel #sbAuthForm label{display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:650}#topAccountPanel #sbAuthForm input{padding:9px;border:1px solid var(--bd);border-radius:8px;background:var(--card);color:var(--tx);max-width:100%}#topAccountPanel #topAccountIndicator{overflow-wrap:anywhere}
+</style>
+<style id="phase3MobileSlipStyles">
+#phase3MobileSlipToggle{display:none}
+#phase3MobileSlipDialog{background:var(--card);color:var(--tx);border:1px solid var(--bd);border-radius:16px 16px 0 0;padding:16px;width:100%;max-width:100%;max-height:85dvh;margin:auto 0 0;overflow:auto;box-sizing:border-box}
+#phase3MobileSlipDialog::backdrop{background:rgba(0,0,0,.6)}
+#phase3MobileSlipDialog .mobile-slip-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
+@media(max-width:700px){#phase3MobileSlipToggle{display:block;position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));right:12px;z-index:30;box-shadow:0 5px 18px #0005}body{padding-bottom:75px}}
 </style>
 </head><body>
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
+<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 Your account</strong><span class="mu" id="topAccountIndicator" role="status" aria-live="polite">Checking sign-in…</span></div><div id="topAuthMount"></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
 <div class="card" style="border-color:#b45309"><b>Account isolation test · local cleanup available, cloud writes paused</b><div class="mu">Sign-in and read-only cloud checks work. You can explicitly clear old local TEST parlays after verifying the reset cloud. Cloud writes, restore, merging, and cloud deletion remain paused.</div></div>
 <div class="navlinks"><button id="openSetup" class="btn alt" type="button">⚙ Setup</button><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
@@ -116,6 +125,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 <div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
 </section>
 <section id="csvSetup"><h2>Upload NFL Stats</h2><div id="autoStatsStatus" class="mu" role="status">Cloud NFL statistics: checking…</div><div class="mu" style="margin:5px 0 8px">Imported player statistics are retained in this browser until you select Clear imported stats.</div><div class="tools"><span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px"><button class="btn" type="button" id="chooseCSV">Choose CSV file</button><span id="csvFileName" class="mu" role="status">Empty</span></span><input id="csvUpload" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-label="Choose player statistics CSV"><button class="btn alt" id="clearCSV">Clear imported stats</button></div><div id="csvState" class="mu">Empty — no imported player statistics.</div><div class="mu" id="csvLastUpload" style="margin-top:7px" role="status">Latest upload: Never</div><div class="mu">Data source: Onboard + uploaded NFL stats (automatic)</div></section></div></dialog>
+<details id="phase3DataHealth" class="card" style="margin:12px 0" aria-label="Data health and synchronization status"><summary style="cursor:pointer;font-weight:700">Data health &amp; synchronization status</summary><p class="mu">Device-level diagnostics only. These indicators do not certify that NFL feeds are current or that cloud writes are enabled.</p><div id="phase3HealthResults" role="status" aria-live="polite">Checking local connection…</div><button type="button" class="btn alt" id="phase3HealthRefresh" style="margin-top:8px">Refresh status</button></details>
 <h2 id="myParlays">My parlays</h2><div id="sumry" class="card"></div>
 <section id="savedParlaySlips" style="margin-top:18px"><h2>Saved parlay slips</h2><div class="mu">Showing saved parlays for the selected NFL week. Expand previous weeks to see older slips.</div><div class="tools"><button type="button" class="btn alt" id="toggleSavedPrevious" aria-expanded="false" aria-controls="savedPreviousWeeks">Show previous weeks saved parlays</button></div><div id="saved"></div><div class="mu" id="savedActionStatus" role="status" aria-live="polite"></div><div class="tools" style="margin-top:12px"><button class="btn alt" id="copyAllSaved">Copy all saved parlays</button><button type="button" class="btn alt" id="deleteAllSaved">Delete all my saved parlays…</button></div></section>
 <!-- Active parlay summary and actions above draft slip listing -->
@@ -124,6 +134,8 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 
 <div class="row" style="margin:8px 0"><button class="btn" id="save">Save parlay</button><button class="btn alt" id="cp">Copy slip</button><button class="btn alt" id="xl">Export spreadsheet</button><span class="mu" id="msg"></span></div>
 
+<button type="button" class="btn" id="phase3MobileSlipToggle" aria-haspopup="dialog" aria-controls="phase3MobileSlipDialog" aria-expanded="false">View active slip</button>
+<dialog id="phase3MobileSlipDialog" aria-label="Active parlay slip"><div class="mobile-slip-heading"><strong>Active parlay slip</strong><button type="button" class="btn alt" id="phase3MobileSlipClose">Close</button></div><div id="phase3MobileSlipContents"></div></dialog>
 <h2 id="builderSettingsTitle">Week &amp; pick filters</h2>
 <div class="mu" style="margin-bottom:8px">Select the NFL week, game type, kickoff, and pick filters here.</div>
 <div class="card" id="builderControls">
@@ -134,6 +146,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
   </div>
   <div class="row" style="margin-top:10px"><b>Kickoff</b></div><div class="row" id="tf" style="margin-top:4px"></div>
 <div class="row" style="margin-top:10px"><b>Picks</b></div><div class="row" id="pf" style="margin-top:4px"></div>
+<div class="row" style="margin-top:12px"><button type="button" class="btn alt" id="resetBuilderFilters" onclick="resetBuilderFilters()">Reset filters</button><span class="mu">Kickoff, pick type, and game search are remembered on this device.</span></div>
 <div class="mu" id="hint" style="margin-top:8px"></div>
 </div>
 
@@ -152,11 +165,36 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 <p class="mu">Team TD, passing and rushing picks are estimates against standard reference lines. Player picks use season totals from StatsCrew league leaders (Pro-Football-Reference blocks automated access), so only leading QBs, RBs and TD scorers appear, lines are each player’s season average, and TD counts may miss receiving scores for backs. Odds shown are model-estimated (about 4.5% margin built in), and spread/total lines are model reference lines, not sportsbook prices. Check your book for real lines before betting. These are estimates, not guarantees; same-game legs are correlated, so books price them differently. Please bet responsibly.</p>
 
 <h2 id="advancedPredictions">AI Matchup Recommendations</h2>
-<div class="mu">Data-driven matchup analysis using available model estimates and imported player game logs. Not a live generative AI service. Sportsbook lines are optional and entered manually; no paid API or background odds scraping.</div>
+<details id="phase3AdvancedMethodology" class="card" style="margin:8px 0 12px"><summary style="cursor:pointer;font-weight:700">How matchup analysis works (advanced details)</summary><p class="mu">Data-driven matchup analysis using available model estimates and imported player game logs. Not a live generative AI service. Sportsbook lines are optional and entered manually; no paid API or background odds scraping.</p><p class="mu">Model estimates are not sportsbook odds. Verify current lines, player availability, and kickoff times before making selections.</p></details>
 <div class="tools" role="tablist" aria-label="AI Matchups sections"><button type="button" class="btn" id="advTabRecommendations" aria-selected="true">Recommendations</button><button type="button" class="btn alt" id="advTabPerformance" aria-selected="false">Prediction Performance</button></div><div id="advRecommendationPanel"><div class="card"><div class="tools"><label for="advView"><b>View</b></label><select id="advView"><option value="picks">Top picks</option><option value="games">Game matchups</option><option value="parlays">Suggested parlay</option></select><label for="advMarket"><b>Market</b></label><select id="advMarket"><option value="all">All</option><option value="ps">Passing yards</option><option value="ru">Rushing yards</option><option value="td">Touchdowns</option></select></div><div id="advStatus" class="mu" role="status"></div><div id="advResults"></div><div id="advEditor" class="card" hidden><b id="advEditTitle">Sportsbook line</b><div class="mu">Enter a line you personally verified at the sportsbook. These values are not automatically refreshed or cloud-synced.</div><div class="tools"><select id="advBook"><option>DraftKings</option><option>FanDuel</option><option>Other</option></select><label>Line <input id="advLine" type="number" min="0" step="0.5" placeholder="225.5"></label><label>American odds <input id="advOdds" type="number" step="1" placeholder="-110"></label><button class="btn" id="advSaveLine" type="button">Save line</button><button class="btn alt" id="advCancelLine" type="button">Cancel</button></div></div></div>
-</div><div id="advPerformancePanel" hidden><div class="card"><b>Tracked AI recommendations</b><p class="mu">Save a pregame snapshot of the currently ranked recommendations. Once final player statistics are imported, this tab grades the original lines without changing the prediction engine. Snapshots stay in this browser; export a backup to preserve them. Only pregame snapshots count.</p><div class="tools"><button type="button" class="btn" id="advTrackSnapshot">Save current Top 12 predictions</button><button type="button" class="btn alt" id="advExportTracking">Export tracking history</button><button type="button" class="btn alt" id="advImportTracking">Import tracking history</button><input type="file" id="advImportTrackingFile" accept=".json,application/json" hidden></div><div id="advTrackingStatus" class="mu" role="status"></div><div id="advTrackingResults"></div></div><div id="cloudOfficialGrades" class="card" style="margin-top:12px"><b>Official cloud grading</b><p class="mu">Verified cloud grade records are shown separately from browser estimates. No records are changed here.</p><div id="cloudOfficialGradesStatus" class="mu" role="status">Waiting to load cloud grades…</div><div id="cloudOfficialGradesResults"></div><button class="btn alt" type="button" id="cloudOfficialGradesRefresh">Refresh official grades</button></div><h2 id="aiPerformance">Previous Week &amp; Season AI Performance</h2><div id="boxState" class="mu" role="status" aria-live="polite" hidden></div><div id="archivedPerformance" class="card"><b>Archived pregame prediction accuracy</b><div class="mu">Checking for timestamped pregame snapshots…</div></div><div id="performance"></div><dialog id="performanceDetails" class="performance-modal" aria-label="AI performance pick details"><div class="performance-modal-inner"><div class="performance-modal-head"><h3 id="performanceDetailsTitle">Pick details</h3><button type="button" class="btn alt" id="closePerformanceDetails">Close ✕</button></div><div id="performanceDetailsBody"></div></div></dialog><div class="mu">Only predictions with verifiable final results are scored. Player props require matching weekly CSV data. The existing performance cards below are retrospective model evaluations; archived pregame accuracy is shown separately above; unavailable outcomes are excluded from hit percentages.</div>
+</div><div id="advPerformancePanel" hidden><div class="card"><b>Tracked AI recommendations</b><p class="mu">Save a pregame snapshot of the currently ranked recommendations. Once final player statistics are imported, this tab grades the original lines without changing the prediction engine. Snapshots stay in this browser; export a backup to preserve them. Only pregame snapshots count.</p><div class="tools"><button type="button" class="btn" id="advTrackSnapshot">Save current Top 12 predictions</button><button type="button" class="btn alt" id="advExportTracking">Export tracking history</button><button type="button" class="btn alt" id="advImportTracking">Import tracking history</button><input type="file" id="advImportTrackingFile" accept=".json,application/json" hidden></div><div id="advTrackingStatus" class="mu" role="status"></div><div id="advTrackingResults"></div></div><div id="cloudUserPredictionHistory" class="card" style="margin-top:12px"><b>My cloud prediction history</b><p class="mu">Read-only preview of prediction tracking saved for your signed-in account. This does not upload local snapshots or change cloud records.</p><div id="cloudUserPredictionHistoryStatus" class="mu" role="status">Sign in to view your cloud prediction history.</div><div id="cloudUserPredictionHistoryResults"></div><button class="btn alt" type="button" id="cloudUserPredictionHistoryRefresh">Refresh my cloud history</button></div><div id="cloudOfficialGrades" class="card" style="margin-top:12px"><b>Official cloud grading</b><p class="mu">Verified cloud grade records are shown separately from browser estimates. No records are changed here.</p><div id="cloudOfficialGradesStatus" class="mu" role="status">Waiting to load cloud grades…</div><div id="cloudOfficialGradesResults"></div><button class="btn alt" type="button" id="cloudOfficialGradesRefresh">Refresh official grades</button></div><h2 id="aiPerformance">Previous Week &amp; Season AI Performance</h2><div id="boxState" class="mu" role="status" aria-live="polite" hidden></div><div id="archivedPerformance" class="card"><b>Archived pregame prediction accuracy</b><div class="mu">Checking for timestamped pregame snapshots…</div></div><div id="performance"></div><dialog id="performanceDetails" class="performance-modal" aria-label="AI performance pick details"><div class="performance-modal-inner"><div class="performance-modal-head"><h3 id="performanceDetailsTitle">Pick details</h3><button type="button" class="btn alt" id="closePerformanceDetails">Close ✕</button></div><div id="performanceDetailsBody"></div></div></dialog><div class="mu">Only predictions with verifiable final results are scored. Player props require matching weekly CSV data. The existing performance cards below are retrospective model evaluations; archived pregame accuracy is shown separately above; unavailable outcomes are excluded from hit percentages.</div>
 
 </div>
+<script>
+(function(){
+  const target=document.getElementById('phase3HealthResults');
+  const refresh=document.getElementById('phase3HealthRefresh');
+  if(!target||!refresh)return;
+  function update(){
+    const online=navigator.onLine===false?'Device reports offline':'Device reports online (server reachability unverified)';
+    const cloud=document.getElementById('sbStatus');
+    const cloudText=cloud?(cloud.textContent||'').trim():'Cloud status unavailable';
+    const stats=document.getElementById('autoStatsStatus');
+    const statsText=stats?(stats.textContent||'').trim():'NFL statistics status unavailable';
+    target.replaceChildren();
+    for(const [label,value] of [['Network',online],['Cloud sync',cloudText],['NFL statistics',statsText],['Cloud writes','Paused for Phase 3 TEST validation']]){
+      const p=document.createElement('p');p.className='mu';
+      const b=document.createElement('strong');b.textContent=label+': ';
+      p.append(b,document.createTextNode(value));target.appendChild(p);
+    }
+  }
+  refresh.addEventListener('click',update);
+  window.addEventListener('online',update);
+  window.addEventListener('offline',update);
+  document.getElementById('phase3DataHealth').addEventListener('toggle',e=>{if(e.target.open)update()});
+  update();
+})();
+</script>
 <script>
 const NFL_SEASON_KEY="nflp-selected-season-v1";
 const currentNFLSeason=()=>{const d=new Date();const parts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"numeric"}).formatToParts(d);const year=Number(parts.find(x=>x.type==="year").value),month=Number(parts.find(x=>x.type==="month").value);return month<3?year-1:year};
@@ -195,6 +233,14 @@ function estimatedNFLWeek(){
  return Math.max(1,Math.min(18,Math.floor((today-firstTuesday)/604800000)+1));
 }
 const CUR=10,WKS=SEASON===MODEL_SEASON?{9:build(G9),10:build(G)}:{};const BUNDLED_FINALS=SEASON===MODEL_SEASON?build(G9):[];
+const BUILDER_FILTERS_KEY="nflp-builder-filters-v1";
+function readBuilderFilters(){
+ try{const x=JSON.parse(localStorage.getItem(BUILDER_FILTERS_KEY)||"null");
+  if(!x||typeof x!=="object"||Array.isArray(x))return {};
+  return {tf:typeof x.tf==="string"?x.tf:"all",pf:typeof x.pf==="string"?x.pf:"all",query:typeof x.query==="string"?x.query.slice(0,120):""};
+ }catch(e){return {}}
+}
+const rememberedBuilderFilters=readBuilderFilters();
 let wk=estimatedNFLWeek(),games=WKS[wk]||[],tf="all",pf="all",openG=null,gameQuery="",liveWeeks=new Set();
 let startupScheduleSelection=true, userSelectedWeek=false;
 const gpOf=t=>T[t][1]+T[t][2],PLY=[];
@@ -215,7 +261,13 @@ const hr=tm=>{const m=/(\d+):(\d+) (AM|PM)/.exec(tm);return m?(+m[1]%12)+(m[3]==
 const bucket=tm=>{const h=hr(tm);return h<11?"early":h<15?"aft":h<19?"eve":"late"};
 const vis=g=>(tf==="all"||bucket(g.tm)===tf)&&(!gameQuery||`${g.a} ${g.h} ${T[g.a]?.[0]||""} ${T[g.h]?.[0]||""}`.toLowerCase().includes(gameQuery));
 const TF=[["all","All"],["early","Early 9–10a"],["aft","Afternoon 12–2p"],["eve","Evening 4–6p"],["late","Late 7–10p"]],PF=[["all","All"],["td","TD"],["ps","Passing"],["ru","Rushing"]];
-function drawF(){$("tf").innerHTML=TF.map(([k,l])=>`<button class="fp ${tf===k?"on":""}" onclick="tf='${k}';drawF();draw();plays()">${l}</button>`).join("");$("pf").innerHTML=PF.map(([k,l])=>`<button class="fp ${pf===k?"on":""}" onclick="pf='${k}';drawF();draw();plays()">${l}</button>`).join("")}
+function saveBuilderFilters(){try{localStorage.setItem(BUILDER_FILTERS_KEY,JSON.stringify({tf,pf,query:gameQuery}))}catch(e){}}
+function setBuilderFilter(type,value){if(type==="tf"&&TF.some(x=>x[0]===value))tf=value;else if(type==="pf"&&PF.some(x=>x[0]===value))pf=value;else return;saveBuilderFilters();drawF();draw();plays()}
+function resetBuilderFilters(){tf="all";pf="all";gameQuery="";const search=$("gameSearch");if(search)search.value="";saveBuilderFilters();drawF();draw();plays();renderAdvanced()}
+function drawF(){$("tf").innerHTML=TF.map(([k,l])=>`<button class="fp ${tf===k?"on":""}" onclick="setBuilderFilter('tf','${k}')">${l}</button>`).join("");$("pf").innerHTML=PF.map(([k,l])=>`<button class="fp ${pf===k?"on":""}" onclick="setBuilderFilter('pf','${k}')">${l}</button>`).join("")}
+if(TF.some(x=>x[0]===rememberedBuilderFilters.tf))tf=rememberedBuilderFilters.tf;
+if(PF.some(x=>x[0]===rememberedBuilderFilters.pf))pf=rememberedBuilderFilters.pf;
+gameQuery=rememberedBuilderFilters.query||"";
 function tog(id){openG=openG===id?null:id;draw()}
 function addp(id,m,s){if(games.find(g=>g.id===id)?.sc)return;if(mode==="same"&&focus!==id)setFocus(id);pick(id,m,s)}
 const propBtns=(g,k,b)=>["a","h"].map(t=>{const p=g.pp[t][k+"p"],sub=q=>am(dec(q))+" · "+Math.round(q*100)+"%";return`<div class="m">${t==="a"?g.a:g.h} ${PN[k][0]} · line ${PN[k][1]}</div>`+b(k+t,"o","Over",sub(p))+b(k+t,"u","Under",sub(1-p))}).join("");
@@ -348,9 +400,43 @@ function draw(){
   const st=Math.max(0,+$("stake").value||0);let D=1,P=1;
   const li=legs.map((L,i)=>{const x=legOf(L);D*=x.d;P*=x.p;return`<div class="leg"><div><b>${x.txt}</b><div class="mu">${x.g.a} @ ${x.g.h} · ${am(x.d)}</div></div><button class="x" aria-label="Clear this leg" title="Clear this leg" onclick="legs.splice(${i},1);draw()">✕</button></div>`}).join("");
   $("slip").innerHTML=legs.length?li+`<div class="mu" style="margin-top:8px">Win chance (est.): ${f1(P*100)}%${mode==="same"?" · legs correlated, treat as rough":""}</div>`:`<span class="mu">Your slip is empty.</span>`;
+  // Advisory only: do not silently change or submit the user's selections.
+  const prebetWarnings=validateDraftForBet(legs,games,N,mode);
+  if(prebetWarnings.length){
+    const panel=document.createElement('div');
+    panel.className='warn';panel.setAttribute('role','status');panel.setAttribute('aria-label','Pre-bet validation warnings');
+    panel.style.marginTop='10px';
+    const heading=document.createElement('strong');heading.textContent='Review before betting';panel.appendChild(heading);
+    const list=document.createElement('ul');
+    for(const warning of prebetWarnings){const item=document.createElement('li');item.textContent=warning;list.appendChild(item)}
+    panel.appendChild(list);$('slip').appendChild(panel);
+  }
   const full=legs.length===N;
   $("b1").innerHTML=`${legs.length}/${N} legs<small>${full?"Parlay ready":legs.length>N?"Remove "+(legs.length-N)+" leg(s) of your choice":"Add "+(N-legs.length)+" more"}</small>`;
   $("b2").innerHTML=legs.length?`${am(D)} · ${D.toFixed(2)}x<small>$${st} pays $${(st*D).toFixed(2)}</small>`:`—<small></small>`;
+}
+function validateDraftForBet(selections,weekGames,requiredLegs,slipMode){
+ const warnings=[];
+ if(!Array.isArray(selections)||!selections.length)return warnings;
+ if(selections.length!==requiredLegs)warnings.push(`Slip has ${selections.length} of ${requiredLegs} required legs.`);
+ const byId=new Map((weekGames||[]).map(g=>[String(g.id),g]));
+ const seen=new Set(),byMarket=new Map(),gameIds=new Set();
+ for(const leg of selections){
+  const game=byId.get(String(leg.gid));
+  if(!game){warnings.push('A selection is no longer in the selected week.');continue}
+  if(game.sc)warnings.push('A selected game is already completed.');
+  gameIds.add(String(leg.gid));
+  const key=String(leg.gid)+'|'+String(leg.mkt)+'|'+String(leg.side);
+  if(seen.has(key))warnings.push('The same selection appears more than once.');
+  seen.add(key);
+  const market=String(leg.gid)+'|'+String(leg.mkt);
+  if(byMarket.has(market)&&byMarket.get(market)!==String(leg.side))warnings.push('Opposing sides of the same market appear on this slip.');
+  byMarket.set(market,String(leg.side));
+ }
+ if(slipMode==='same'&&gameIds.size>1)warnings.push('Same-game slip contains selections from multiple games.');
+ if(slipMode==='multi'&&gameIds.size<selections.length)warnings.push('Multiple legs share a game; correlation may affect estimated odds.');
+ warnings.push('Reference lines and model odds are not live sportsbook quotes. Verify all lines, odds, injuries, and kickoff times before placing a bet.');
+ return [...new Set(warnings)];
 }
 function togglePreviousGames(){showPreviousGames=!showPreviousGames;renderPreviousGames()}
 function renderPreviousGames(){
@@ -390,9 +476,27 @@ function plays(){if(SEASON!==MODEL_SEASON){$("plays").innerHTML=`<div class="car
   h+=`<div class="card"><b>Suggested ${N}-leg multi-game parlay</b><div style="margin:6px 0">${top.map(x=>x.t+" ML").join(" + ")}</div><div class="mu">Est. win chance ${f1(P*100)}% · pays about ${D.toFixed(2)}x (${am(D)})</div><div style="margin-top:8px"><button class="btn" onclick="load()">Load into slip</button></div></div>`;
   const sgc=arr.filter(x=>x.g.tot>=40).sort((a,b)=>(b.p+b.g.tot/100)-(a.p+a.g.tot/100))[0];
   if(sgc)h+=`<div class="card"><b>Same-game idea: ${sgc.g.a} @ ${sgc.g.h}</b><div style="margin:6px 0">${sgc.t} ML + ${sgc.t} ${sgc.home?sg(-sgc.g.sp):sg(sgc.g.sp)}</div><div class="mu">Strongest favorite with a ${f1(sgc.mg)}-pt projected margin, projected total ${sgc.g.tot}. Stacking ML and spread on one side is highly correlated.</div><div style="margin-top:8px"><button class="btn" onclick="loadSG('${sgc.g.id}','${sgc.home?"h":"a"}')">Load into slip</button></div></div>`;
-  const val=arr.filter(x=>x.edge!=null).sort((a,b)=>b.edge-a.edge).slice(0,2);
-  h+=`<div class="card"><b>Where the model disagrees with the feed</b>`+val.map(x=>`<div class="pl med"><b>${x.t} ML</b> · model ${Math.round((x.home?x.g.pm:1-x.g.pm)*100)}% vs feed ${Math.round((x.home?x.g.fp:1-x.g.fp)*100)}%<div class="mu">${why(x)} Small sample of games, so treat as a lean.</div></div>`).join("")+`</div>`;
-  const completed=(WKS[wk]||[]).filter(g=>g.sc);if(completed.length){h+=`<div class="card"><b>Completed games · Potential Plays results</b><div class="mu">Retrospective moneyline picks based on the currently loaded model; not pregame predictions.</div>${completed.map(g=>{const home=g.p>=.5,side=home?'h':'a',team=home?g.h:g.a,hit=grade({...g,week:wk},'ml',side);return`<div class="pl ${hit===true?'hit':hit===false?'miss':'pending'}"><b>${team} ML</b> · ${hit===true?'HIT':hit===false?'MISS':'Not graded'} · Final ${g.a} ${g.sc[0]} – ${g.h} ${g.sc[1]}</div>`}).join('')}</div>`}
+  // Retrospective evaluations only: these are not verified pregame predictions.
+  const completed=(WKS[wk]||[]).filter(g=>g.sc);
+  if(completed.length){
+    const groups=new Map();
+    const marketName=m=>m==='ml'?'Moneyline':m==='sp'?'Spread':m==='tot'?'Game total':/^(td|ps|ru)[ah]$/.test(m)?'Team props':/^p\d+$/.test(m)?'Player props':'Other';
+    completed.forEach(g=>bestFor(g).forEach(pick=>{
+      const kind=marketName(pick.m),bucket=groups.get(kind)||[];
+      const detail=gradeDetail({...g,week:wk},pick.m,pick.s);
+      const team=pick.m==='ml'?(pick.s==='h'?g.h:g.a):`${g.a} @ ${g.h}`;
+      bucket.push({team,market:pick.m,side:pick.s,result:detail.result,reason:detail.reason});
+      groups.set(kind,bucket);
+    }));
+    h+=`<div class="card"><b>Completed games · Potential Plays results by bet type</b><div class="mu">Retrospective model evaluations using currently loaded data, not verified pregame picks. Unavailable statistics and pushes are not counted as hits or misses.</div>`;
+    for(const [kind,rows] of groups){
+      const hits=rows.filter(x=>x.result===true).length,misses=rows.filter(x=>x.result===false).length;
+      h+=`<details><summary><b>${kind}</b> · ${hits} hits · ${misses} misses · ${rows.length-hits-misses} ungraded</summary>`;
+      h+=rows.map(x=>`<div class="pl ${x.result===true?'hit':x.result===false?'miss':'pending'}"><b>${x.team} · ${x.market} ${x.side}</b> · ${x.result===true?'HIT':x.result===false?'MISS':'Ungraded'}<div class="mu">${x.reason}</div></div>`).join('');
+      h+='</details>';
+    }
+    h+='</div>';
+  }
   $("plays").innerHTML=h;window._arr=arr}
 // Advanced, explainable matchup recommendations. Uses only data already in this app.
 // No sportsbook API requests or private credentials are embedded.
@@ -494,7 +598,12 @@ function renderAdvanced(){
   html=groups.map(id=>{const rows=all.filter(x=>x.g.id===id),g=rows[0].g;return `<h3>${esc(g.a)} @ ${esc(g.h)}</h3><div class="mu">Model margin: ${g.m.toFixed(1)} points toward ${g.m>=0?esc(g.h):esc(g.a)}; total: ${g.tot.toFixed(1)}. These are estimates, not current betting lines.</div>`+rows.slice(0,4).map(x=>advCard(x,all.indexOf(x))).join('')}).join('');
  }else if(view==='parlays'){
   const unique=[],seen=new Set();for(const x of all){if(seen.has(x.g.id))continue;seen.add(x.g.id);unique.push(x);if(unique.length===5)break;}
-  html='<div class="mu">Illustrative multi-game combination. Picks are selected from different games to reduce obvious same-game correlation; independence and combined probability are not guaranteed. Review each selection and current sportsbook line.</div>'+unique.map(x=>advCard(x,all.indexOf(x))).join('');
+  const legSummary=unique.map((x,i)=>{
+   const marketLabel=x.p.k==='td'?'Anytime touchdown':x.p.k==='ps'?'Passing yards':'Rushing yards';
+   const lineText=x.line==null?'Reference line unavailable':`${x.prob>=.5?'Over':'Under'} ${x.line}`;
+   return `<li><b>${esc(x.p.n)}</b> — ${esc(marketLabel)} · ${esc(lineText)}<div class="mu">${esc(x.g.a)} @ ${esc(x.g.h)} · ${x.manual?'Manually entered '+esc(x.manual.book)+' odds '+esc(String(x.odds)):'No verified sportsbook odds'}</div></li>`;
+  }).join('');
+  html=`<section aria-label="Suggested parlay details" class="card"><h3>Suggested ${unique.length}-leg parlay</h3><div class="mu">Illustrative picks from different games, not a verified sportsbook ticket. Model probabilities are uncalibrated; combined odds and independence are not assumed.</div><ol>${legSummary}</ol><div class="mu">Use the Add to active slip control below each pick. Verify live lines, odds, kickoff and injuries before saving.</div></section>`+unique.map(x=>advCard(x,all.indexOf(x))).join('');
  }else html=all.slice(0,12).map((x,i)=>advCard(x,i)).join('');
  root.innerHTML=html||'<div class="mu">No eligible upcoming player predictions for the selected week. Refresh the NFL schedule or change the market filter.</div>';
 }
@@ -609,7 +718,7 @@ function renderSaved(){const t=stats();
  const previousSaved=saved.filter(s=>Number(s.wk)<currentWeek);
  const toggle=$("toggleSavedPrevious");toggle.textContent=showPreviousSavedWeeks?"Hide previous weeks saved parlays":"Show previous weeks saved parlays";toggle.setAttribute("aria-expanded",String(showPreviousSavedWeeks));
 
- $("sumry").innerHTML=`<div class="sm"><div><b>${t.w}-${t.l}</b><span class="mu">Record</span></div><div><b>${t.open}</b><span class="mu">Open</span></div><div><b class="${t.net>=0?"pos":"neg"}">${money(t.net)}</b><span class="mu">Net P/L</span></div><div><b>${f1(t.roi)}%</b><span class="mu">ROI</span></div></div>`;
+ $("sumry").innerHTML=`<div class="sm"><div><b>${t.open}</b><span class="mu">Open parlays</span></div><div><b>${t.w}-${t.l}</b><span class="mu">Overall record</span></div></div>`;
  const savedCard=s=>`<div class="card sv ${s.status}"><div class="gh"><b>${esc(s.name||"Untitled Parlay")} · Wk ${s.wk} · ${s.legs.length}-leg ${s.mode==="same"?"same-game":"multi"} · ${am(s.dec)}</b><span class="tag ${s.status}">${s.status.toUpperCase()}</span></div>
 ${s.legs.map((l,i)=>`<div class="mu" style="display:flex;align-items:center;gap:8px;margin:5px 0"><span style="flex:1;min-width:0">• ${esc(l.t)} (${esc(l.m||"")}, ${esc(l.o||"")})</span>${editingSavedParlays.has(String(s.id))?`<button type="button" class="btn alt" style="padding:4px 8px;flex:none" title="Remove this selection" aria-label="Remove ${esc(l.t)}" data-saved-action="remove-leg" data-saved-id="${esc(s.id)}" data-leg-index="${i}">🗑️</button>`:""}</div>`).join("")}
 <div class="row" style="margin-top:8px"><div class="seg" style="flex:none">${["open","won","lost"].map(k=>`<button class="${s.status===k?"on":""}" onclick="setS(${s.id},'status','${k}')">${k[0].toUpperCase()+k.slice(1)}</button>`).join("")}</div>
@@ -768,7 +877,8 @@ async function refreshNFL(){const btn=$("refresh"),state=$("dataState"),selected
  btn.disabled=false;btn.textContent="↻ Refresh NFL schedule";
 }
 $("refresh").addEventListener("click",refreshNFL);
-$("gameSearch").addEventListener("input",e=>{gameQuery=e.target.value.trim().toLowerCase();draw()});
+$("gameSearch").value=gameQuery;
+$("gameSearch").addEventListener("input",e=>{gameQuery=e.target.value.trim().toLowerCase().slice(0,120);saveBuilderFilters();draw()});
 const THEME_KEY="nflp-theme-v2";
 try{const th=localStorage.getItem(THEME_KEY);if(th)document.documentElement.dataset.theme=th}catch(e){}
 $("theme").addEventListener("click",()=>{const next=document.documentElement.dataset.theme==="dark"?"light":"dark";document.documentElement.dataset.theme=next;try{localStorage.setItem(THEME_KEY,next)}catch(e){}});
@@ -1087,6 +1197,20 @@ updateBoxState();drawF();switchSlip(activeSlip);renderSaved();
 if(navigator.onLine){setTimeout(()=>{refreshNFL().catch(e=>console.warn('Automatic schedule refresh failed',e))},400)}
 </script>
 <script>
+// Surface authentication at the top without duplicating IDs or changing its handlers.
+// The existing form remains the single source of truth for sign-in and sign-out.
+(function mountTopAccount(){
+ const form=document.getElementById('sbAuthForm');
+ const mount=document.getElementById('topAuthMount');
+ if(form&&mount){mount.appendChild(form);form.style.margin='4px 0';}
+ const indicator=document.getElementById('topAccountIndicator');
+ const status=document.getElementById('sbStatus');
+ if(indicator&&status){
+  const update=()=>{indicator.textContent=status.textContent||'Sign-in status unavailable';};
+  new MutationObserver(update).observe(status,{childList:true,subtree:true,characterData:true});
+  update();
+ }
+})();
 document.getElementById('openSetup').onclick=()=>document.getElementById('setupDialog').showModal();
 document.getElementById('closeSetup').onclick=()=>document.getElementById('setupDialog').close();
 document.getElementById('setupDialog').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close()});
@@ -2384,8 +2508,8 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
   if(!picks.length){$('advTrackingStatus').textContent='No eligible predictions for the selected week.';return}
   const now=new Date();
   // Conservative: don't record snapshots for games already started or finalized.
-  const eligible=picks.filter(x=>!x.g.sc && (!x.g.date || Number.isNaN(Date.parse(x.g.date)) || Date.parse(x.g.date)>now.getTime()));
-  if(!eligible.length){$('advTrackingStatus').textContent='No upcoming unplayed picks to archive.';return}
+  const eligible=picks.filter(x=>{const kickoff=Date.parse(x.g.date||'');return !x.g.sc && Number.isFinite(kickoff) && kickoff>now.getTime();});
+  if(!eligible.length){$('advTrackingStatus').textContent='No eligible future-kickoff picks with a verified schedule time. Unknown or past kickoffs are excluded.';return}
   const snapshot={id:now.toISOString()+'-'+Math.random().toString(36).slice(2),created:now.toISOString(),picks:eligible.map(x=>({season:SEASON,week:wk,away:x.g.a,home:x.g.h,player:x.p.n,team:x.p.tm,market:x.p.k,line:Number(x.line),prob:x.prob}))};
   history.push(snapshot);if(save())$('advTrackingStatus').textContent='Saved '+snapshot.picks.length+' prediction snapshots on this device. Export a backup for safekeeping.';
   render();
@@ -2444,6 +2568,120 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
  refresh.addEventListener('click',load);
  document.getElementById('advTabPerformance')?.addEventListener('click',load);
  document.getElementById('seasonSelect')?.addEventListener('change',load);
+})();
+</script>
+<script>
+/* Phase 3 authenticated, owner-scoped cloud prediction history preview.
+   No POST/PATCH/DELETE; does not merge local snapshots into cloud. */
+(()=>{
+ 'use strict';
+ const statusEl=document.getElementById('cloudUserPredictionHistoryStatus');
+ const resultsEl=document.getElementById('cloudUserPredictionHistoryResults');
+ const refresh=document.getElementById('cloudUserPredictionHistoryRefresh');
+ if(!statusEl||!resultsEl||!refresh)return;
+ let busy=false;
+ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ async function load(){
+  if(busy)return;
+  busy=true;refresh.disabled=true;resultsEl.replaceChildren();
+  try{
+   if(!auth){statusEl.textContent='Sign in to view your cloud prediction history.';return;}
+   const uid=await userId(); // Verifies JWT and local storage owner before cloud read.
+   const jwt=await token();
+   const rows=await api('/rest/v1/nfl_user_prediction_tracking?select=user_id,tracking_id,payload,updated_at&user_id=eq.'+encodeURIComponent(uid)+'&order=updated_at.desc&limit=100',{
+    headers:{Authorization:'Bearer '+jwt}});
+   if(!Array.isArray(rows))throw Error('Unexpected tracking response');
+   if(rows.some(r=>r.user_id!==uid))throw Error('Cloud owner mismatch: results hidden');
+   statusEl.textContent=rows.length+' cloud tracking record(s) for your signed-in account'+(rows.length===100?' (showing most recent 100)':'')+'.';
+   if(!rows.length){resultsEl.textContent='No cloud tracking records yet. Local prediction snapshots remain unchanged.';return;}
+   const table=document.createElement('table');table.className='performance-table';
+   table.innerHTML='<thead><tr><th>Last updated</th><th>Tracking ID</th><th>Status</th></tr></thead>';
+   const tbody=document.createElement('tbody');
+   for(const row of rows){
+    const tr=document.createElement('tr');
+    const payload=row.payload&&typeof row.payload==='object'&&!Array.isArray(row.payload)?row.payload:{};
+    const date=new Date(row.updated_at);
+    const dateText=Number.isFinite(date.getTime())?date.toLocaleString():'Unknown';
+    // Cloud storage alone is not proof of an authentic pregame capture.
+    const rawStatus=typeof payload.status==='string'?payload.status.toLowerCase():'';
+    const isVerified=rawStatus==='verified_pregame' && payload.capture_evidence && typeof payload.capture_evidence==='object';
+    const state=isVerified?'Verified pregame (evidence attached)':
+      rawStatus==='graded'?'Graded (verify pregame provenance separately)':
+      rawStatus==='unverified_pregame'||payload.kind==='local_snapshot'?'Unverified local snapshot':
+      rawStatus==='unavailable'?'Outcome unavailable':
+      rawStatus==='pending'?'Awaiting final results':'Stored — verification not established';
+    tr.innerHTML='<td>'+esc(dateText)+'</td><td>'+esc(row.tracking_id)+'</td><td>'+esc(state)+'</td>';
+    tbody.appendChild(tr);
+   }
+   table.appendChild(tbody);resultsEl.appendChild(table);
+  }catch(e){statusEl.textContent='Cloud history unavailable: '+e.message;resultsEl.replaceChildren();}
+  finally{busy=false;refresh.disabled=false;}
+ }
+ refresh.addEventListener('click',load);
+ document.getElementById('advTabPerformance')?.addEventListener('click',load);
+})();
+</script>
+<script>
+/* Phase 3 staged prediction snapshot cloud writer.
+   Intentionally disabled until authenticated tracking write-isolation and release gates pass.
+   Never updates existing tracking IDs; snapshots are immutable evidence. */
+(()=>{
+ 'use strict';
+ const CLOUD_TRACKING_WRITES_ENABLED=false;
+ const LOCAL_KEY='nflp-adv-prediction-tracking-v1';
+ const setStatus=message=>{const el=document.getElementById('cloudUserPredictionHistoryStatus');if(el)el.textContent=message;};
+ function validatedSnapshots(){
+  let raw;
+  try{raw=JSON.parse(localStorage.getItem(LOCAL_KEY)||'[]')}catch{return []}
+  if(!Array.isArray(raw))return [];
+  const ids=new Set();
+  return raw.filter(item=>{
+   if(!item||typeof item.id!=='string'||!item.id||item.id.length>200||ids.has(item.id)||!Array.isArray(item.picks)||!item.picks.length)return false;
+   const created=Date.parse(item.created);
+   if(!Number.isFinite(created)||created>Date.now()+60000)return false;
+   // These are locally saved snapshots, not independently verified pregame predictions.
+   ids.add(item.id);return true;
+  });
+ }
+ async function sync(){
+  if(!CLOUD_TRACKING_WRITES_ENABLED){setStatus('Cloud prediction-history uploads are locked pending the final security gate. Read-only history remains available.');return {status:'locked'};}
+  if(!auth)throw Error('Sign in before syncing prediction history.');
+  const uid=await userId();
+  const jwt=await token();
+  const existing=await api('/rest/v1/nfl_user_prediction_tracking?select=user_id,tracking_id&user_id=eq.'+encodeURIComponent(uid),{headers:{Authorization:'Bearer '+jwt}});
+  if(!Array.isArray(existing)||existing.some(row=>row.user_id!==uid))throw Error('Tracking owner verification failed');
+  const known=new Set(existing.map(row=>row.tracking_id));
+  let created=0;
+  for(const snapshot of validatedSnapshots()){
+   const trackingId='local-snapshot-'+snapshot.id;
+   if(trackingId.length>240||known.has(trackingId))continue;
+   await api('/rest/v1/nfl_user_prediction_tracking',{method:'POST',headers:{Authorization:'Bearer '+jwt,Prefer:'return=minimal'},body:JSON.stringify({user_id:uid,tracking_id:trackingId,payload:{kind:'local_snapshot',status:'unverified_pregame',snapshot}})});
+   known.add(trackingId);created++;
+  }
+  setStatus('Uploaded '+created+' new local snapshots. Local snapshots are not independently verified as pregame.');
+  return {status:'complete',created};
+ }
+ // No automatic write call while disabled; explicit hook reserved for future gated integration.
+ window.phase3SyncPredictionHistory=sync;
+})();
+</script>
+<script id="phase3MobileSlipController">
+(()=>{
+ const dialog=document.getElementById('phase3MobileSlipDialog');
+ const toggle=document.getElementById('phase3MobileSlipToggle');
+ const close=document.getElementById('phase3MobileSlipClose');
+ const content=document.getElementById('phase3MobileSlipContents');
+ const slip=document.getElementById('slip');
+ const bar=slip.previousElementSibling;
+ const actions=slip.nextElementSibling;
+ if(!dialog||!toggle||!close||!content||!slip||!bar||!actions)return;
+ const original=[bar,slip,actions].map(node=>({node,parent:node.parentNode,next:node.nextSibling}));
+ function restore(){for(const {node,parent,next} of original){parent.insertBefore(node,next&&next.parentNode===parent?next:null)}toggle.setAttribute('aria-expanded','false');}
+ toggle.addEventListener('click',()=>{if(dialog.open)return;for(const {node} of original)content.appendChild(node);dialog.showModal();toggle.setAttribute('aria-expanded','true');close.focus();});
+ close.addEventListener('click',()=>dialog.close());
+ dialog.addEventListener('close',()=>{restore();toggle.focus();});
+ dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+ window.matchMedia('(min-width:701px)').addEventListener('change',e=>{if(e.matches&&dialog.open)dialog.close();});
 })();
 </script>
 </body></html>
