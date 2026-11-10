@@ -1,0 +1,91 @@
+name: NFL Phase 3 Prediction Capture Link (TEST Read Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Regular season year (blank = ESPN current)'
+        required: false
+        type: string
+      week:
+        description: 'Regular season week (blank = ESPN current)'
+        required: false
+        type: string
+  schedule:
+    - cron: '27 */3 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: phase3-prediction-capture-link-readonly
+  cancel-in-progress: false
+jobs:
+  link-preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+      NFL_SEASON: ${{ inputs.season }}
+      NFL_WEEK: ${{ inputs.week }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Enforce TEST-only repository and Supabase boundary
+        run: python scripts/phase3_test_boundary.py
+      - name: Test capture linkage and existing pregame preview
+        run: |
+          python -m unittest discover -s scripts -p 'test_phase3_test_boundary.py' -v
+          python -m unittest discover -s scripts -p 'test_phase3_prediction_capture_link.py' -v
+          python -m unittest discover -s scripts -p 'test_phase3d37f_pregame.py' -v
+      - name: Resolve regular-season week
+        shell: bash
+        run: |
+          python - <<'PY' >> "$GITHUB_ENV"
+          import os,sys
+          sys.path.insert(0,'scripts')
+          from phase3d37f_pregame import current_week
+          from phase3d37b_roster_match import BASE,fetch
+          season=os.environ.get('NFL_SEASON','').strip()
+          week=os.environ.get('NFL_WEEK','').strip()
+          if not season or not week:
+              current_season,current_number=current_week(fetch(BASE+'/scoreboard?limit=100'))
+              season=season or str(current_season)
+              week=week or str(current_number)
+          if not season.isdecimal() or not week.isdecimal() or not (2000<=int(season)<=2100 and 1<=int(week)<=18):
+              raise ValueError('Invalid season/week')
+          print('RESOLVED_SEASON='+season)
+          print('RESOLVED_WEEK='+week)
+          PY
+      - name: Capture source and verify evidence
+        shell: bash
+        run: |
+          python scripts/phase3d37e_capture.py --season "$RESOLVED_SEASON" --week "$RESOLVED_WEEK" --output-dir phase3-evidence
+          python scripts/phase3d37e_capture.py --verify --output-dir phase3-evidence
+      - name: Generate independent read-only prediction preview
+        shell: bash
+        run: |
+          python scripts/phase3d37f_pregame.py --season "$RESOLVED_SEASON" --week "$RESOLVED_WEEK" --output phase3-preview.json --max-export-age-hours 12
+      - name: Compare capture to independent prediction preview
+        shell: bash
+        run: |
+          python scripts/phase3_prediction_capture_link.py --capture-dir phase3-evidence --prediction-preview phase3-preview.json --output phase3-link-report.json
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          result=json.loads(Path('phase3-link-report.json').read_text())
+          print('Capture linkage:',result['linkage'],'; prediction certification:',result['status'])
+          if result['linkage']!='PASS':
+              raise SystemExit('Capture and preview mismatch; review report')
+          PY
+      - name: Upload reports only (no source CSV)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3-prediction-link-${{ github.run_id }}
+          path: |
+            phase3-evidence/capture_manifest.json
+            phase3-preview.json
+            phase3-link-report.json
+          if-no-files-found: warn
+          retention-days: 14

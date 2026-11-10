@@ -1,0 +1,25 @@
+name: NFL Phase 3 TEST Postgame Grading Readiness
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '30 12 * * 2'
+permissions:
+  contents: read
+jobs:
+  postgame-readiness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Test offline grading gate
+        run: |
+          python -m unittest discover -s scripts -p 'test_phase3_postgame_grading_gate.py' -v
+          python -m unittest discover -s scripts -p 'test_phase3_postgame_artifact_pipeline.py' -v
+      - name: Generate fail-closed readiness report
+        run: python scripts/phase3_postgame_artifact_pipeline.py --output-dir postgame-artifacts
+      - uses: actions/upload-artifact@v4
+        with:
+          name: postgame-grading-readiness
+          path: postgame-artifacts/*.json

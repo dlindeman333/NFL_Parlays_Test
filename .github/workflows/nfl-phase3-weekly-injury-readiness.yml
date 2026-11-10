@@ -1,0 +1,35 @@
+name: NFL Phase 3 Weekly Injury Readiness (Read Only)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '31 12 * * 2'
+permissions:
+  contents: read
+concurrency:
+  group: nfl-phase3-injury-readiness
+  cancel-in-progress: false
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate preview contracts
+        run: python -m unittest discover -s scripts -p 'test_phase3_weekly_injury_preview.py' -v
+      - name: Read public scoreboard and report readiness (no cloud writes)
+        env:
+          NFL_PHASE3_INJURY_FEED_URL: ${{ vars.NFL_PHASE3_INJURY_FEED_URL }}
+          NFL_PHASE3_INJURY_FEED_HOST: ${{ vars.NFL_PHASE3_INJURY_FEED_HOST }}
+        run: python scripts/phase3_weekly_injury_preview.py
+      - name: Upload read-only report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase3-weekly-injury-readiness
+          path: |
+            phase3-injury-preview-report.json
+            phase3-injury-validated-observations.json
+          if-no-files-found: warn

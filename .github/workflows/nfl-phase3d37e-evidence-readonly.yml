@@ -30,6 +30,10 @@ jobs:
         run: python scripts/phase3d37e_capture.py --season "${{ inputs.season }}" --week "${{ inputs.week }}"
       - name: Verify captured file integrity
         run: python scripts/phase3d37e_capture.py --verify
+      - name: Test capture-chain readiness audit
+        run: python -m unittest discover -s scripts -p 'test_phase3_capture_chain_readiness.py' -v
+      - name: Audit captured artifact (read-only; never certifies pregame)
+        run: python scripts/phase3_capture_chain_readiness.py
       - uses: actions/upload-artifact@v4
         if: success()
         with:

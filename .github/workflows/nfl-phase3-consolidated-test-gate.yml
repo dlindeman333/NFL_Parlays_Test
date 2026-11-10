@@ -1,0 +1,43 @@
+name: NFL Phase 3 Consolidated TEST Release Gate
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  offline-release-gate:
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check app JavaScript syntax without cloud access
+        run: python scripts/phase3_release_static_check.py
+      - name: Run complete Python regression suite
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest discover -s scripts -p 'test_*.py' -q
+  authenticated-test-readonly:
+    needs: offline-release-gate
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate authenticated TEST owner isolation (read-only)
+        env:
+          NFL_TEST_SUPABASE_URL: https://luxezjthznupdghmexyh.supabase.co
+          NFL_TEST_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NFL_TEST_SUPABASE_PUBLISHABLE_KEY }}
+          NFL_TEST_USER_A_EMAIL: ${{ secrets.NFL_TEST_USER_A_EMAIL }}
+          NFL_TEST_USER_A_PASSWORD: ${{ secrets.NFL_TEST_USER_A_PASSWORD }}
+          NFL_TEST_USER_B_EMAIL: ${{ secrets.NFL_TEST_USER_B_EMAIL }}
+          NFL_TEST_USER_B_PASSWORD: ${{ secrets.NFL_TEST_USER_B_PASSWORD }}
+        run: python scripts/phase3_tracking_live_smoke.py

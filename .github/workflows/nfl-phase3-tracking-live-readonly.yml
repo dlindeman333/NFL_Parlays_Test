@@ -1,0 +1,26 @@
+name: NFL Phase 3 TEST Tracking Live Read-only Smoke
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  tracking-live-readonly:
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Run offline smoke contract tests
+        run: python -m unittest discover -s scripts -p 'test_phase3_tracking_live_smoke.py' -v
+      - name: Check live authenticated TEST cloud reads only
+        env:
+          NFL_TEST_SUPABASE_URL: https://luxezjthznupdghmexyh.supabase.co
+          NFL_TEST_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NFL_TEST_SUPABASE_PUBLISHABLE_KEY }}
+          NFL_TEST_USER_A_EMAIL: ${{ secrets.NFL_TEST_USER_A_EMAIL }}
+          NFL_TEST_USER_A_PASSWORD: ${{ secrets.NFL_TEST_USER_A_PASSWORD }}
+          NFL_TEST_USER_B_EMAIL: ${{ secrets.NFL_TEST_USER_B_EMAIL }}
+          NFL_TEST_USER_B_PASSWORD: ${{ secrets.NFL_TEST_USER_B_PASSWORD }}
+        run: python scripts/phase3_tracking_live_smoke.py
