@@ -28,7 +28,7 @@ def audit_candidates(manifest,candidates,now,existing_keys=(),minimum_lead_minut
             if kickoff is None or kickoff<=now+dt.timedelta(minutes=minimum_lead_minutes): raise ValueError("kickoff_gate")
             if not c.get("history_weeks") or any(not isinstance(w,int) or w>=week or w<1 for w in c["history_weeks"]):raise ValueError("invalid_history")
             # A projection is deliberately NOT a sportsbook pick. No synthetic odds, lines, side or probability.
-            item={"logical_key":key,"espn_id":pid,"metric":metric,"baseline":value,"position":c.get("position"),"kickoff_at":c["kickoff_at"],"source_sha256":c["source_sha256"],"classification":"STATISTICAL_BASELINE_NOT_BETTING_PICK"}
+            item={"logical_key":key,"game_id":gid,"espn_id":pid,"metric":metric,"baseline":value,"position":c.get("position"),"kickoff_at":c["kickoff_at"],"source_sha256":c["source_sha256"],"classification":"STATISTICAL_BASELINE_NOT_BETTING_PICK"}
             accepted.append(item);games[(season,week,gid)].append(item)
         except (ValueError,TypeError,KeyError) as e: rejected[str(e) or "invalid_candidate"]+=1
     plans=[]
