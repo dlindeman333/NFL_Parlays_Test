@@ -30,3 +30,21 @@ class FullManifestTests(unittest.TestCase):
   src=inspect.getsource(phase3d37h_full_manifest)
   self.assertNotIn('requests.post(',src);self.assertNotIn('requests.patch(',src);self.assertNotIn('requests.delete(',src)
 if __name__=='__main__':unittest.main()
+
+
+class TestManifestTestBoundary(unittest.TestCase):
+    def test_production_repository_rejected_before_any_fetch(self):
+        from unittest.mock import patch
+        from phase3d37h_full_manifest import main
+        with patch('phase3d37h_full_manifest.fetch') as fetcher, patch.dict('os.environ', {'GITHUB_REPOSITORY':'dlindeman333/NFL_Parlays','SUPABASE_URL':'https://luxezjthznupdghmexyh.supabase.co'}):
+            with self.assertRaisesRegex(ValueError,'TEST GitHub repository'):
+                main([])
+            fetcher.assert_not_called()
+
+    def test_production_project_rejected_before_any_fetch(self):
+        from unittest.mock import patch
+        from phase3d37h_full_manifest import main
+        with patch('phase3d37h_full_manifest.fetch') as fetcher, patch.dict('os.environ', {'GITHUB_REPOSITORY':'dlindeman333/NFL_Parlays_Test','SUPABASE_URL':'https://wpvuunwtyxycqfjwuzkn.supabase.co'}):
+            with self.assertRaisesRegex(ValueError,'TEST project'):
+                main([])
+            fetcher.assert_not_called()

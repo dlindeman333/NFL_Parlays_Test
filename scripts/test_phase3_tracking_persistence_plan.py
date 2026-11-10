@@ -29,6 +29,12 @@ class PersistencePlanTests(unittest.TestCase):
     def test_duplicate_tracking_ids_rejected(self):
         with self.assertRaises(ValueError):
             plan({**EXPORT, 'rows': [ROW, ROW]}, [], UID)
+    def test_synthetic_security_record_rejected(self):
+        for flag in ({'synthetic': True}, {'exclude_from_grading': True},
+                     {'exclude_from_accuracy': True}, {'record_type': 'RLS_SECURITY_TEST'}):
+            with self.subTest(flag=flag), self.assertRaisesRegex(ValueError, 'Synthetic'):
+                plan({**EXPORT, 'rows': [{**ROW, **flag}]}, [], UID)
+
     def test_deterministic_plan(self):
         self.assertEqual(plan(EXPORT, [], UID), plan(EXPORT, [], UID))
 

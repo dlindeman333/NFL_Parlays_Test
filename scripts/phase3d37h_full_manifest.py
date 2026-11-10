@@ -10,6 +10,7 @@ from phase3d37c_crosswalk import download_registry,REGISTRY_URL,build_crosswalk,
 from phase3d37d_readiness import choose_columns,valid_weekly_row,recompute
 from phase3d37f_pregame import current_week,freshness
 from phase3d37g_forward_gate import metric_allowed,stable_key
+from phase3_test_boundary import validate as validate_test_boundary
 
 
 def build_manifest(rows, crosswalk, matches, abbr, positions, schedule, season, week, now, export_time, source_hash, lead_minutes=30):
@@ -61,9 +62,10 @@ def build_manifest(rows, crosswalk, matches, abbr, positions, schedule, season, 
     return entries,dict(counts),cols,stale
 
 
-def main():
+def main(argv=None):
     p=argparse.ArgumentParser();p.add_argument('--season',type=int);p.add_argument('--week',type=int)
-    p.add_argument('--output-dir',default='phase3d37h-output');a=p.parse_args()
+    p.add_argument('--output-dir',default='phase3d37h-output');a=p.parse_args(argv)
+    validate_test_boundary(os.environ.get("GITHUB_REPOSITORY", ""), os.environ.get("SUPABASE_URL", ""))
     now=datetime.now(timezone.utc)
     if a.season is None or a.week is None:
         s,w=current_week(fetch(BASE+'/scoreboard?limit=100'))

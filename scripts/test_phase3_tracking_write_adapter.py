@@ -44,6 +44,16 @@ class TestWriteAdapter(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'Unverified'):
             prepare_write(data, OWNER)
 
+    def test_synthetic_security_payload_rejected_even_with_valid_hash(self):
+        for flag in ({'synthetic': True}, {'exclude_from_grading': True},
+                     {'exclude_from_accuracy': True}, {'record_type': 'RLS_SECURITY_TEST'}):
+            with self.subTest(flag=flag):
+                data = sample()
+                data['proposed_inserts'][0]['payload'].update(flag)
+                data['proposal_sha256'] = hashlib.sha256(_canonical(data['proposed_inserts']).encode()).hexdigest()
+                with self.assertRaisesRegex(ValueError, 'Unverified'):
+                    prepare_write(data, OWNER)
+
     def test_stale_plan_rejected_before_any_post(self):
         def fake_preflight(*args, **kwargs):
             kwargs['record_sink']({'tracking_id': 'a' * 64})
