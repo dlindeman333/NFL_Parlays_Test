@@ -1,6 +1,12 @@
 name: NFL Phase 3 Consolidated TEST Release Gate
 on:
   workflow_dispatch:
+    inputs:
+      run_write_isolation:
+        description: "Run disposable TEST parlay write-isolation checks (modifies only TEST disposable rows)"
+        type: boolean
+        required: true
+        default: false
 permissions:
   contents: read
 jobs:
@@ -41,3 +47,23 @@ jobs:
           NFL_TEST_USER_B_EMAIL: ${{ secrets.NFL_TEST_USER_B_EMAIL }}
           NFL_TEST_USER_B_PASSWORD: ${{ secrets.NFL_TEST_USER_B_PASSWORD }}
         run: python scripts/phase3_tracking_live_smoke.py
+
+  authenticated-test-write-isolation:
+    needs: authenticated-test-readonly
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test' && inputs.run_write_isolation == true
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Verify disposable TEST-only parlay write isolation and negative tracking writes
+        env:
+          NFL_TEST_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.NFL_TEST_SUPABASE_PUBLISHABLE_KEY }}
+          NFL_TEST_USER_A_EMAIL: ${{ secrets.NFL_TEST_USER_A_EMAIL }}
+          NFL_TEST_USER_A_PASSWORD: ${{ secrets.NFL_TEST_USER_A_PASSWORD }}
+          NFL_TEST_USER_B_EMAIL: ${{ secrets.NFL_TEST_USER_B_EMAIL }}
+          NFL_TEST_USER_B_PASSWORD: ${{ secrets.NFL_TEST_USER_B_PASSWORD }}
+          NFL_TEST_ALLOW_WRITE_ISOLATION: YES_TEST_ONLY
+        run: python scripts/nfl_phase3_api_isolation.py
