@@ -604,7 +604,7 @@ function renderAdvanced(){
   const unique=[],seen=new Set();for(const x of all){if(seen.has(x.g.id))continue;seen.add(x.g.id);unique.push(x);if(unique.length===5)break;}
   const legSummary=unique.map((x,i)=>{
    const marketLabel=x.p.k==='td'?'Anytime touchdown':x.p.k==='ps'?'Passing yards':'Rushing yards';
-   const lineText=x.p.k==='td'?'Anytime TD candidate (verify availability and price)':x.line==null?'Reference line unavailable':`${x.prob>=.5?'Over':'Under'} ${x.line}`;
+   const lineText=x.line==null?'Reference line unavailable':`${x.prob>=.5?'Over':'Under'} ${x.line}`;
    return `<li><b>${esc(x.p.n)}</b> — ${esc(marketLabel)} · ${esc(lineText)}<div class="mu">${esc(x.g.a)} @ ${esc(x.g.h)} · ${x.manual?'Manually entered '+esc(x.manual.book)+' odds '+esc(String(x.odds)):'No verified sportsbook odds'}</div></li>`;
   }).join('');
   html=`<section aria-label="Suggested parlay details" class="card"><h3>Suggested ${unique.length}-leg parlay</h3><div class="mu">Illustrative picks from different games, not a verified sportsbook ticket. Model probabilities are uncalibrated; combined odds and independence are not assumed.</div><ol>${legSummary}</ol><div class="mu">Use the Add to active slip control below each pick. Verify live lines, odds, kickoff and injuries before saving.</div></section>`+unique.map(x=>advCard(x,all.indexOf(x))).join('');
@@ -1296,6 +1296,19 @@ function saveActiveAccount(){
 
 let config={},auth=null,remoteUpdated=0,lastPushed='',busy=false,started=false,lastPoll=0;
 const status=t=>{$('sbStatus').textContent=t;};
+// Keep sign-in controls visible only when authentication is actually needed.
+// The sign-out control remains accessible while signed in.
+function authControls(verified){
+ for(const id of ['sbEmail','sbPassword','sbSignIn','sbSignUp']){
+  const el=$(id);if(!el)continue;
+  const holder=el.closest('label')||el;
+  holder.hidden=!!verified;
+  holder.style.display=verified?'none':'';
+ }
+ $('sbSignOut').hidden=!verified;
+ $('sbSignOut').style.display=verified?'':'none';
+}
+
 // Public browser key only. Never embed a Supabase secret/service_role key.
 const CLOUD_URL='https://luxezjthznupdghmexyh.supabase.co';
 const CLOUD_PUBLIC_KEY='sb_publishable_XdEEprnezK3kIWahWB1mYw_txnqRXs3';
@@ -1550,7 +1563,7 @@ async function sign(kind){
   // The builder's saved/slips arrays were initialized before authentication.
   // Never unlock this document after changing partitions: reload first.
   if(changed){location.reload();return;}
-  privacyUnlock();
+  privacyUnlock();authControls(true);
   status('Signed in. Cloud writes paused for safety; only this account’s local data is active.');
  }catch(e){status('Authentication error: '+e.message);if(localStorage.getItem(OWNER_KEY))privacyGate('This browser is reserved for its original account. Sign in with that account or use a separate browser profile.')}
 }
@@ -2150,51 +2163,6 @@ markerPullButton.onclick=async()=>{
 // Phase 3 TEST opt-in saved-parlay synchronization v6. Legacy writers remain disabled.
 // Strict three-way baseline: never infer deletions from a missing ID without a baseline.
 const safe6Key=uid=>'nflp-phase3-test-saved-sync-v6-'+uid;
-// First-time TEST cloud record creation: explicit opt-in, local backup and read-back.
-// Does not use the legacy upsert path or alter any existing cloud row.
-const firstCloudButton=document.createElement('button');
-firstCloudButton.type='button';firstCloudButton.className='btn alt';
-firstCloudButton.textContent='Create my first TEST cloud record (guarded)…';
-$('sbSyncNow').parentNode.insertBefore(firstCloudButton,$('sbSyncNow'));
-firstCloudButton.onclick=async()=>{
- if(busy){status('Another cloud operation is running.');return;}
- if(!navigator.onLine){status('An online connection is required. Nothing changed.');return;}
- busy=true;
- try{
-  if(config.url!==CLOUD_URL||!CLOUD_URL.includes('luxezjthznupdghmexyh.supabase.co'))throw Error('TEST Supabase project mismatch');
-  const uid=await userId();
-  if(!safe6Active(uid))throw Error('Authenticated account ownership mismatch');
-  const existing=await readRemote(uid);
-  if(existing)throw Error('A cloud record already exists. Creation blocked; use guarded synchronization instead.');
-  const local=safe6View(snapshot(),'Device');
-  const rawPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
-  if(rawPart!==null){
-   const part=JSON.parse(rawPart);
-   if(safe6Canonical(safe6View(part,'Account partition'))!==safe6Canonical(local))throw Error('Account partition differs from active device. No creation.');
-  }
-  const localBefore=JSON.stringify(snapshot());
-  const backup={version:9,source:'before-first-test-cloud-record',exported_at:new Date().toISOString(),test_project:CLOUD_URL,account_id:uid,storage:fullLocalBackup()};
-  downloadJSON(backup,'TEST-parlays-before-first-cloud-create-'+new Date().toISOString().slice(0,10)+'.json');
-  if(!confirm('TEST ACCOUNT ONLY: Verify that the JSON backup was downloaded and saved. This operation will create a NEW cloud record for the currently authenticated TEST account, containing '+local.saved.length+' saved parlay(s) and '+local.deleted.length+' deletion markers. It will not delete any data. Continue?')){status('Cloud initialization canceled. No changes made.');return;}
-  if(!safe6Active(uid)||JSON.stringify(snapshot())!==localBefore)throw Error('Device or account changed during confirmation. No creation.');
-  if(await readRemote(uid))throw Error('Cloud record appeared during confirmation. No creation.');
-  const jwt=await token();
-  // Preserve only this authenticated user's personal payload, including local drafts.
-  const payload=snapshot();
-  const created=await api('/rest/v1/nfl_parlay_sync?select=user_id,payload,updated_at',{
-   method:'POST',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},
-   body:JSON.stringify({user_id:uid,payload,updated_at:new Date().toISOString()})
-  });
-  if(!Array.isArray(created)||created.length!==1||created[0].user_id!==uid)throw Error('Creation response could not verify the authenticated account. Inspect TEST cloud before retrying.');
-  const check=await readRemote(uid);
-  if(!check)throw Error('Creation may have succeeded, but cloud read-back failed. Do not retry until inspected.');
-  const actual=personalCloudValues(check.payload);
-  if(safe6Canonical(safe6View(actual,'Cloud read-back'))!==safe6Canonical(local)||stable(actual)!==stable(personalCloudValues(payload)))throw Error('Cloud read-back mismatch. Do not retry; inspect TEST cloud.');
-  status('FIRST TEST CLOUD RECORD VERIFIED for your authenticated account: '+local.saved.length+' saved parlay(s); '+local.deleted.length+' deletion markers. No deletions. Enable guarded auto-sync separately.');
- }catch(e){status('FIRST CLOUD CREATION STOPPED: '+(e&&e.message||String(e))+'. Existing data was not intentionally overwritten.');}
- finally{busy=false;}
-};
-
 let safe6Running=false;
 const safe6Button=document.createElement('button');safe6Button.type='button';safe6Button.className='btn alt';
 safe6Button.textContent='Enable guarded saved-parlay auto-sync (TEST) — v6';
@@ -2211,52 +2179,6 @@ function safe6View(x,side){
 }
 function safe6Canonical(d){return JSON.stringify({saved:[...d.saved].sort((a,b)=>String(a.id).localeCompare(String(b.id))),deleted:[...d.deleted].sort()});}
 function safe6Active(uid){return localStorage.getItem(OWNER_KEY)===uid&&!!auth;}
-
-// TEST-only recovery for an EXISTING cloud record and a missing device partition.
-// This operation writes ONLY the authenticated user's localStorage partition.
-// It does not change cloud records, saved parlays, drafts, or deletion markers.
-const existingPartitionButton=document.createElement('button');
-existingPartitionButton.type='button';existingPartitionButton.className='btn alt';
-existingPartitionButton.textContent='Verify existing TEST cloud record & initialize local partition (guarded)';
-$('sbSyncNow').parentNode.insertBefore(existingPartitionButton,$('sbSyncNow'));
-existingPartitionButton.onclick=async()=>{
- if(busy){status('Another cloud operation is running.');return;}
- busy=true;
- try{
-  if(!SAFE_READ_ONLY)throw Error('Unexpected cloud safety configuration; operation stopped.');
-  if(config.url!=='https://luxezjthznupdghmexyh.supabase.co')throw Error('Not the approved TEST Supabase project.');
-  const uid=await userId();
-  if(!safe6Active(uid))throw Error('Authenticated user does not own the active browser data.');
-  const partitionKey=ACCOUNT_PREFIX+uid;
-  if(localStorage.getItem(partitionKey)!==null)throw Error('An account partition already exists. Nothing was changed.');
-  const before=snapshot();
-  const local=safe6View(before,'Device');
-  const remote=await readRemote(uid);
-  if(!remote||!remote.updated_at)throw Error('Existing cloud record not found or missing revision.');
-  const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
-  if(safe6Canonical(local)!==safe6Canonical(cloud))throw Error('Cloud and device saved parlays/deletion markers differ. No partition initialized.');
-  const localFingerprint=stable(before);
-  const cloudFingerprint=safe6Canonical(cloud);
-  downloadJSON({version:1,reason:'existing-test-cloud-partition-initialization',exported_at:new Date().toISOString(),user_id:uid,cloud_updated_at:remote.updated_at,storage:fullLocalBackup()},'nfl-test-partition-backup-'+new Date().toISOString().slice(0,10)+'.json');
-  if(!confirm('TEST ACCOUNT ONLY: Verify the JSON backup was saved in Downloads. Cloud and device saved parlays and deletion markers match. Initialize a missing LOCAL account partition for this authenticated user? This will NOT write to Supabase or enable automatic sync.')){
-   status('Local partition initialization canceled. No changes made.');return;
-  }
-  if(!safe6Active(uid)||localStorage.getItem(partitionKey)!==null||stable(snapshot())!==localFingerprint)throw Error('Account or device data changed. No partition initialized.');
-  const check=await readRemote(uid);
-  if(!check||check.updated_at!==remote.updated_at||safe6Canonical(safe6View(personalCloudValues(check.payload),'Cloud recheck'))!==cloudFingerprint)throw Error('Cloud record changed during confirmation. No partition initialized.');
-  // Recheck immediately before local write; fail closed on any conflicting partition.
-  if(localStorage.getItem(partitionKey)!==null||!safe6Active(uid)||stable(snapshot())!==localFingerprint)throw Error('Local account state changed before write.');
-  localStorage.setItem(partitionKey,JSON.stringify(before));
-  const verify=localStorage.getItem(partitionKey);
-  if(verify===null||stable(JSON.parse(verify))!==localFingerprint){
-   if(verify===JSON.stringify(before))localStorage.removeItem(partitionKey);
-   throw Error('Local partition read-back failed. Inspect local storage before retrying.');
-  }
-  status('VERIFIED: Existing TEST cloud record matches device. Authenticated LOCAL account partition initialized and read back successfully. No cloud writes, deletions, or automatic sync.');
- }catch(e){status('LOCAL PARTITION INITIALIZATION STOPPED: '+(e&&e.message||String(e))+'. No cloud changes made.');}
- finally{busy=false;}
-};
-
 function safe6LocalWrite(uid,d){
  const oldSaved=localStorage.getItem('nflp-saved-v1'),oldMarkers=localStorage.getItem('nflp-deleted-saved-v1'),oldPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
  try{
@@ -2397,23 +2319,10 @@ safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_K
 setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
 $('sbSyncNow').onclick=async()=>{
- if(!auth){status('Sign in first. No cloud data changed.');return;}
- if(SAFE_READ_ONLY){
-  // TEST: never invoke the legacy sync path. Reuse only the user-enabled,
-  // account-scoped guarded v7 cycle, including its conflict and CAS checks.
-  if(!safe6Running){status('Guarded TEST auto-sync is not enabled on this device. Run read-only preflight, then enable guarded saved-parlay auto-sync (TEST). No cloud changes made.');return;}
-  if(busy){status('A guarded sync check is already running. No additional operation started.');return;}
-  if(!navigator.onLine){status('Device is offline. Guarded sync will retry when online.');return;}
-  if(document.hidden){status('Open this TEST tab to run guarded sync.');return;}
-  status('Running guarded TEST saved-parlay sync check…');
-  await safe6Cycle();
-  return;
- }
- await sync(!started);
-};
-settings();auth=authLoad();
+ if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
+settings();auth=authLoad();authControls(false);
 privacyGate('Personal parlays are locked until account sign-in is verified.');
-if(auth&&config.url&&config.key){status('Checking signed-in account…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();
+if(auth&&config.url&&config.key){status('Restoring saved sign-in…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();authControls(true);
  // Refresh the builder's in-memory list from the authenticated account's active storage.
  const fresh=trialData(snapshot()).saved;
  saved=fresh;renderSaved();
@@ -2438,8 +2347,8 @@ if(auth&&config.url&&config.key){status('Checking signed-in account…');setTime
    setTimeout(()=>{if(safe6Running)safe6Cycle()},1200);
   }catch(e){safe6Running=false;status('AUTO-SYNC v7 NOT RESUMED: '+e.message+'. No writes.');}
  }
- }catch(e){status('Account verification paused: '+e.message);privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
-else status('Cloud connection ready. Sign in or create an account to enable sync.');
+ }catch(e){authControls(false);status('Saved sign-in could not be verified: '+e.message+'. Sign in again if needed.');privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
+else status('No saved sign-in found in this browser installation. Sign in to restore your account; cloud data has not been changed.');
 setInterval(()=>{if(SAFE_READ_ONLY||!started||!auth||busy)return;sync(false)},5000);
 // Do not snapshot on pagehide: a partition switch can occur before old in-memory
 // arrays are discarded, and pagehide would overwrite the new account partition.
