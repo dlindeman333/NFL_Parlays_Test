@@ -116,10 +116,10 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(.toolbar):not(.
 </style>
 </head><body class="phase3-privacy-locked">
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
-<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 Your account</strong><span class="mu" id="topAccountIndicator" role="status" aria-live="polite">Checking sign-in…</span></div><div id="topAuthMount"></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
+<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 Your account</strong><span class="mu" id="topAccountIndicator" role="status" aria-live="polite">Checking sign-in…</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
 <div class="card" style="border-color:#b45309"><b>Account isolation test · local cleanup available, cloud writes paused</b><div class="mu">Sign-in and read-only cloud checks work. You can explicitly clear old local TEST parlays after verifying the reset cloud. Cloud writes, restore, merging, and cloud deletion remain paused.</div></div>
-<div class="navlinks"><button id="openSetup" class="btn alt" type="button">⚙ Setup</button><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
+<div class="navlinks"><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
 
 <dialog id="setupDialog" class="setup-modal" aria-label="Setup"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Setup</h2><button class="btn alt" type="button" id="closeSetup">Close ✕</button></div><section id="cloudSyncPanel">
 <h2 style="margin:0 0 8px">Cloud sync · PC &amp; iPhone</h2>
@@ -631,14 +631,33 @@ const money=n=>(n<0?"-$":"$")+Math.abs(n).toFixed(2);
 const pl=s=>s.status==="won"?(+s.amt||0):s.status==="lost"?-(+s.amt||0):0;
 const typ=s=>s.mode==="same"?"Same game":"Multi-game";
 $("save").onclick=()=>{
- if(legs.length!==N){$("msg").textContent=legs.length>N?"Remove "+(legs.length-N)+" leg(s) of your choice before saving.":"Fill all "+N+" legs first.";return}
+ if(!legs.length){$("msg").textContent="Add at least one valid selection before saving.";return}
+ if(legs.length>N){$("msg").textContent="Remove "+(legs.length-N)+" leg(s) of your choice before saving.";return}
+ // The leg-count target is a filter, not a minimum required to save.
+ // Reject invalid selections, completed games, duplicate legs, and opposing markets.
+ const currentGames=new Map(games.map(g=>[String(g.id),g]));
+ const seenSelections=new Set(),marketSides=new Map(),selectedGameIds=new Set();
+ for(const leg of legs){
+   const game=currentGames.get(String(leg.gid));
+   if(!game||game.sc){$("msg").textContent="Cannot save: a selection is unavailable or its game is completed.";return}
+   if(!leg.mkt||!leg.side){$("msg").textContent="Cannot save: a selection is incomplete.";return}
+   const selectionKey=String(leg.gid)+'|'+String(leg.mkt)+'|'+String(leg.side);
+   const marketKey=String(leg.gid)+'|'+String(leg.mkt);
+   if(seenSelections.has(selectionKey)||marketSides.has(marketKey)&&marketSides.get(marketKey)!==String(leg.side)){
+     $("msg").textContent="Cannot save: duplicate or opposing selections were found.";return;
+   }
+   seenSelections.add(selectionKey);marketSides.set(marketKey,String(leg.side));selectedGameIds.add(String(leg.gid));
+ }
+ if(mode==='same'&&selectedGameIds.size>1){$("msg").textContent="Cannot save: same-game slips must contain selections from one game.";return}
+ const fewerLegs=legs.length<N;
+ if(fewerLegs){$("msg").textContent=`Note: ${legs.length} selected vs ${N}-leg filter. Saving is allowed.`;}
  const st=Math.max(0,+$("stake").value||0);let D=1;
  const L=legs.map(l=>{const x=legOf(l);D*=x.d;return{t:x.txt,m:x.g.a+" @ "+x.g.h,o:am(x.d)}});
  const proposedName=prompt('Optional parlay name (up to 80 characters). Leave blank for Untitled Parlay:','');
  if(proposedName===null)return;
  const parlayName=proposedName.trim().slice(0,80);
  saved.unshift({id:Date.now(),name:parlayName,wk,mode,stake:st,dec:D,legs:L,status:"open",amt:0});
- persist();legs=[];draw();renderSaved();$("msg").textContent="Saved."};
+ persist();legs=[];draw();renderSaved();$("msg").textContent=fewerLegs?`Saved ${L.length}-leg parlay (filter: ${N} legs).`:"Saved."};
 function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
  if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
  persist();renderSaved()}
