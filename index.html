@@ -670,7 +670,8 @@ $("save").onclick=()=>{
  saved.unshift({id:Date.now(),name:parlayName,wk,mode,stake:st,dec:D,legs:L,status:"open",amt:0});
  persist();legs=[];draw();renderSaved();$("msg").textContent=fewerLegs?`Saved ${L.length}-leg parlay (filter: ${N} legs).`:"Saved.";
  // Keep the explanatory notice visible after the save completes.
- if(legNotice){legNotice.hidden=!fewerLegs;if(fewerLegs)legNotice.textContent=`Saved ${L.length} legs with a ${N}-leg filter. The filter was not changed.`;}
+ if(legNotice){legNotice.hidden=true;}
+ if(fewerLegs)window.alert(`Parlay saved successfully!\n\nYou saved ${L.length} legs while your filter is set to ${N}.\n\nYour filter was not changed.`);
 };
 function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
  if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
@@ -717,7 +718,13 @@ $('saved').addEventListener('click',event=>{
  if(!button)return;
  const action=button.dataset.savedAction,id=button.dataset.savedId;
  if(action==='remove-leg')removeSavedSelection(id,Number(button.dataset.legIndex));
- else if(action==='delete-parlay')safe9DeleteSaved([String(id)]);
+ else if(action==='delete-parlay'){
+   const card=button.closest('.sv');
+   let feedback=card&&card.querySelector('.phase3-card-delete-status');
+   if(card&&!feedback){feedback=document.createElement('div');feedback.className='phase3-card-delete-status mu';feedback.setAttribute('role','status');feedback.style.cssText='padding:8px 10px;margin:6px 0;border:1px solid #8aa4c2;border-radius:8px;';button.parentElement.insertAdjacentElement('afterend',feedback);}
+   if(feedback)feedback.textContent='Checking your signed-in TEST account before deletion…';
+   safe9DeleteSaved([String(id)],feedback).catch(e=>{if(feedback)feedback.textContent='Deletion could not start: '+(e?.message||String(e));});
+ }
  else if(action==='edit')editSavedParlay(id);
  else if(action==='duplicate')duplicateSavedToDraft(id);
  else if(action==='rename')renameSavedParlay(id);
@@ -2357,10 +2364,11 @@ function safe10DeletionFeedback(message){
  const target=document.getElementById('savedActionStatus');
  if(target){target.textContent=message;target.scrollIntoView({block:'nearest',behavior:'smooth'});}
 }
-async function safe9DeleteSaved(requestedIds=null){
- safe10DeletionFeedback('Checking signed-in account and cloud sync before deletion…');
- if(busy){safe10DeletionFeedback('Another cloud operation is running. Try again.');return;}
- if(!navigator.onLine){safe10DeletionFeedback('Cloud deletion requires an online connection. No changes made.');return;}
+async function safe9DeleteSaved(requestedIds=null,cardFeedback=null){
+ const report=message=>{safe10DeletionFeedback(message);if(cardFeedback&&cardFeedback.isConnected)cardFeedback.textContent=message;};
+ report('Checking signed-in account and cloud sync before deletion…');
+ if(busy){report('Another cloud operation is running. Try again.');return;}
+ if(!navigator.onLine){report('Cloud deletion requires an online connection. No changes made.');return;}
  busy=true;
  const priorRunning=safe6Running;safe6Running=false;
  try{
@@ -2374,11 +2382,11 @@ async function safe9DeleteSaved(requestedIds=null){
   if(!baselineRaw)throw Error('Guarded auto-sync must be enabled for this account first');
   const baseline=JSON.parse(baselineRaw);
   if(!baseline||baseline.uid!==uid||baseline.canonical!==canonical)throw Error('Sync baseline is not current. Wait for sync and retry.');
-  if(!cloud.saved.length){safe10DeletionFeedback('No saved parlays to delete for this account.');return;}
+  if(!cloud.saved.length){report('No saved parlays to delete for this account.');return;}
   const selected=requestedIds==='ALL'?cloud.saved.map(p=>String(p.id)):
     Array.isArray(requestedIds)?requestedIds:await chooseSavedParlays(cloud.saved);
-  if(selected===null){safe10DeletionFeedback('Deletion canceled. No changes made.');return;}
-  const ids=[...new Set(selected.map(String))];if(!ids.length){safe10DeletionFeedback('No parlays selected. No changes made.');return;}
+  if(selected===null){report('Deletion canceled. No changes made.');return;}
+  const ids=[...new Set(selected.map(String))];if(!ids.length){report('No parlays selected. No changes made.');return;}
   const existing=new Set(cloud.saved.map(p=>String(p.id)));
   if(ids.some(id=>!existing.has(id)))throw Error('Selection contains an unknown parlay');
   const all=ids.length===cloud.saved.length;
@@ -2403,8 +2411,8 @@ async function safe9DeleteSaved(requestedIds=null){
   // Cloud is verified; a local storage error cannot undo the cloud operation.
   try{safe6LocalWrite(uid,nextData);localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:safe6Canonical(nextData)}));}
   catch(e){throw Error('Cloud deletion VERIFIED, but this device update failed: '+e.message+'. Do not retry deletion; inspect sync status.');}
-  safe10DeletionFeedback('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
- }catch(e){safe10DeletionFeedback('TEST v8 deletion: '+(e&&e.message||String(e)));}
+  report('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
+ }catch(e){report('TEST v8 deletion: '+(e&&e.message||String(e)));}
  finally{busy=false;safe6Running=priorRunning&&!!localStorage.getItem(safe6Key(localStorage.getItem(OWNER_KEY)||''));}
 }
 safe8Delete.onclick=()=>{safe9DeleteSaved().catch(e=>safe10DeletionFeedback('Deletion manager could not start: '+(e&&e.message||String(e))));};
