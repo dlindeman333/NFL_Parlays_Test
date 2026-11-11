@@ -650,14 +650,28 @@ $("save").onclick=()=>{
  }
  if(mode==='same'&&selectedGameIds.size>1){$("msg").textContent="Cannot save: same-game slips must contain selections from one game.";return}
  const fewerLegs=legs.length<N;
- if(fewerLegs){$("msg").textContent=`Note: ${legs.length} selected vs ${N}-leg filter. Saving is allowed.`;}
+ // Persistent, accessible notice: the transient #msg is overwritten after saving.
+ let legNotice=document.getElementById('phase3LegFilterNotice');
+ if(!legNotice){
+   legNotice=document.createElement('div');
+   legNotice.id='phase3LegFilterNotice';
+   legNotice.setAttribute('role','status');
+   legNotice.setAttribute('aria-live','polite');
+   legNotice.style.cssText='margin:8px 0;padding:9px 12px;border:1px solid #8aa4c2;border-radius:8px;font-size:14px;';
+   $("save").parentElement.insertAdjacentElement('afterend',legNotice);
+ }
+ legNotice.hidden=!fewerLegs;
+ if(fewerLegs)legNotice.textContent=`Info: ${legs.length} selected vs ${N}-leg filter. You can save this parlay without changing the filter.`;
  const st=Math.max(0,+$("stake").value||0);let D=1;
  const L=legs.map(l=>{const x=legOf(l);D*=x.d;return{t:x.txt,m:x.g.a+" @ "+x.g.h,o:am(x.d)}});
  const proposedName=prompt('Optional parlay name (up to 80 characters). Leave blank for Untitled Parlay:','');
  if(proposedName===null)return;
  const parlayName=proposedName.trim().slice(0,80);
  saved.unshift({id:Date.now(),name:parlayName,wk,mode,stake:st,dec:D,legs:L,status:"open",amt:0});
- persist();legs=[];draw();renderSaved();$("msg").textContent=fewerLegs?`Saved ${L.length}-leg parlay (filter: ${N} legs).`:"Saved."};
+ persist();legs=[];draw();renderSaved();$("msg").textContent=fewerLegs?`Saved ${L.length}-leg parlay (filter: ${N} legs).`:"Saved.";
+ // Keep the explanatory notice visible after the save completes.
+ if(legNotice){legNotice.hidden=!fewerLegs;if(fewerLegs)legNotice.textContent=`Saved ${L.length} legs with a ${N}-leg filter. The filter was not changed.`;}
+};
 function setS(id,k,v){const s=saved.find(x=>x.id===id);if(!s)return;
  if(k==="status"){s.status=v;s.amt=v==="won"?+(s.stake*(s.dec-1)).toFixed(2):v==="lost"?s.stake:0}else s.amt=Math.abs(+v||0);
  persist();renderSaved()}
