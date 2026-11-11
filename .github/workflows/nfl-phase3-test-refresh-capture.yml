@@ -1,0 +1,89 @@
+name: NFL Phase 3 TEST Refresh and Capture (Guarded)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'NFL season'
+        type: string
+        default: '2026'
+        required: true
+      week:
+        description: 'NFL week (blank = ESPN current week)'
+        type: string
+        required: false
+      authorize_test_stats_upload:
+        description: 'Manually enable validated TEST statistics upload (scheduled runs upload automatically)'
+        type: boolean
+        default: false
+  schedule:
+    - cron: '17 10 * * *'
+permissions:
+  contents: read
+concurrency:
+  group: nfl-phase3-test-refresh-capture
+  cancel-in-progress: false
+jobs:
+  refresh:
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-automation.txt
+      - name: Install export dependencies
+        run: python -m pip install -r requirements-automation.txt
+      - name: Verify repository and TEST target
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: python scripts/phase3_test_boundary.py
+      - name: Generate fresh stats without credentials
+        env:
+          NFL_SEASON: ${{ inputs.season || '2026' }}
+          SUPABASE_URL: ''
+          SUPABASE_SERVICE_ROLE_KEY: ''
+        run: python export_automated.py
+      - name: Validate export without writing
+        env:
+          NFL_SEASON: ${{ inputs.season || '2026' }}
+        run: python scripts/phase3_test_stats_upload.py --csv nfl_player_stats.csv --season "$NFL_SEASON"
+      - name: Guarded TEST-only stats upload (scheduled or manual opt-in)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.authorize_test_stats_upload == true)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season || '2026' }}
+        run: python scripts/phase3_test_stats_upload.py --csv nfl_player_stats.csv --season "$NFL_SEASON" --upload
+      - name: Candidate and forecast generation (only after validated upload)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.authorize_test_stats_upload == true)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season || '2026' }}
+          NFL_WEEK: ${{ inputs.week }}
+          PYTHONPATH: scripts
+        shell: bash
+        run: |
+          args=(--season "$NFL_SEASON")
+          if [[ -n "$NFL_WEEK" ]]; then args+=(--week "$NFL_WEEK"); fi
+          python scripts/phase3d37h_full_manifest.py "${args[@]}"
+          python scripts/phase3_forecast_snapshot.py --input-dir phase3d37h-output --output-dir phase3-forecast-output
+      - name: Verify captured forecast integrity before publication
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.authorize_test_stats_upload == true)
+        env:
+          PYTHONPATH: scripts
+        run: python scripts/phase3_capture_artifact_check.py --directory phase3-forecast-output
+      - name: Preserve read-only evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3-test-refresh-${{ github.run_id }}
+          path: |
+            nfl_player_stats.csv
+            phase3d37h-output/manifest.json
+            phase3-forecast-output/*.json
+          if-no-files-found: warn
+          retention-days: 7
