@@ -2211,6 +2211,52 @@ function safe6View(x,side){
 }
 function safe6Canonical(d){return JSON.stringify({saved:[...d.saved].sort((a,b)=>String(a.id).localeCompare(String(b.id))),deleted:[...d.deleted].sort()});}
 function safe6Active(uid){return localStorage.getItem(OWNER_KEY)===uid&&!!auth;}
+
+// TEST-only recovery for an EXISTING cloud record and a missing device partition.
+// This operation writes ONLY the authenticated user's localStorage partition.
+// It does not change cloud records, saved parlays, drafts, or deletion markers.
+const existingPartitionButton=document.createElement('button');
+existingPartitionButton.type='button';existingPartitionButton.className='btn alt';
+existingPartitionButton.textContent='Verify existing TEST cloud record & initialize local partition (guarded)';
+$('sbSyncNow').parentNode.insertBefore(existingPartitionButton,$('sbSyncNow'));
+existingPartitionButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}
+ busy=true;
+ try{
+  if(!SAFE_READ_ONLY)throw Error('Unexpected cloud safety configuration; operation stopped.');
+  if(config.url!=='https://luxezjthznupdghmexyh.supabase.co')throw Error('Not the approved TEST Supabase project.');
+  const uid=await userId();
+  if(!safe6Active(uid))throw Error('Authenticated user does not own the active browser data.');
+  const partitionKey=ACCOUNT_PREFIX+uid;
+  if(localStorage.getItem(partitionKey)!==null)throw Error('An account partition already exists. Nothing was changed.');
+  const before=snapshot();
+  const local=safe6View(before,'Device');
+  const remote=await readRemote(uid);
+  if(!remote||!remote.updated_at)throw Error('Existing cloud record not found or missing revision.');
+  const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
+  if(safe6Canonical(local)!==safe6Canonical(cloud))throw Error('Cloud and device saved parlays/deletion markers differ. No partition initialized.');
+  const localFingerprint=stable(before);
+  const cloudFingerprint=safe6Canonical(cloud);
+  downloadJSON({version:1,reason:'existing-test-cloud-partition-initialization',exported_at:new Date().toISOString(),user_id:uid,cloud_updated_at:remote.updated_at,storage:fullLocalBackup()},'nfl-test-partition-backup-'+new Date().toISOString().slice(0,10)+'.json');
+  if(!confirm('TEST ACCOUNT ONLY: Verify the JSON backup was saved in Downloads. Cloud and device saved parlays and deletion markers match. Initialize a missing LOCAL account partition for this authenticated user? This will NOT write to Supabase or enable automatic sync.')){
+   status('Local partition initialization canceled. No changes made.');return;
+  }
+  if(!safe6Active(uid)||localStorage.getItem(partitionKey)!==null||stable(snapshot())!==localFingerprint)throw Error('Account or device data changed. No partition initialized.');
+  const check=await readRemote(uid);
+  if(!check||check.updated_at!==remote.updated_at||safe6Canonical(safe6View(personalCloudValues(check.payload),'Cloud recheck'))!==cloudFingerprint)throw Error('Cloud record changed during confirmation. No partition initialized.');
+  // Recheck immediately before local write; fail closed on any conflicting partition.
+  if(localStorage.getItem(partitionKey)!==null||!safe6Active(uid)||stable(snapshot())!==localFingerprint)throw Error('Local account state changed before write.');
+  localStorage.setItem(partitionKey,JSON.stringify(before));
+  const verify=localStorage.getItem(partitionKey);
+  if(verify===null||stable(JSON.parse(verify))!==localFingerprint){
+   if(verify===JSON.stringify(before))localStorage.removeItem(partitionKey);
+   throw Error('Local partition read-back failed. Inspect local storage before retrying.');
+  }
+  status('VERIFIED: Existing TEST cloud record matches device. Authenticated LOCAL account partition initialized and read back successfully. No cloud writes, deletions, or automatic sync.');
+ }catch(e){status('LOCAL PARTITION INITIALIZATION STOPPED: '+(e&&e.message||String(e))+'. No cloud changes made.');}
+ finally{busy=false;}
+};
+
 function safe6LocalWrite(uid,d){
  const oldSaved=localStorage.getItem('nflp-saved-v1'),oldMarkers=localStorage.getItem('nflp-deleted-saved-v1'),oldPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
  try{
