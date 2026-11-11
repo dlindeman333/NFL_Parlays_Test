@@ -110,7 +110,11 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 #phase3MobileSlipDialog .mobile-slip-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px}
 @media(max-width:700px){#phase3MobileSlipToggle{display:block;position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));right:12px;z-index:30;box-shadow:0 5px 18px #0005}body{padding-bottom:75px}}
 </style>
-</head><body>
+<style id="phase3PrivacyShellStyles">
+body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(.toolbar):not(.refresh-status-line):not(.navlinks):not(#setupDialog):not(script){display:none!important}
+#phase3PrivacyNotice{margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px}
+</style>
+</head><body class="phase3-privacy-locked">
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
 <section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 Your account</strong><span class="mu" id="topAccountIndicator" role="status" aria-live="polite">Checking sign-in…</span></div><div id="topAuthMount"></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
@@ -1232,29 +1236,24 @@ const LEGACY_PREFIX='nflp-phase3-test-legacy-quarantine-v2-';
 // Phase 3 privacy gate: never display one account's local parlays to a signed-out
 // or different user. This is a conservative lock, NOT a data migration.
 function privacyGate(message){
- let el=document.getElementById('phase3PrivacyGate');
- if(!el){
-  el=document.createElement('div');el.id='phase3PrivacyGate';
-  el.setAttribute('role','alertdialog');el.setAttribute('aria-modal','true');
-  el.style.cssText='position:fixed;inset:0;z-index:2147483647;background:#07142c;color:#fff;display:flex;align-items:center;justify-content:center;padding:24px;font:16px/1.5 system-ui,sans-serif';
-  el.innerHTML='<div style="max-width:550px;background:#142b52;border:1px solid #7496ce;border-radius:14px;padding:24px"><h2 style="color:#fff;margin-top:0">Account privacy lock</h2><p id="phase3PrivacyMessage"></p><p style="font-size:13px">Your saved data has not been deleted or transferred. To use a different account, open the test app in a separate browser profile or private window. Do not clear browser data.</p><button id="phase3PrivacyUnlock" style="background:#fff;color:#10234b;border:0;border-radius:8px;padding:10px 14px;font-weight:700">Sign in as original account</button></div>';
-  document.body.appendChild(el);
-  el.querySelector('#phase3PrivacyUnlock').addEventListener('click',()=>{
-   // Show only the authentication form; keep all parlay content concealed.
-   const dialog=document.getElementById('setupDialog');
-   el.style.display='none'; // Hide lock while the authentication dialog is open.
-   if(!dialog.open)dialog.showModal();
-   document.getElementById('sbEmail').focus();
-   dialog.addEventListener('close',()=>{
-    const lock=document.getElementById('phase3PrivacyGate');
-    if(lock)lock.style.display='flex'; // Still locked unless verified sign-in removed it.
-   },{once:true});
-  });
+ document.body.classList.add('phase3-privacy-locked');
+ let notice=document.getElementById('phase3PrivacyNotice');
+ if(!notice){
+  notice=document.createElement('div');
+  notice.id='phase3PrivacyNotice';
+  notice.setAttribute('role','status');
+  const panel=document.getElementById('topAccountPanel');
+  if(!panel)throw new Error('Account panel missing');
+  panel.appendChild(notice);
  }
- el.querySelector('#phase3PrivacyMessage').textContent=message;
- el.style.display='flex';
+ notice.textContent=message+' Sign in above to unlock your personal parlays.';
 }
-function privacyUnlock(){const el=document.getElementById('phase3PrivacyGate');if(el)el.remove();}
+function privacyUnlock(){
+ document.body.classList.remove('phase3-privacy-locked');
+ const notice=document.getElementById('phase3PrivacyNotice');
+ if(notice)notice.remove();
+}
+
 
 function personalDataPresent(){
  try{
