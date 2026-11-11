@@ -2228,6 +2228,77 @@ async function safe6Cycle(){
  }catch(e){safe6Running=false;status('AUTO-SYNC v7 PAUSED: '+(e&&e.message||String(e))+'. No further automatic writes. Review before resuming.');}
  finally{busy=false}
 }
+// One-time, explicitly confirmed, TEST-only union of nonconflicting saved parlays.
+// Never infer deletion from absence; never use legacy unrestricted cloud writers.
+const safe11Merge=document.createElement('button');
+safe11Merge.type='button';safe11Merge.className='btn alt';
+safe11Merge.textContent='Reconcile cloud + this device (guarded TEST)';
+$('sbSyncNow').parentNode.insertBefore(safe11Merge,$('sbSyncNow'));
+safe11Merge.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}
+ if(!navigator.onLine){status('RECONCILE STOPPED: Offline; no changes.');return;}
+ // A locally opened HTML file can be inspected, but cannot perform writes.
+ if(location.hostname!=='dlindeman333.github.io'||!location.pathname.startsWith('/NFL_Parlays_Test/')){
+  status('RECONCILE STOPPED: Writes are permitted only from the TEST GitHub Pages app.');return;
+ }
+ busy=true;const wasRunning=safe6Running;safe6Running=false;
+ let cloudCommitted=false;
+ try{
+  const uid=await userId();if(!safe6Active(uid))throw Error('Authenticated storage owner mismatch');
+  // Keep auto-sync paused across reload until the user explicitly re-enables it.
+  localStorage.removeItem(safe6Key(uid));
+  const remote=await readRemote(uid);
+  if(!remote||!remote.updated_at||!remote.payload||typeof remote.payload!=='object'||Array.isArray(remote.payload))throw Error('Existing owned cloud record/revision unavailable');
+  // The REST request is scoped to the authenticated UID; reject any explicit contradictory owner.
+  if(remote.payload.user_id!=null&&String(remote.payload.user_id)!==uid)throw Error('Cloud payload owner mismatch');
+  const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
+  const device=safe6View(snapshot(),'Device');
+  const cloudById=new Map(cloud.saved.map(p=>[String(p.id),p]));
+  const localById=new Map(device.saved.map(p=>[String(p.id),p]));
+  const deleted=new Set([...cloud.deleted,...device.deleted]);
+  for(const id of new Set([...cloudById.keys(),...localById.keys()])){
+   if(deleted.has(id))throw Error('Saved parlay conflicts with deletion history: '+id);
+   if(cloudById.has(id)&&localById.has(id)&&JSON.stringify(cloudById.get(id))!==JSON.stringify(localById.get(id)))throw Error('Same-ID parlay conflict: '+id);
+  }
+  const partRaw=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(partRaw!==null){
+   const part=JSON.parse(partRaw);
+   if(!part||typeof part!=='object'||Array.isArray(part))throw Error('Invalid account partition');
+   if(safe6Canonical(safe6View(part,'Account partition'))!==safe6Canonical(device))throw Error('Account partition differs from active device data');
+  }
+  const combined=safe6View({'nflp-saved-v1':JSON.stringify([...cloudById.values(),...[...localById].filter(([id])=>!cloudById.has(id)).map(([,p])=>p)]),'nflp-deleted-saved-v1':JSON.stringify([...deleted])},'Reconciled result');
+  const canonical=safe6Canonical(combined),initialCloud=safe6Canonical(cloud),initialDevice=safe6Canonical(device);
+  const addedToCloud=[...localById.keys()].filter(id=>!cloudById.has(id));
+  const addedToDevice=[...cloudById.keys()].filter(id=>!localById.has(id));
+  const backup={version:1,kind:'phase3-test-reconcile-before-write',timestamp:new Date().toISOString(),uid,cloud_revision:remote.updated_at,cloud_payload:remote.payload,device_storage:snapshot(),account_partition_raw:partRaw,planned_saved_ids:combined.saved.map(p=>String(p.id)),planned_deletion_markers:combined.deleted};
+  downloadJSON(backup,'NFL-TEST-reconcile-BACKUP-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json');
+  if(!confirm('TEST ACCOUNT ONLY: A combined backup download was requested. VERIFY it is saved before continuing.\n\nCloud-only saved parlays: '+addedToDevice.length+'; device-only saved parlays: '+addedToCloud.length+'; combined: '+combined.saved.length+'.\n\nNo parlay deletions; drafts stay local. Continue ONLY after verifying the backup?')){status('RECONCILE CANCELED: Backup requested; no data changed.');return;}
+  if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==initialDevice)throw Error('Device or account changed during confirmation');
+  const currentPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(currentPart!==partRaw)throw Error('Account partition changed during confirmation');
+  const fresh=await readRemote(uid);
+  if(!fresh||fresh.updated_at!==remote.updated_at||safe6Canonical(safe6View(personalCloudValues(fresh.payload),'Cloud'))!==initialCloud)throw Error('Cloud changed before write; retry after review');
+  if(fresh.payload.user_id!=null&&String(fresh.payload.user_id)!==uid)throw Error('Cloud owner changed');
+  if(initialCloud!==canonical){
+   const jwt=await token();
+   const next={...fresh.payload,'nflp-saved-v1':JSON.stringify(combined.saved),'nflp-deleted-saved-v1':JSON.stringify(combined.deleted)};
+   const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(fresh.updated_at)+'&select=payload,updated_at',{
+    method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:next,updated_at:new Date().toISOString()})
+   });
+   if(!Array.isArray(rows)||rows.length!==1)throw Error('Cloud CAS write not confirmed; check cloud before retry');
+   cloudCommitted=true;
+  }
+  const verified=await readRemote(uid);
+  if(!verified||safe6Canonical(safe6View(personalCloudValues(verified.payload),'Cloud'))!==canonical)throw Error('Cloud read-back mismatch');
+  if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==initialDevice)throw Error('Device changed before local update');
+  safe6LocalWrite(uid,combined);
+  const partition=JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)||'null');
+  if(!partition||safe6Canonical(safe6View(partition,'Partition readback'))!==canonical)throw Error('Account partition read-back mismatch');
+  localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical}));
+  status('RECONCILE VERIFIED: '+combined.saved.length+' saved parlays; '+combined.deleted.length+' deletion markers. Cloud, device and account partition match. Drafts untouched. Auto-sync remains paused; enable it separately.');
+ }catch(e){status('RECONCILE STOPPED: '+(e&&e.message||String(e))+(cloudCommitted?'. Cloud write may have succeeded; DO NOT repeat until read-only preflight confirms state.':'. No confirmed cloud write.'));}
+ finally{busy=false;safe6Running=false;}
+};
 safe6Button.onclick=async()=>{
  if(busy){status('Another cloud operation is running.');return;}busy=true;
  try{
