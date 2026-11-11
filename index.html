@@ -2397,7 +2397,20 @@ safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_K
 setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
 $('sbSyncNow').onclick=async()=>{
- if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
+ if(!auth){status('Sign in first. No cloud data changed.');return;}
+ if(SAFE_READ_ONLY){
+  // TEST: never invoke the legacy sync path. Reuse only the user-enabled,
+  // account-scoped guarded v7 cycle, including its conflict and CAS checks.
+  if(!safe6Running){status('Guarded TEST auto-sync is not enabled on this device. Run read-only preflight, then enable guarded saved-parlay auto-sync (TEST). No cloud changes made.');return;}
+  if(busy){status('A guarded sync check is already running. No additional operation started.');return;}
+  if(!navigator.onLine){status('Device is offline. Guarded sync will retry when online.');return;}
+  if(document.hidden){status('Open this TEST tab to run guarded sync.');return;}
+  status('Running guarded TEST saved-parlay sync check…');
+  await safe6Cycle();
+  return;
+ }
+ await sync(!started);
+};
 settings();auth=authLoad();
 privacyGate('Personal parlays are locked until account sign-in is verified.');
 if(auth&&config.url&&config.key){status('Checking signed-in account…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();
