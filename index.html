@@ -112,7 +112,7 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 @media(max-width:700px){#phase3MobileSlipToggle{display:block;position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));right:12px;z-index:30;box-shadow:0 5px 18px #0005}body{padding-bottom:75px}}
 </style>
 <style id="phase3PrivacyShellStyles">
-body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffCountdown):not(.toolbar):not(.refresh-status-line):not(.navlinks):not(#setupDialog):not(script){display:none!important}
+body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffCountdown):not(.toolbar):not(.refresh-status-line):not(.navlinks):not(#setupDialog):not(#advancedSetupDialog):not(script){display:none!important}
 #phase3PrivacyNotice{margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px}
 </style>
 <style id="phase3KickoffCountdownStyles">
@@ -149,6 +149,7 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
 <form id="sbAuthForm" class="tools" autocomplete="on" method="post" action="#" aria-label="Cloud account sign in"><label for="sbEmail">Email <input id="sbEmail" name="username" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Email" required></label><label for="sbPassword">Password <input id="sbPassword" name="password" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" required></label><button class="btn" id="sbSignIn" type="submit">Sign in</button><button class="btn alt" id="sbSignUp" type="button">Create account</button><button class="btn alt" id="sbSignOut" type="button">Sign out</button></form>
 <div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
 </section>
+<dialog id="advancedSetupDialog" class="setup-modal" aria-label="Advanced Options"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Advanced Options</h2><button class="btn alt" type="button" id="closeAdvancedSetup">Close ✕</button></div><div id="advancedSetupMount"></div></div></dialog>
 <section id="csvSetup"><h2>Upload NFL Stats</h2><div id="autoStatsStatus" class="mu" role="status">Cloud NFL statistics: checking…</div><div class="mu" style="margin:5px 0 8px">Imported player statistics are retained in this browser until you select Clear imported stats.</div><div class="tools"><span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px"><button class="btn" type="button" id="chooseCSV">Choose CSV file</button><span id="csvFileName" class="mu" role="status">Empty</span></span><input id="csvUpload" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-label="Choose player statistics CSV"><button class="btn alt" id="clearCSV">Clear imported stats</button></div><div id="csvState" class="mu">Empty — no imported player statistics.</div><div class="mu" id="csvLastUpload" style="margin-top:7px" role="status">Latest upload: Never</div><div class="mu">Data source: Onboard + uploaded NFL stats (automatic)</div></section></div></dialog>
 <details id="phase3DataHealth" class="card" style="margin:12px 0" aria-label="Data health and synchronization status"><summary style="cursor:pointer;font-weight:700">Data health &amp; synchronization status</summary><p class="mu">Device-level diagnostics only. These indicators do not certify that NFL feeds are current or that cloud writes are enabled.</p><div id="phase3HealthResults" role="status" aria-live="polite">Checking local connection…</div><button type="button" class="btn alt" id="phase3HealthRefresh" style="margin-top:8px">Refresh status</button></details>
 <h2 id="myParlays">My parlays</h2><div id="sumry" class="card"></div>
@@ -1305,7 +1306,9 @@ if(navigator.onLine){setTimeout(()=>{refreshNFL().catch(e=>console.warn('Automat
  const indicator=document.getElementById('topAccountIndicator');
  const status=document.getElementById('sbStatus');
  if(indicator&&status){
-  const update=()=>{indicator.textContent=status.textContent||'Sign-in status unavailable';};
+  const update=()=>{if(!indicator.dataset.accountEmail)indicator.textContent='Not signed in · '+(status.textContent||'');};
+  document.addEventListener('phase3-account-verified',e=>{const email=e.detail?.email||'Account verified';indicator.dataset.accountEmail=email;indicator.textContent='✓ Signed in as '+email+' · Connected · TEST';});
+  document.addEventListener('phase3-account-signed-out',()=>{delete indicator.dataset.accountEmail;indicator.textContent='Not signed in · TEST';});
   new MutationObserver(update).observe(status,{childList:true,subtree:true,characterData:true});
   update();
  }
@@ -1313,6 +1316,23 @@ if(navigator.onLine){setTimeout(()=>{refreshNFL().catch(e=>console.warn('Automat
 document.getElementById('openSetup').onclick=()=>document.getElementById('setupDialog').showModal();
 document.getElementById('closeSetup').onclick=()=>document.getElementById('setupDialog').close();
 document.getElementById('setupDialog').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close()});
+
+(function organizeSetupOptions(){
+ const setup=document.getElementById('setupDialog'), advanced=document.getElementById('advancedSetupDialog');
+ const cloud=document.getElementById('cloudSyncPanel'), mount=document.getElementById('advancedSetupMount');
+ const button=document.createElement('button');
+ button.type='button';button.className='btn alt';button.id='openAdvancedSetup';button.textContent='⚙ Advanced Options';
+ button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','advancedSetupDialog');
+ cloud.appendChild(button);
+ const tools=document.createElement('section');tools.innerHTML='<h2>Cloud maintenance</h2>';
+ for(const id of ['sbRestoreCloud','sbUploadLocal','sbBackup']){const el=document.getElementById(id);if(el)tools.appendChild(el);}
+ mount.appendChild(tools);
+ const csv=document.getElementById('csvSetup');if(csv)mount.appendChild(csv);
+ button.onclick=()=>{setup.close();advanced.showModal();};
+ document.getElementById('closeAdvancedSetup').onclick=()=>{advanced.close();setup.showModal();};
+ advanced.addEventListener('click',e=>{if(e.target===advanced)advanced.close();});
+})();
+
 /* Optional cloud synchronization: browser-first, single Supabase row per authenticated user.
    Existing browser storage remains intact; conflict prompts before initial remote restore.
    Password is never stored. Auth tokens persist in localStorage until sign-out. */
@@ -1447,6 +1467,7 @@ async function userId(){
  const jwt=await token();
  const data=await api('/auth/v1/user',{headers:{Authorization:'Bearer '+jwt}});
  enforceStorageOwner(data.id);
+ document.dispatchEvent(new CustomEvent('phase3-account-verified',{detail:{email:data.email||auth?.user?.email||''}}));
  return data.id;
 }
 function snapshot(){
@@ -1664,7 +1685,7 @@ async function sign(kind){
 }
 $('sbAuthForm').addEventListener('submit',e=>{e.preventDefault();sign('signin')});
 $('sbSignUp').onclick=()=>sign('signup');
-$('sbSignOut').onclick=()=>{try{saveActiveAccount()}catch(e){status('Could not preserve account storage; sign-out stopped: '+e.message);return;}storeAuth(null);started=false;lastPushed='';status('Signed out. Personal data is locked on this device.');const dialog=document.getElementById('setupDialog');if(dialog.open)dialog.close();privacyGate('Signed out. Personal data is hidden. Sign in to access your account partition.');location.reload();};
+$('sbSignOut').onclick=()=>{try{saveActiveAccount()}catch(e){status('Could not preserve account storage; sign-out stopped: '+e.message);return;}storeAuth(null);document.dispatchEvent(new Event('phase3-account-signed-out'));started=false;lastPushed='';status('Signed out. Personal data is locked on this device.');const dialog=document.getElementById('setupDialog');if(dialog.open)dialog.close();privacyGate('Signed out. Personal data is hidden. Sign in to access your account partition.');location.reload();};
 $('sbBackup').onclick=download;
 $('sbRestoreCloud').onclick=async()=>{
  if(SAFE_READ_ONLY){status('Cloud restore paused: cloud records contain known cross-account duplicates. No data changed.');return;}
