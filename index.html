@@ -137,7 +137,7 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
  </div>
  <div class="kickoff-note" id="kickoffStatus" role="status" aria-live="polite">Checking NFL schedule…</div>
 </section>
-<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 Your account</strong><span class="mu" id="topAccountIndicator" role="status" aria-live="polite">Checking sign-in…</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
+<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 NFL Parlay Builder · Your Account</strong><span class="mu" style="font-weight:700;color:#047857" id="topEnvironment">TEST</span></div><div id="accountIdentityCard" role="status" aria-live="polite" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="mu">Signed in as</div><strong id="topAccountIndicator">Checking sign-in…</strong></div><span id="topConnectionBadge" class="mu">Not connected</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
 <div class="card" style="border-color:#b45309"><b>Account isolation test · local cleanup available, cloud writes paused</b><div class="mu">Sign-in and read-only cloud checks work. You can explicitly clear old local TEST parlays after verifying the reset cloud. Cloud writes, restore, merging, and cloud deletion remain paused.</div></div>
 <div class="navlinks"><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
@@ -149,8 +149,8 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
 <form id="sbAuthForm" class="tools" autocomplete="on" method="post" action="#" aria-label="Cloud account sign in"><label for="sbEmail">Email <input id="sbEmail" name="username" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="Email" required></label><label for="sbPassword">Password <input id="sbPassword" name="password" type="password" autocomplete="current-password" placeholder="Password (8+ characters)" required></label><button class="btn" id="sbSignIn" type="submit">Sign in</button><button class="btn alt" id="sbSignUp" type="button">Create account</button><button class="btn alt" id="sbSignOut" type="button">Sign out</button></form>
 <div class="tools"><button class="btn alt" id="sbSyncNow">Sync now</button><button class="btn alt" id="sbRestoreCloud">Use cloud data on this device</button><button class="btn alt" id="sbUploadLocal" type="button">Upload this device's parlays to cloud</button><button class="btn alt" id="sbBackup">Download local data backup</button><span class="mu" id="sbStatus" role="status" aria-live="polite">Cloud sync not configured; local data unchanged.</span></div>
 </section>
-<dialog id="advancedSetupDialog" class="setup-modal" aria-label="Advanced Options"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Advanced Options</h2><button class="btn alt" type="button" id="closeAdvancedSetup">Close ✕</button></div><div id="advancedSetupMount"></div></div></dialog>
 <section id="csvSetup"><h2>Upload NFL Stats</h2><div id="autoStatsStatus" class="mu" role="status">Cloud NFL statistics: checking…</div><div class="mu" style="margin:5px 0 8px">Imported player statistics are retained in this browser until you select Clear imported stats.</div><div class="tools"><span style="display:inline-flex;flex-direction:column;align-items:flex-start;gap:5px"><button class="btn" type="button" id="chooseCSV">Choose CSV file</button><span id="csvFileName" class="mu" role="status">Empty</span></span><input id="csvUpload" type="file" accept=".csv,.tsv,text/csv,text/tab-separated-values" style="position:absolute;width:1px;height:1px;opacity:0;pointer-events:none" aria-label="Choose player statistics CSV"><button class="btn alt" id="clearCSV">Clear imported stats</button></div><div id="csvState" class="mu">Empty — no imported player statistics.</div><div class="mu" id="csvLastUpload" style="margin-top:7px" role="status">Latest upload: Never</div><div class="mu">Data source: Onboard + uploaded NFL stats (automatic)</div></section></div></dialog>
+<dialog id="advancedSetupDialog" class="setup-modal" aria-label="Advanced Options"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Advanced Options</h2><button class="btn alt" type="button" id="closeAdvancedSetup">Close ✕</button></div><div id="advancedSetupMount"></div></div></dialog>
 <details id="phase3DataHealth" class="card" style="margin:12px 0" aria-label="Data health and synchronization status"><summary style="cursor:pointer;font-weight:700">Data health &amp; synchronization status</summary><p class="mu">Device-level diagnostics only. These indicators do not certify that NFL feeds are current or that cloud writes are enabled.</p><div id="phase3HealthResults" role="status" aria-live="polite">Checking local connection…</div><button type="button" class="btn alt" id="phase3HealthRefresh" style="margin-top:8px">Refresh status</button></details>
 <h2 id="myParlays">My parlays</h2><div id="sumry" class="card"></div>
 <section id="savedParlaySlips" style="margin-top:18px"><h2>Saved parlay slips</h2><div class="mu">Showing saved parlays for the selected NFL week. Expand previous weeks to see older slips.</div><div class="tools"><button type="button" class="btn alt" id="toggleSavedPrevious" aria-expanded="false" aria-controls="savedPreviousWeeks">Show previous weeks saved parlays</button></div><div id="saved"></div><div class="mu" id="savedActionStatus" role="status" aria-live="polite"></div><div class="tools" style="margin-top:12px"><button class="btn alt" id="copyAllSaved">Copy all saved parlays</button><button type="button" class="btn alt" id="deleteAllSaved">Delete all my saved parlays…</button></div></section>
@@ -1306,9 +1306,10 @@ if(navigator.onLine){setTimeout(()=>{refreshNFL().catch(e=>console.warn('Automat
  const indicator=document.getElementById('topAccountIndicator');
  const status=document.getElementById('sbStatus');
  if(indicator&&status){
-  const update=()=>{if(!indicator.dataset.accountEmail)indicator.textContent='Not signed in · '+(status.textContent||'');};
-  document.addEventListener('phase3-account-verified',e=>{const email=e.detail?.email||'Account verified';indicator.dataset.accountEmail=email;indicator.textContent='✓ Signed in as '+email+' · Connected · TEST';});
-  document.addEventListener('phase3-account-signed-out',()=>{delete indicator.dataset.accountEmail;indicator.textContent='Not signed in · TEST';});
+  const badge=document.getElementById('topConnectionBadge');
+  const update=()=>{if(!indicator.dataset.accountEmail){indicator.textContent='Not signed in';badge.textContent='Not connected';}};
+  document.addEventListener('phase3-account-verified',e=>{const email=e.detail?.email||'Account verified';indicator.dataset.accountEmail=email;indicator.textContent=email;badge.textContent='✓ Connected';});
+  document.addEventListener('phase3-account-signed-out',()=>{delete indicator.dataset.accountEmail;indicator.textContent='Not signed in';badge.textContent='Not connected';});
   new MutationObserver(update).observe(status,{childList:true,subtree:true,characterData:true});
   update();
  }
@@ -1318,18 +1319,18 @@ document.getElementById('closeSetup').onclick=()=>document.getElementById('setup
 document.getElementById('setupDialog').addEventListener('click',e=>{if(e.target===e.currentTarget)e.currentTarget.close()});
 
 (function organizeSetupOptions(){
- const setup=document.getElementById('setupDialog'), advanced=document.getElementById('advancedSetupDialog');
- const cloud=document.getElementById('cloudSyncPanel'), mount=document.getElementById('advancedSetupMount');
- const button=document.createElement('button');
- button.type='button';button.className='btn alt';button.id='openAdvancedSetup';button.textContent='⚙ Advanced Options';
+ const setup=document.getElementById('setupDialog'),advanced=document.getElementById('advancedSetupDialog');
+ const cloud=document.getElementById('cloudSyncPanel'),mount=document.getElementById('advancedSetupMount');
+ const button=document.createElement('button');button.type='button';button.className='btn alt';button.id='openAdvancedSetup';button.textContent='⚙ Advanced Options';
  button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','advancedSetupDialog');
  cloud.appendChild(button);
- const tools=document.createElement('section');tools.innerHTML='<h2>Cloud maintenance</h2>';
- for(const id of ['sbRestoreCloud','sbUploadLocal','sbBackup']){const el=document.getElementById(id);if(el)tools.appendChild(el);}
- mount.appendChild(tools);
+ const tools=document.createElement('section');tools.innerHTML='<h2>Cloud maintenance and testing</h2><p class="mu">These controls are intended for occasional maintenance, not everyday parlay building.</p>';
+ const toolRow=document.createElement('div');toolRow.className='tools';
+ for(const id of ['sbRestoreCloud','sbUploadLocal','sbBackup']){const el=document.getElementById(id);if(el)toolRow.appendChild(el);}
+ tools.appendChild(toolRow);mount.appendChild(tools);
  const csv=document.getElementById('csvSetup');if(csv)mount.appendChild(csv);
- button.onclick=()=>{setup.close();advanced.showModal();};
- document.getElementById('closeAdvancedSetup').onclick=()=>{advanced.close();setup.showModal();};
+ button.addEventListener('click',(event)=>{event.preventDefault();event.stopPropagation();if(!advanced.open)advanced.showModal();});
+ document.getElementById('closeAdvancedSetup').addEventListener('click',()=>{advanced.close();});
  advanced.addEventListener('click',e=>{if(e.target===advanced)advanced.close();});
 })();
 
