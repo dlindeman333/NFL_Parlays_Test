@@ -1,0 +1,77 @@
+
+name: NFL Phase 3 - TEST Snapshot Read-Only Inspection
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "NFL season"
+        required: true
+        default: "2026"
+        type: string
+      week:
+        description: "NFL week"
+        required: true
+        default: "10"
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Read TEST snapshot keys only
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          SEASON: ${{ inputs.season }}
+          WEEK: ${{ inputs.week }}
+        run: |
+          python3 - <<'PY'
+          import os, json, urllib.request, urllib.parse
+
+          expected = "https://luxezjthznupdghmexyh.supabase.co"
+          url = os.environ["SUPABASE_URL"].rstrip("/")
+          if url != expected:
+              raise SystemExit("BLOCKED: Not TEST Supabase")
+
+          season = int(os.environ["SEASON"])
+          week = int(os.environ["WEEK"])
+          if season != 2026 or not 1 <= week <= 22:
+              raise SystemExit("BLOCKED: Invalid season/week")
+
+          key = os.environ["SUPABASE_SERVICE_ROLE_KEY"]
+          params = urllib.parse.urlencode({
+              "select": "season,week,game_id,model_version",
+              "season": f"eq.{season}",
+              "week": f"eq.{week}",
+              "limit": "1000"
+          })
+          endpoint = (
+              expected + "/rest/v1/nfl_prediction_snapshots?"
+              + params
+          )
+          req = urllib.request.Request(
+              endpoint,
+              headers={
+                  "apikey": key,
+                  "Authorization": "Bearer " + key,
+                  "Accept": "application/json"
+              },
+              method="GET"
+          )
+          with urllib.request.urlopen(req, timeout=20) as response:
+              rows = json.load(response)
+
+          if not isinstance(rows, list):
+              raise SystemExit("BLOCKED: Unexpected response")
+
+          print("TEST snapshot inspection successful")
+          print("Season:", season, "Week:", week)
+          print("Records returned:", len(rows))
+          print("At limit (may be more):", len(rows) == 1000)
+          print(json.dumps(rows, indent=2))
+          PY
