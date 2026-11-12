@@ -112,11 +112,31 @@ button{cursor:pointer;touch-action:manipulation}button:focus-visible,select:focu
 @media(max-width:700px){#phase3MobileSlipToggle{display:block;position:fixed;bottom:calc(12px + env(safe-area-inset-bottom));right:12px;z-index:30;box-shadow:0 5px 18px #0005}body{padding-bottom:75px}}
 </style>
 <style id="phase3PrivacyShellStyles">
-body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(.toolbar):not(.refresh-status-line):not(.navlinks):not(#setupDialog):not(script){display:none!important}
+body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffCountdown):not(.toolbar):not(.refresh-status-line):not(.navlinks):not(#setupDialog):not(script){display:none!important}
 #phase3PrivacyNotice{margin-top:8px;padding:10px;border:1px solid var(--bd);border-radius:8px;font-size:13px}
+</style>
+<style id="phase3KickoffCountdownStyles">
+#phase3KickoffCountdown{margin:10px 0 12px;padding:12px 14px;text-align:center;border:1px solid var(--bd);border-radius:12px;background:var(--card)}
+#phase3KickoffCountdown .kickoff-title{font-size:13px;font-weight:800;letter-spacing:.045em}
+#phase3KickoffCountdown .kickoff-clock{display:flex;justify-content:center;gap:8px;margin:9px 0 5px}
+#phase3KickoffCountdown .kickoff-unit{min-width:64px;flex:0 1 95px;padding:7px 4px;border-radius:8px;background:var(--sel)}
+#phase3KickoffCountdown .kickoff-value{display:block;font-size:clamp(19px,4vw,27px);font-weight:800;font-variant-numeric:tabular-nums}
+#phase3KickoffCountdown .kickoff-label{font-size:11px;color:var(--mu)}
+#phase3KickoffCountdown .kickoff-note{font-size:12px;color:var(--mu)}
+@media(max-width:400px){#phase3KickoffCountdown .kickoff-clock{gap:5px}#phase3KickoffCountdown .kickoff-unit{min-width:0}}
 </style>
 </head><body class="phase3-privacy-locked">
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
+<section id="phase3KickoffCountdown" aria-label="Countdown to next NFL kickoff" aria-live="off">
+ <div class="kickoff-title">🏈 NEXT NFL KICKOFF</div>
+ <div class="kickoff-clock" role="timer" aria-label="Time remaining to next kickoff">
+  <div class="kickoff-unit"><span class="kickoff-value" id="kickoffDays">--</span><span class="kickoff-label">Days</span></div>
+  <div class="kickoff-unit"><span class="kickoff-value" id="kickoffHours">--</span><span class="kickoff-label">Hours</span></div>
+  <div class="kickoff-unit"><span class="kickoff-value" id="kickoffMinutes">--</span><span class="kickoff-label">Minutes</span></div>
+  <div class="kickoff-unit"><span class="kickoff-value" id="kickoffSeconds">--</span><span class="kickoff-label">Seconds</span></div>
+ </div>
+ <div class="kickoff-note" id="kickoffStatus" role="status" aria-live="polite">Checking NFL schedule…</div>
+</section>
 <section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 Your account</strong><span class="mu" id="topAccountIndicator" role="status" aria-live="polite">Checking sign-in…</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
 <div class="card" style="border-color:#b45309"><b>Account isolation test · local cleanup available, cloud writes paused</b><div class="mu">Sign-in and read-only cloud checks work. You can explicitly clear old local TEST parlays after verifying the reset cloud. Cloud writes, restore, merging, and cloud deletion remain paused.</div></div>
@@ -890,6 +910,33 @@ function parseESPN(data){if(!Array.isArray(data.events))throw Error("No schedule
  const sc=final&&Number.isFinite(hs)&&Number.isFinite(as)?[as,hs]:undefined;
  return ["espn"+String(e.id).replace(/[^0-9]/g,""),a,h,readableKickoff(e.date),null,sc];
  }).filter(Boolean)}
+// Phase 3 TEST: next NFL kickoff, sourced from actual ESPN event ISO timestamps.
+const PHASE3_KICKOFF_KEY='nflp-next-kickoff-'+SEASON;
+let phase3KickoffAt=null;
+let phase3KickoffRetry=false;
+function phase3SetNextKickoff(events){
+ const now=Date.now();const starts=events.map(e=>Number(e.start)).filter(t=>Number.isFinite(t)&&t>now).sort((a,b)=>a-b);
+ phase3KickoffAt=starts.length?starts[0]:null;
+ try{if(phase3KickoffAt)localStorage.setItem(PHASE3_KICKOFF_KEY,JSON.stringify({start:phase3KickoffAt,checkedAt:now}));else localStorage.removeItem(PHASE3_KICKOFF_KEY)}catch(e){}
+ phase3RenderKickoff();
+}
+function phase3RenderKickoff(){
+ const el=id=>document.getElementById(id);const status=el('kickoffStatus');if(!status)return;
+ const ms=phase3KickoffAt-Date.now();
+ if(!Number.isFinite(ms)||ms<=0){
+  for(const id of ['kickoffDays','kickoffHours','kickoffMinutes','kickoffSeconds'])el(id).textContent='--';
+  status.textContent='Next kickoff unavailable — refresh NFL schedule';
+  if(Number.isFinite(ms)&&ms<=0&&!phase3KickoffRetry){phase3KickoffRetry=true;setTimeout(()=>{phase3KickoffRetry=false;if(navigator.onLine&&!document.hidden)refreshNFL().catch(()=>{});},15000)}
+  return;
+ }
+ const sec=Math.max(0,Math.ceil(ms/1000));
+ const parts=[Math.floor(sec/86400),Math.floor(sec%86400/3600),Math.floor(sec%3600/60),sec%60];
+ ['kickoffDays','kickoffHours','kickoffMinutes','kickoffSeconds'].forEach((id,i)=>el(id).textContent=String(parts[i]).padStart(2,'0'));
+ status.textContent='Kickoff: '+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(phase3KickoffAt));
+}
+try{const cached=JSON.parse(localStorage.getItem(PHASE3_KICKOFF_KEY)||'null');if(cached&&Number(cached.start)>Date.now()&&Date.now()-Number(cached.checkedAt)<12*3600000)phase3KickoffAt=Number(cached.start)}catch(e){}
+phase3RenderKickoff();setInterval(phase3RenderKickoff,1000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)phase3RenderKickoff()});
 const NFL_REFRESH_KEY="nflp-last-schedule-refresh-v1";
 function showLastScheduleRefresh(){
  const state=$("dataState");if(!state)return;
@@ -917,6 +964,7 @@ async function refreshNFL(){const btn=$("refresh"),state=$("dataState"),selected
    WKS[w]=merged;liveWeeks.add(w);successes++;
   }catch(e){console.warn("NFL schedule refresh week",w,e);failures++}
  }))}
+ if(successes)phase3SetNextKickoff(upcoming);
  const next=upcoming.sort((a,b)=>a.start-b.start)[0];
  const target=startupScheduleSelection&&!userSelectedWeek&&next?next.week:selected;
  startupScheduleSelection=false;
