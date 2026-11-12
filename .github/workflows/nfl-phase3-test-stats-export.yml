@@ -32,8 +32,8 @@ jobs:
         run: python export_automated.py
       - name: Validate statistics CSV (no writes)
         run: python scripts/phase3_test_stats_upload.py --csv nfl_player_stats.csv --season 2026
-      - name: Upload validated CSV to TEST only (explicit manual opt-in)
-        if: github.event_name == 'workflow_dispatch' && inputs.upload_to_test == true
+      - name: Sync validated CSV to TEST (scheduled or manual opt-in)
+        if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.upload_to_test == true)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
