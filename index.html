@@ -1894,6 +1894,48 @@ auditButton.onclick=async()=>{
  }catch(e){status('Read-only cloud audit failed: '+e.message);}
  finally{busy=false;}
 };
+// TEST-only, read-only RLS visibility diagnostic. Uses the actual user's JWT.
+// Never uses service-role credentials or writes to Supabase.
+const isolationSection=document.createElement('section');
+isolationSection.id='phase3RlsAudit';
+isolationSection.innerHTML='<h2>Account isolation (read only)</h2><p class="mu">Run once in each separately signed-in TEST account. This reads only row IDs, not parlay contents. A nonempty Account A result and an empty Account B result together provide evidence of SELECT isolation.</p><button type="button" class="btn alt" id="phase3RunRlsAudit">Verify my cloud row visibility</button><div id="phase3RlsAuditResult" class="mu" role="status" aria-live="polite" style="margin-top:10px;white-space:pre-line">Not run yet.</div>';
+$('advancedSetupMount').appendChild(isolationSection);
+$('phase3RunRlsAudit').addEventListener('click',async()=>{
+ const output=$('phase3RlsAuditResult');const button=$('phase3RunRlsAudit');
+ button.disabled=true;output.textContent='Checking authenticated TEST account and RLS visibility…';
+ try{
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Local account ownership mismatch. No access test performed.');
+  const jwt=await token();
+  // Intentionally omit user_id filter: RLS itself must limit visible rows.
+  const rows=await api('/rest/v1/nfl_parlay_sync?select=user_id&limit=1000',{
+   headers:{Authorization:'Bearer '+jwt}
+  });
+  if(!Array.isArray(rows))throw Error('Unexpected database response.');
+  const foreign=rows.filter(row=>row.user_id!==uid);
+  const own=rows.length-foreign.length;
+  const capped=rows.length===1000;
+  const result=foreign.length?'FAIL — other users’ rows were visible. Stop testing.':
+   'PASS — no foreign rows visible in this read.';
+  output.textContent=result+'\nOwn rows visible: '+own+'\nForeign rows visible: '+foreign.length+
+   (capped?'\nWARNING: Result limit reached; not an exhaustive audit.':'')+
+   '\nNo cloud or local data changed.';
+  if(foreign.length)console.error('TEST cloud RLS isolation FAILED: foreign row visible');
+ }catch(error){output.textContent='NOT VERIFIED — '+error.message+'\nNo cloud or local data changed.';}
+ finally{button.disabled=false;}
+});
+// Mirror existing cloud status into Advanced Options, where diagnostic buttons live.
+const advancedCloudStatus=document.createElement('div');
+advancedCloudStatus.id='phase3AdvancedCloudStatus';
+advancedCloudStatus.className='mu';
+advancedCloudStatus.setAttribute('role','status');
+advancedCloudStatus.setAttribute('aria-live','polite');
+advancedCloudStatus.style.cssText='margin:10px 0;padding:10px;border:1px solid var(--bd);border-radius:8px;white-space:pre-line';
+$('advancedSetupMount').prepend(advancedCloudStatus);
+const sourceCloudStatus=$('sbStatus');
+const syncAdvancedStatus=()=>{advancedCloudStatus.textContent='Cloud operation status: '+sourceCloudStatus.textContent;};
+new MutationObserver(syncAdvancedStatus).observe(sourceCloudStatus,{childList:true,characterData:true,subtree:true});
+syncAdvancedStatus();
 // Phase 3 post-reset safety check: inspect both sides without merging or writing.
 const readinessButton=document.createElement('button');
 readinessButton.type='button';readinessButton.className='btn alt';
