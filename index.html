@@ -1689,16 +1689,43 @@ $('sbSignUp').onclick=()=>sign('signup');
 $('sbSignOut').onclick=()=>{try{saveActiveAccount()}catch(e){status('Could not preserve account storage; sign-out stopped: '+e.message);return;}storeAuth(null);document.dispatchEvent(new Event('phase3-account-signed-out'));started=false;lastPushed='';status('Signed out. Personal data is locked on this device.');const dialog=document.getElementById('setupDialog');if(dialog.open)dialog.close();privacyGate('Signed out. Personal data is hidden. Sign in to access your account partition.');location.reload();};
 $('sbBackup').onclick=download;
 $('sbRestoreCloud').onclick=async()=>{
- if(SAFE_READ_ONLY){status('Cloud restore paused: cloud records contain known cross-account duplicates. No data changed.');return;}
+ // TEST-only guarded cloud-to-device recovery. Keep all cloud writes, deletions,
+ // and automatic synchronization disabled by SAFE_READ_ONLY.
  if(!auth){status('Sign in first.');return;}
  if(busy){status('Sync is already running. Please wait.');return;}
  busy=true;
  try{
-  const uid=await userId();const remote=await readRemote(uid);
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account storage ownership is not verified.');
+  const local=snapshot();
+  const localSaved=parseCollection(local,'nflp-saved-v1');
+  const localDrafts=parseCollection(local,'nflp-draft-slips-v3');
+  if(localSaved!==null&&!Array.isArray(localSaved))throw Error('Unexpected local saved-parlay format.');
+  const nonemptyDrafts=Array.isArray(localDrafts)?localDrafts.filter(x=>x&&Array.isArray(x.legs)&&x.legs.length):
+   (localDrafts&&Array.isArray(localDrafts.slips)?localDrafts.slips.filter(x=>x&&Array.isArray(x.legs)&&x.legs.length):[]);
+  if((localSaved&&localSaved.length)||nonemptyDrafts.length){
+   status('Restore paused: this device contains saved parlays or nonempty drafts. No data changed.');return;
+  }
+  const remote=await readRemote(uid);
   if(!remote){status('No cloud copy exists for this account. Nothing restored.');return;}
-  if(!confirm('Restore your saved cloud data to this device?\n\nA backup download of your local parlays will be attempted first. Verify it in Downloads. The cloud copy will NOT be overwritten.'))return;
-  restore(personalCloudValues(remote.payload));
- }catch(e){status('Restore failed: '+e.message)}finally{busy=false}
+  const values=personalCloudValues(remote.payload);
+  const cloudSaved=parseCollection(values,'nflp-saved-v1');
+  const deleted=parseCollection(values,'nflp-deleted-saved-v1');
+  if(!Array.isArray(cloudSaved)||!Array.isArray(deleted))throw Error('Invalid cloud saved parlays or deletion ledger. Restore paused.');
+  const ids=new Set();
+  for(const item of cloudSaved){
+   if(!item||item.id==null)throw Error('Cloud saved parlay missing ID. Restore paused.');
+   const id=String(item.id);
+   if(ids.has(id))throw Error('Duplicate saved-parlay ID in cloud. Restore paused.');
+   ids.add(id);
+  }
+  const deletedIds=new Set(deleted.map(String));
+  if(cloudSaved.some(item=>deletedIds.has(String(item.id))))throw Error('Cloud contains a saved parlay also marked deleted. Restore paused.');
+  if(!confirm('TEST ONLY — Download '+cloudSaved.length+' saved parlays from YOUR authenticated cloud row to THIS device?\n\nCloud writes, deletion and automatic sync remain DISABLED. A local backup download will be attempted before restoring. Confirm you already saved a separate backup.')){
+   status('Restore canceled. No data changed.');return;
+  }
+  restore(values);
+ }catch(e){status('Restore failed safely: '+e.message)}finally{busy=false}
 };
 
 // Explicit recovery path when this PC has the desired saved parlays and cloud has an older copy.
