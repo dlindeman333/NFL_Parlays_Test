@@ -2897,5 +2897,46 @@ window.addEventListener('online',()=>{if(auth)sync(!started)});
  window.matchMedia('(min-width:701px)').addEventListener('change',e=>{if(e.matches&&dialog.open)dialog.close();});
 })();
 </script>
+<script id="phase3AdvancedControlsCleanup">
+(()=>{
+  "use strict";
+  function organize(){
+    const mount=document.getElementById('advancedSetupMount');
+    const cloud=document.getElementById('cloudSyncPanel');
+    const advanced=document.getElementById('advancedSetupDialog');
+    const setup=document.getElementById('setupDialog');
+    const open=document.getElementById('openAdvancedSetup');
+    if(!mount||!cloud||!advanced||!setup||!open)return;
+    const heading=document.createElement('section');
+    heading.id='phase3AdvancedSyncDiagnostics';
+    heading.innerHTML='<h2>Cloud sync diagnostics &amp; recovery</h2><p class="mu">TEST-only tools. Routine syncing remains in Setup; guarded operations retain their existing confirmations and safety checks.</p>';
+    const row=document.createElement('div');row.className='tools';
+    heading.appendChild(row);mount.insertBefore(heading,mount.firstChild);
+    // All temporary controls are created dynamically before DOMContentLoaded.
+    // Move the original elements rather than cloning them, preserving event handlers.
+    const routine=new Set(['sbSyncNow','openAdvancedSetup','sbSignIn','sbSignOut','sbSignUp']);
+    const candidates=Array.from(cloud.querySelectorAll('button'));
+    let moved=0;
+    for(const button of candidates){
+      if(routine.has(button.id))continue;
+      if(button.closest('#sbAuthForm'))continue;
+      if(button.id==='sbRestoreCloud'||button.id==='sbUploadLocal'||button.id==='sbBackup')continue;
+      row.appendChild(button);moved++;
+    }
+    // Opening Advanced Options must not close the Setup dialog underneath.
+    open.addEventListener('click',e=>{
+      e.preventDefault();e.stopImmediatePropagation();
+      if(!advanced.open)advanced.showModal();
+    },true);
+    // Keep a minimal indication of where the diagnostics went.
+    const note=document.createElement('p');note.className='mu';
+    note.textContent='Testing, recovery, and diagnostic tools are available under Advanced Options.';
+    cloud.appendChild(note);
+    console.info('Phase 3 TEST: moved '+moved+' diagnostic buttons to Advanced Options.');
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',organize,{once:true});
+  else organize();
+})();
+</script>
 </body></html>
 
