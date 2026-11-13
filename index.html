@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PHASE 3 V5 ISOLATED TEST REGRESSION. GUARDED TEST WRITES ENABLED. NEVER DEPLOY TO PRODUCTION. -->
+<!-- Phase 3 TEST deployment refresh -->
 <html lang="en"><head><meta charset="utf-8"><title>NFL Parlay Builder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
@@ -137,9 +137,9 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
  </div>
  <div class="kickoff-note" id="kickoffStatus" role="status" aria-live="polite">Checking NFL schedule…</div>
 </section>
-<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 NFL Parlay Builder · Your Account</strong><span class="mu" style="font-weight:700;color:#047857" id="topEnvironment">TEST ONLY</span></div><div id="accountIdentityCard" role="status" aria-live="polite" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="mu">Signed in as</div><strong id="topAccountIndicator">Checking sign-in…</strong></div><span id="topConnectionBadge" class="mu">Not connected</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST environment: guarded cloud writes are available only after account and synchronization preflight checks. Do not use production credentials or deploy to production.</div></section>
+<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 NFL Parlay Builder · Your Account</strong><span class="mu" style="font-weight:700;color:#047857" id="topEnvironment">TEST</span></div><div id="accountIdentityCard" role="status" aria-live="polite" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="mu">Signed in as</div><strong id="topAccountIndicator">Checking sign-in…</strong></div><span id="topConnectionBadge" class="mu">Not connected</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST safety mode: cloud writes and restore remain paused until integrated release validation.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
-<div class="card" style="border-color:#b45309"><b>PHASE 3 V5 · ISOLATED TEST REGRESSION</b><div class="mu">TEST Supabase only. Guarded save, sync, and deletion require their normal account checks and confirmations. Never deploy this file to production.</div></div>
+<div class="card" style="border-color:#b45309"><b>Account isolation test · local cleanup available, cloud writes paused</b><div class="mu">Sign-in and read-only cloud checks work. You can explicitly clear old local TEST parlays after verifying the reset cloud. Cloud writes, restore, merging, and cloud deletion remain paused.</div></div>
 <div class="navlinks"><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
 
 <dialog id="setupDialog" class="setup-modal" aria-label="Setup"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Setup</h2><button class="btn alt" type="button" id="closeSetup">Close ✕</button></div><section id="cloudSyncPanel">
@@ -208,7 +208,7 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
     const stats=document.getElementById('autoStatsStatus');
     const statsText=stats?(stats.textContent||'').trim():'NFL statistics status unavailable';
     target.replaceChildren();
-    for(const [label,value] of [['Network',online],['Cloud sync',cloudText],['NFL statistics',statsText],['Cloud writes','Guarded TEST writes enabled; account preflight required']]){
+    for(const [label,value] of [['Network',online],['Cloud sync',cloudText],['NFL statistics',statsText],['Cloud writes','Paused for Phase 3 TEST validation']]){
       const p=document.createElement('p');p.className='mu';
       const b=document.createElement('strong');b.textContent=label+': ';
       p.append(b,document.createTextNode(value));target.appendChild(p);
@@ -706,7 +706,7 @@ const phase3DeleteMessages=new Map();
 function phase3DeleteReport(id,message){
  const key=String(id);phase3DeleteMessages.set(key,message);
  const target=document.querySelectorAll('[data-phase3-delete-status]');
- for(const el of target)if(el.getAttribute('data-phase3-delete-status')===key){el.textContent=message;el.hidden=false;}
+ for(const el of target)if(el.getAttribute('data-phase3-delete-status')===key){el.textContent=message;el.style.display='block';el.hidden=false;}
  const global=document.getElementById('savedActionStatus');if(global)global.textContent=message;
 }
 
@@ -750,8 +750,18 @@ $('saved').addEventListener('click',event=>{
  const action=button.dataset.savedAction,id=button.dataset.savedId;
  if(action==='remove-leg')removeSavedSelection(id,Number(button.dataset.legIndex));
  else if(action==='delete-parlay'){
-   phase3DeleteReport(id,'Checking your signed-in account before deletion…');
-   Promise.resolve().then(()=>{if(typeof window.phase3GuardedDeleteSaved!=='function')throw Error('Guarded deletion controller unavailable');return window.phase3GuardedDeleteSaved([String(id)],null,String(id));}).catch(e=>phase3DeleteReport(id,'Deletion could not start: '+(e?.message||String(e))));
+   if(button.disabled)return;
+   button.disabled=true;
+   phase3DeleteReport(id,'Starting guarded TEST deletion for this parlay…');
+   // Invoke directly, rather than through a deferred microtask. Always restore
+   // the button, even when authentication or the controller throws.
+   (async()=>{
+     try{
+       if(typeof window.phase3GuardedDeleteSaved!=='function')throw Error('Guarded TEST deletion controller unavailable');
+       await window.phase3GuardedDeleteSaved([String(id)],null,String(id));
+     }catch(e){phase3DeleteReport(id,'Deletion could not start: '+(e?.message||String(e)));}
+     finally{if(button.isConnected)button.disabled=false;}
+   })();
  }
  else if(action==='edit')editSavedParlay(id);
  else if(action==='duplicate')duplicateSavedToDraft(id);
@@ -1324,13 +1334,13 @@ document.getElementById('setupDialog').addEventListener('click',e=>{if(e.target=
  const button=document.createElement('button');button.type='button';button.className='btn alt';button.id='openAdvancedSetup';button.textContent='⚙ Advanced Options';
  button.setAttribute('aria-haspopup','dialog');button.setAttribute('aria-controls','advancedSetupDialog');
  cloud.appendChild(button);
- const tools=document.createElement('section');tools.innerHTML='<h2>Account backup</h2><p class="mu">Download a backup before making account changes.</p>';
+ const tools=document.createElement('section');tools.innerHTML='<h2>Cloud maintenance and testing</h2><p class="mu">These controls are intended for occasional maintenance, not everyday parlay building.</p>';
  const toolRow=document.createElement('div');toolRow.className='tools';
  for(const id of ['sbRestoreCloud','sbUploadLocal','sbBackup']){const el=document.getElementById(id);if(el)toolRow.appendChild(el);}
  tools.appendChild(toolRow);mount.appendChild(tools);
  const csv=document.getElementById('csvSetup');if(csv)mount.appendChild(csv);
- button.addEventListener('click',(event)=>{event.preventDefault();event.stopPropagation();if(!advanced.open)advanced.showModal();});
- document.getElementById('closeAdvancedSetup').addEventListener('click',()=>{advanced.close();});
+ button.addEventListener('click',()=>{setup.close();advanced.showModal();});
+ document.getElementById('closeAdvancedSetup').addEventListener('click',()=>{advanced.close();setup.showModal();});
  advanced.addEventListener('click',e=>{if(e.target===advanced)advanced.close();});
 })();
 
@@ -1345,10 +1355,10 @@ const keys=['nflp-saved-v1','nflp-draft-slips-v3','nflp-deleted-saved-v1'];
 const prefix='nflp-cloud-';
 // Fail closed on cross-account browser data. Never silently merge personal data
 // from a previous account into a different authenticated Supabase user.
-const OWNER_KEY='nflp-phase3-finaltest-storage-owner-v1';
-const SAFE_READ_ONLY=false; // ISOLATED TEST ONLY: guarded writes allowed after preflight; never deploy to production.
-const ACCOUNT_PREFIX='nflp-phase3-finaltest-account-v1-';
-const LEGACY_PREFIX='nflp-phase3-finaltest-legacy-quarantine-v1-';
+const OWNER_KEY='nflp-phase3-test-storage-owner-v1';
+const SAFE_READ_ONLY=true; // Temporary: existing cloud records contain cross-account duplicates.
+const ACCOUNT_PREFIX='nflp-phase3-test-account-v2-';
+const LEGACY_PREFIX='nflp-phase3-test-legacy-quarantine-v2-';
 // Phase 3 privacy gate: never display one account's local parlays to a signed-out
 // or different user. This is a conservative lock, NOT a data migration.
 function privacyGate(message){
@@ -1451,8 +1461,6 @@ function storeAuth(a){
 function settings(){config={url:CLOUD_URL,key:CLOUD_PUBLIC_KEY};}
 function headers(extra={}){return {'apikey':config.key,'Content-Type':'application/json',...extra}}
 async function api(path,options={}){
- // Release hold: block every mutation to production parlay sync, including guarded maintenance flows.
- if(SAFE_READ_ONLY && path.startsWith('/rest/v1/nfl_parlay_sync') && !['GET','HEAD'].includes(String(options.method||'GET').toUpperCase()))throw Error('Production cloud mutations disabled pending authenticated release validation.');
  const response=await fetch(config.url+path,{...options,headers:headers(options.headers||{})});
  const raw=await response.text();let data;try{data=raw?JSON.parse(raw):null}catch{data=raw}
  if(!response.ok)throw Error((data&& (data.msg||data.error_description||data.message||data.error))||'Supabase request failed: '+response.status);
@@ -1683,41 +1691,14 @@ async function sign(kind){
   // Never unlock this document after changing partitions: reload first.
   if(changed){location.reload();return;}
   privacyUnlock();authControls(true);
-  status('Signed in to TEST. Guarded synchronization requires account-scoped preflight. No automatic upload was performed.');
+  status('Signed in. Cloud writes paused for safety; only this account’s local data is active.');
  }catch(e){status('Authentication error: '+e.message);if(localStorage.getItem(OWNER_KEY))privacyGate('This browser is reserved for its original account. Sign in with that account or use a separate browser profile.')}
 }
 $('sbAuthForm').addEventListener('submit',e=>{e.preventDefault();sign('signin')});
 $('sbSignUp').onclick=()=>sign('signup');
 $('sbSignOut').onclick=()=>{try{saveActiveAccount()}catch(e){status('Could not preserve account storage; sign-out stopped: '+e.message);return;}storeAuth(null);document.dispatchEvent(new Event('phase3-account-signed-out'));started=false;lastPushed='';status('Signed out. Personal data is locked on this device.');const dialog=document.getElementById('setupDialog');if(dialog.open)dialog.close();privacyGate('Signed out. Personal data is hidden. Sign in to access your account partition.');location.reload();};
-// Explicit legacy recovery: export only. Never assign unowned data to a signed-in account.
-// Import is intentionally withheld until ownership and cloud-baseline checks are verified.
-function exportLegacyQuarantine(){
- const raw=localStorage.getItem(LEGACY_PREFIX+'original');
- if(!raw){status('No quarantined legacy data exists on this device.');return;}
- let values;
- try{values=JSON.parse(raw)}catch(e){status('Legacy data is unreadable; original remains preserved.');return;}
- if(!values||typeof values!=='object'||Array.isArray(values)){
-  status('Unexpected legacy data format; original remains preserved.');return;
- }
- const counts={saved:0,drafts:0};
- try{
-  const saved=JSON.parse(values['nflp-saved-v1']||'[]');
-  const drafts=JSON.parse(values['nflp-draft-slips-v3']||'{}');
-  if(!Array.isArray(saved)||!Array.isArray(drafts.slips||[]))throw Error('Invalid legacy data');
-  counts.saved=saved.length;counts.drafts=(drafts.slips||[]).length;
- }catch(e){status('Legacy data format invalid; original remains preserved.');return;}
- if(!confirm('Export quarantined browser data?\n\nSaved parlays: '+counts.saved+'\nDraft slips: '+counts.drafts+'\n\nThis only downloads a backup. It will NOT restore, merge, upload, or change account data.'))return;
- downloadJSON({version:1,type:'legacy-quarantine-export',exported_at:new Date().toISOString(),storage:values},'nfl-parlay-legacy-quarantine-'+new Date().toISOString().slice(0,10)+'.json');
- status('Legacy backup download requested. Original quarantine preserved. No account data changed.');
-}
-const legacyExportButton=document.createElement('button');
-legacyExportButton.type='button';legacyExportButton.className='btn alt';
-legacyExportButton.id='phase3ExportLegacy';legacyExportButton.textContent='Export older browser parlays (recovery backup)';
-legacyExportButton.addEventListener('click',exportLegacyQuarantine);
-$('sbBackup').insertAdjacentElement('afterend',legacyExportButton);
 $('sbBackup').onclick=download;
 $('sbRestoreCloud').onclick=async()=>{
- status('Legacy maintenance action retired in Phase 3. No data changed.');return;
  if(SAFE_READ_ONLY){status('Cloud restore paused: cloud records contain known cross-account duplicates. No data changed.');return;}
  if(!auth){status('Sign in first.');return;}
  if(busy){status('Sync is already running. Please wait.');return;}
@@ -1733,7 +1714,6 @@ $('sbRestoreCloud').onclick=async()=>{
 // Explicit recovery path when this PC has the desired saved parlays and cloud has an older copy.
 // Remote update uses an optimistic concurrency condition to avoid overwriting a concurrent edit.
 $('sbUploadLocal').onclick=async()=>{
- status('Legacy maintenance action retired in Phase 3. No data changed.');return;
  if(SAFE_READ_ONLY){status('Cloud upload disabled until account isolation is verified.');return;}
  if(!auth){status('Sign in first.');return;}
  if(busy){status('Another sync operation is running. Please wait.');return;}
@@ -1968,7 +1948,7 @@ readinessButton.onclick=async()=>{
  }catch(e){status('Sync readiness check stopped: '+e.message+' [diagnostic v2]');}
  finally{busy=false;}
 };
-// Legacy validation-only local cleanup. Never calls a cloud write endpoint.
+// Explicit TEST-only local cleanup. Never calls a cloud write endpoint.
 const clearOldLocalButton=document.createElement('button');
 clearOldLocalButton.type='button';clearOldLocalButton.className='btn alt';
 clearOldLocalButton.textContent='Clear old LOCAL test parlays';
@@ -1994,8 +1974,8 @@ clearOldLocalButton.onclick=async()=>{
   if(!Array.isArray(localSaved)||!Array.isArray(localDeleted))throw Error('Local data has an unexpected format. No changes made.');
   if(!localSaved.length){status('No local saved parlays to clear for this account. Cloud is clean.');return;}
   const email=auth.user&&auth.user.email?auth.user.email:'current signed-in account';
-  if(!confirm('ACCOUNT LOCAL CLEANUP\\n\\nAccount: '+email+'\\nSaved parlays to permanently remove from this browser: '+localSaved.length+'\\n\\nNo new backup or quarantine copy will be created. Cloud records, other accounts, drafts and NFL data will NOT be changed.\\n\\nContinue?'))return;
-  if(!confirm('FINAL CONFIRMATION: Permanently clear '+localSaved.length+' local saved parlay(s) from this account?'))return;
+  if(!confirm('TEST ACCOUNT LOCAL CLEANUP\\n\\nAccount: '+email+'\\nSaved parlays to permanently remove from this browser: '+localSaved.length+'\\n\\nNo new backup or quarantine copy will be created. Cloud records, other accounts, drafts and NFL data will NOT be changed.\\n\\nContinue?'))return;
+  if(!confirm('FINAL CONFIRMATION: Permanently clear '+localSaved.length+' local saved parlay(s) from this TEST account?'))return;
   // Remove active list and partitioned copy together. No stale partition can rehydrate it.
   const partitionKey=ACCOUNT_PREFIX+uid;
   const existingPartition=localStorage.getItem(partitionKey);
@@ -2017,32 +1997,97 @@ clearOldLocalButton.onclick=async()=>{
     if(previousMarkers===null)localStorage.removeItem('nflp-deleted-saved-v1');else localStorage.setItem('nflp-deleted-saved-v1',previousMarkers);}catch(_){}
    throw Error('Browser storage update failed. Check local data before retrying. '+e.message);
   }
-  status('Cleared '+localSaved.length+' local parlay(s). Cloud unchanged. Reloading to discard old in-memory data.');
+  status('Cleared '+localSaved.length+' local TEST parlay(s). Cloud unchanged. Reloading to discard old in-memory data.');
   location.reload();
  }catch(e){status('Local cleanup stopped: '+e.message);}
  finally{busy=false;}
 };
-// Shared collection parser retained for normal authenticated sync and inspection.
+// Phase 3 guarded manual cloud trial. Legacy automatic merge and uploads remain disabled.
+// A per-account, per-browser baseline must be established while both sides are empty.
+const trialKey=uid=>'nflp-phase3-test-manual-baseline-v1-'+uid;
+const trialButton=document.createElement('button');
+trialButton.type='button';trialButton.className='btn alt';
+trialButton.textContent='Initialize safe-sync trial (read only)';
+$('sbSyncNow').parentNode.insertBefore(trialButton,$('sbSyncNow'));
+const trialUploadButton=document.createElement('button');
+trialUploadButton.type='button';trialUploadButton.className='btn alt';
+trialUploadButton.textContent='Upload new test parlay (guarded)';
+$('sbSyncNow').parentNode.insertBefore(trialUploadButton,$('sbSyncNow'));
 function trialData(v){
  const saved=('nflp-saved-v1' in v)?parseCollection(v,'nflp-saved-v1'):[],deleted=('nflp-deleted-saved-v1' in v)?parseCollection(v,'nflp-deleted-saved-v1'):[],drafts=('nflp-draft-slips-v3' in v)?parseCollection(v,'nflp-draft-slips-v3'):{slips:[]};
  if(!Array.isArray(saved)||!Array.isArray(deleted)||!drafts||!Array.isArray(drafts.slips))throw Error('Invalid saved, draft or deletion data; no changes made.');
  return {saved,deleted,drafts};
 }
 function trialEmpty(x){return x.saved.length===0&&!x.drafts.slips.some(s=>s&&Array.isArray(s.legs)&&s.legs.length)}
-// Legacy TEST trial initialization/upload handlers removed for production review.
+trialButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch.');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud record missing.');
+  const c=trialData(personalCloudValues(remote.payload)),l=trialData(snapshot());
+  if(!trialEmpty(c))throw Error('Cloud must have zero saved parlays and nonempty drafts before initialization.');
+  if(l.drafts.slips.some(s=>s&&Array.isArray(s.legs)&&s.legs.length))throw Error('Browser contains a nonempty draft. No initialization.');
+  if(l.saved.length>1)throw Error('Browser has '+l.saved.length+' saved parlays. Trial permits at most one.');
+  if(l.saved.length===1){
+   const item=l.saved[0];
+   if(!item||item.id==null)throw Error('Local test parlay has no ID.');
+   if(new Set([...c.deleted,...l.deleted].map(String)).has(String(item.id)))throw Error('Local parlay ID is in deletion history. No initialization.');
+   if(!confirm('TEST ACCOUNT ONLY: This browser already has ONE saved parlay. Confirm this is the NEW disposable test parlay you want to upload. This does NOT upload it yet. Continue initialization?'))return;
+  }
+  // Extra LOCAL tombstones are permitted for this one-parlay trial. They are never uploaded,
+  // deleted, or used to replace the cloud deletion ledger.
+  const markerSet=new Set(c.deleted.map(String));
+  const extraLocalMarkers=l.deleted.filter(id=>!markerSet.has(String(id))).length;
+  const baseline={uid,updated_at:remote.updated_at,markers:c.deleted.map(String).sort(),initialized_at:new Date().toISOString(),candidateId:l.saved.length?String(l.saved[0].id):null};
+  localStorage.setItem(trialKey(uid),JSON.stringify(baseline));
+  status('Safe-sync trial initialized for this account. '+extraLocalMarkers+' extra browser-only deletion marker(s) retained locally. Cloud untouched. '+(l.saved.length?'Your existing ONE disposable parlay is ready for guarded upload.':'Create ONE disposable saved parlay, then upload.') );
+ }catch(e){status('Safe-sync initialization stopped: '+e.message)}finally{busy=false}
+};
+trialUploadButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch.');
+  const base=JSON.parse(localStorage.getItem(trialKey(uid))||'null');
+  if(!base||base.uid!==uid)throw Error('Initialize safe-sync trial first on this device.');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud record missing.');
+  const cloud=personalCloudValues(remote.payload),c=trialData(cloud),l=trialData(snapshot());
+  if(!trialEmpty(c))throw Error('Cloud has changed from empty baseline. No upload; use another device to inspect.');
+  if(remote.updated_at!==base.updated_at)throw Error('Cloud revision changed since initialization. Recheck before uploading.');
+  if(JSON.stringify(c.deleted.map(String).sort())!==JSON.stringify(base.markers))throw Error('Cloud deletion history changed. No upload.');
+  if(l.saved.length!==1)throw Error('Trial requires exactly ONE local saved parlay. Found '+l.saved.length+'.');
+  if(l.drafts.slips.some(s=>s&&Array.isArray(s.legs)&&s.legs.length))throw Error('Nonempty local drafts detected. Trial upload paused.');
+  const item=l.saved[0];if(!item||item.id==null)throw Error('Saved parlay has no ID.');
+  if(new Set([...c.deleted,...l.deleted].map(String)).has(String(item.id)))throw Error('Parlay ID appears in deletion history. Upload blocked.');
+  if(base.candidateId!==null&&base.candidateId!==undefined&&String(item.id)!==String(base.candidateId))throw Error('Saved parlay changed since initialization. Reinitialize before uploading.');
+  // Cloud deletion ledger is preserved verbatim; local-only tombstones remain local.
+  if(!confirm('TEST ONLY: Upload exactly ONE newly created saved parlay to this authenticated TEST account? Cloud must still be empty. No drafts or deletion markers will be overwritten.'))return;
+  // The cloud's existing drafts and deletion ledger are preserved verbatim.
+  const next={...cloud,'nflp-saved-v1':JSON.stringify([item])};
+  const jwt=await token();
+  // Compare-and-swap protects against concurrent changes to this exact cloud row.
+  const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(remote.updated_at)+'&select=payload,updated_at',{
+   method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},
+   body:JSON.stringify({payload:next,updated_at:new Date().toISOString()})
+  });
+  if(!Array.isArray(rows)||rows.length!==1)throw Error('Concurrent cloud change detected. No overwrite confirmed.');
+  const check=await readRemote(uid);if(!check)throw Error('Upload response received but cloud read-back failed.');
+  const result=trialData(personalCloudValues(check.payload));
+  if(result.saved.length!==1||String(result.saved[0].id)!==String(item.id)||JSON.stringify(result.deleted.map(String).sort())!==JSON.stringify(c.deleted.map(String).sort()))throw Error('Cloud read-back mismatch. Stop and inspect.');
+  localStorage.removeItem(trialKey(uid));
+  status('GUARDED TEST UPLOAD VERIFIED: 1 parlay in this account cloud; deletion markers preserved. Automatic sync is still OFF.');
+ }catch(e){status('Guarded upload stopped: '+e.message)}finally{busy=false}
+};
 // Phase 3 TEST: explicitly approved cloud-to-device restore; never uploads or merges.
 // This trial is intentionally limited to a clean destination device and one cloud parlay.
 const devicePullButton=document.createElement('button');
 devicePullButton.type='button';devicePullButton.className='btn alt';
-devicePullButton.textContent='Restore cloud parlay (maintenance)';
+devicePullButton.textContent='Restore one cloud TEST parlay to this device (guarded)';
 $('sbSyncNow').parentNode.insertBefore(devicePullButton,$('sbSyncNow'));
-devicePullButton.hidden=true; devicePullButton.disabled=true; // Production review: TEST maintenance control disabled
 devicePullButton.onclick=async()=>{
- status('Unavailable: TEST maintenance operation disabled in production review.');return;
  let restoreStage='starting';
  if(busy){status('Another cloud operation is running.');return;}busy=true;
  try{
-  if(!auth)throw Error('Sign in to your account first.');
+  if(!auth)throw Error('Sign in to your TEST account first.');
   restoreStage='authenticate before download';
   const uid=await userId();
   if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch; no changes made.');
@@ -2099,7 +2144,7 @@ devicePullButton.onclick=async()=>{
   const partitionSaved=partitionCheck&&trialData(partitionCheck).saved;
   if(activeCheck.saved.length!==1||String(activeCheck.saved[0].id)!==String(item.id)||!partitionSaved||partitionSaved.length!==1||String(partitionSaved[0].id)!==String(item.id))
    throw Error('Restore write verification failed. Cloud unchanged.');
-  sessionStorage.setItem('nflp-phase3-finaltest-pull-check-v1',JSON.stringify({uid,id:String(item.id)}));
+  sessionStorage.setItem('nflp-phase3-test-pull-check-v1',JSON.stringify({uid,id:String(item.id)}));
   status('Guarded cloud-to-device restore verified in browser and account storage. Reloading.');
   location.reload();
  }catch(e){status('Guarded device restore stopped [Safari-safe v5 / '+restoreStage+']: '+(e&&e.message||String(e)));}
@@ -2155,17 +2200,102 @@ autoPreflightButton.onclick=async()=>{
  }catch(e){status('AUTO-SYNC PREFLIGHT STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
  finally{busy=false;}
 };
-// Retired validation-only marker maintenance operations removed for production release.
-// Phase 3 opt-in saved-parlay synchronization v6. Legacy writers remain disabled.
+// TEST-only explicit marker reconciliation. All legacy automatic writers remain disabled.
+const markerUnionButton=document.createElement('button');
+markerUnionButton.type='button';markerUnionButton.className='btn alt';
+markerUnionButton.textContent='Reconcile deletion markers (guarded TEST) — v4';
+$('sbSyncNow').parentNode.insertBefore(markerUnionButton,$('sbSyncNow'));
+markerUnionButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();
+  if(!auth||localStorage.getItem(OWNER_KEY)!==uid)throw Error('Authenticated account does not own browser storage.');
+  const remote=await readRemote(uid);if(!remote||!remote.updated_at)throw Error('Cloud record or revision missing.');
+  const cloudValues=personalCloudValues(remote.payload),cloud=trialData(cloudValues),local=trialData(snapshot());
+  const rawPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(rawPart!==null){const p=JSON.parse(rawPart);if(!p||typeof p!=='object'||Array.isArray(p))throw Error('Invalid account partition.');
+   const part=trialData(p);if(JSON.stringify(part.saved)!==JSON.stringify(local.saved))throw Error('Account partition saved parlays differ from active device.');}
+  const valid=(x,side)=>{const ids=new Set();for(const p of x.saved){if(!p||p.id==null)throw Error(side+' invalid parlay ID.');const id=String(p.id);if(ids.has(id))throw Error(side+' duplicate parlay ID.');ids.add(id);}for(const m of x.deleted){if(m==null||typeof m!=='string'&&typeof m!=='number')throw Error(side+' invalid marker.');}return ids;};
+  const ci=valid(cloud,'Cloud'),li=valid(local,'Device');
+  if(ci.size!==li.size||[...ci].some(id=>!li.has(id)))throw Error('Cloud and device saved-parlay IDs differ. No changes.');
+  for(const id of ci){const a=cloud.saved.find(p=>String(p.id)===id),b=local.saved.find(p=>String(p.id)===id);if(JSON.stringify(a)!==JSON.stringify(b))throw Error('Saved parlay conflict for ID '+id+'.');}
+  const union=[...new Set([...cloud.deleted,...local.deleted].map(String))].sort();
+  if([...ci].some(id=>union.includes(id)))throw Error('Deletion marker references an existing saved parlay. No changes.');
+  if(union.length===cloud.deleted.length&&union.length===local.deleted.length){status('MARKER UNION v4: Already reconciled. No changes made.');return;}
+  if(!confirm('TEST ACCOUNT ONLY: Safely combine '+cloud.deleted.length+' cloud and '+local.deleted.length+' device deletion markers into '+union.length+' markers? Saved parlays and drafts will not be changed. This writes ONLY to your authenticated TEST cloud record.')){status('Marker reconciliation canceled. No changes made.');return;}
+  // Re-read immediately before the compare-and-swap write. Never overwrite a newer revision.
+  const fresh=await readRemote(uid);
+  if(!fresh||fresh.updated_at!==remote.updated_at||JSON.stringify(fresh.payload)!==JSON.stringify(remote.payload))throw Error('Cloud changed during confirmation. Retry preflight.');
+  if(localStorage.getItem(OWNER_KEY)!==uid||JSON.stringify(trialData(snapshot()).saved)!==JSON.stringify(local.saved)||JSON.stringify(trialData(snapshot()).deleted)!==JSON.stringify(local.deleted))throw Error('Device data changed during confirmation.');
+  const next={...fresh.payload,'nflp-deleted-saved-v1':JSON.stringify(union)};
+  const jwt=await token();
+  const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(fresh.updated_at)+'&select=payload,updated_at',{
+   method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:next,updated_at:new Date().toISOString()})
+  });
+  if(!Array.isArray(rows)||rows.length!==1)throw Error('Cloud revision conflict; no write confirmed.');
+  const verify=await readRemote(uid);if(!verify)throw Error('Cloud read-back failed. Inspect cloud before retrying.');
+  const checked=trialData(personalCloudValues(verify.payload));
+  if(JSON.stringify(checked.deleted.map(String).sort())!==JSON.stringify(union)||JSON.stringify(checked.saved)!==JSON.stringify(cloud.saved)||JSON.stringify(checked.drafts)!==JSON.stringify(cloud.drafts))throw Error('Cloud verification mismatch. Stop and inspect.');
+  localStorage.setItem('nflp-deleted-saved-v1',JSON.stringify(union));
+  saveActiveAccount();
+  status('MARKER UNION v4 VERIFIED: '+union.length+' deletion markers in cloud and this device. Saved parlays and drafts unchanged. Automatic sync remains OFF.');
+ }catch(e){status('MARKER UNION v4 STOPPED: '+(e&&e.message||String(e))+'. Inspect before retrying.');}
+ finally{busy=false;}
+};
+// TEST-only guarded cloud-to-device marker propagation. No cloud writes.
+const markerPullButton=document.createElement('button');
+markerPullButton.type='button';markerPullButton.className='btn alt';
+markerPullButton.textContent='Bring cloud deletion markers to this device (guarded TEST) — v5';
+$('sbSyncNow').parentNode.insertBefore(markerPullButton,$('sbSyncNow'));
+markerPullButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account ownership mismatch.');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud record missing.');
+  const cloud=trialData(personalCloudValues(remote.payload));
+  const local=trialData(snapshot());
+  const validate=(data,side)=>{
+   const ids=new Set();
+   for(const p of data.saved){if(!p||p.id==null)throw Error(side+' has invalid saved parlay.');const id=String(p.id);if(ids.has(id))throw Error(side+' has duplicate parlay IDs.');ids.add(id);}
+   for(const m of data.deleted){if(typeof m!=='string'&&typeof m!=='number')throw Error(side+' has invalid deletion marker.');}
+   return ids;
+  };
+  const ci=validate(cloud,'Cloud'),li=validate(local,'Device');
+  if(ci.size!==li.size||[...ci].some(id=>!li.has(id)))throw Error('Cloud and device saved parlay IDs differ. No changes.');
+  for(const id of ci){const a=cloud.saved.find(p=>String(p.id)===id),b=local.saved.find(p=>String(p.id)===id);if(JSON.stringify(a)!==JSON.stringify(b))throw Error('Saved parlay conflict: '+id);}
+  const union=[...new Set([...cloud.deleted,...local.deleted].map(String))].sort();
+  if([...ci].some(id=>union.includes(id)))throw Error('A deletion marker matches a saved parlay ID. No changes.');
+  const rawPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(rawPart!==null){const p=JSON.parse(rawPart);if(!p||typeof p!=='object'||Array.isArray(p))throw Error('Invalid account partition.');
+   const part=trialData(p);if(JSON.stringify(part.saved)!==JSON.stringify(local.saved))throw Error('Account partition saved parlays differ.');}
+  const missing=union.filter(id=>!new Set(local.deleted.map(String)).has(id)).length;
+  if(!missing){status('MARKER PULL v5 VERIFIED: Device already has all '+union.length+' cloud/device deletion markers. No changes made.');return;}
+  if(!confirm('TEST ACCOUNT ONLY: Add '+missing+' cloud deletion marker(s) to this device (total '+union.length+')? No saved parlays, drafts, or cloud data will change.')){status('Marker pull canceled.');return;}
+  // Local write is intentionally network-free after confirmation, for iPhone Safari reliability.
+  if(localStorage.getItem(OWNER_KEY)!==uid||JSON.stringify(trialData(snapshot()).saved)!==JSON.stringify(local.saved)||JSON.stringify(trialData(snapshot()).deleted)!==JSON.stringify(local.deleted))throw Error('Device data changed during confirmation.');
+  const previous=localStorage.getItem('nflp-deleted-saved-v1');
+  try{
+   localStorage.setItem('nflp-deleted-saved-v1',JSON.stringify(union));
+   saveActiveAccount();
+   const check=trialData(snapshot());
+   const part=JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)||'null');
+   if(JSON.stringify(check.deleted.map(String).sort())!==JSON.stringify(union)||!part||JSON.stringify(trialData(part).deleted.map(String).sort())!==JSON.stringify(union))throw Error('Local marker read-back mismatch.');
+  }catch(e){try{if(previous===null)localStorage.removeItem('nflp-deleted-saved-v1');else localStorage.setItem('nflp-deleted-saved-v1',previous);saveActiveAccount();}catch(_){}throw e;}
+  status('MARKER PULL v5 VERIFIED: '+union.length+' deletion markers on this device. Saved parlays and drafts unchanged. Cloud untouched. Automatic sync remains OFF.');
+ }catch(e){status('MARKER PULL v5 STOPPED: '+(e&&e.message||String(e))+'. No cloud changes.');}
+ finally{busy=false;}
+};
+
+// Phase 3 TEST opt-in saved-parlay synchronization v6. Legacy writers remain disabled.
 // Strict three-way baseline: never infer deletions from a missing ID without a baseline.
-const safe6Key=uid=>'nflp-phase3-finaltest-saved-sync-v1-'+uid;
+const safe6Key=uid=>'nflp-phase3-test-saved-sync-v6-'+uid;
 let safe6Running=false;
 const safe6Button=document.createElement('button');safe6Button.type='button';safe6Button.className='btn alt';
-safe6Button.textContent='Enable saved-parlay auto-sync (drafts stay on this device)';
-safe6Button.disabled=SAFE_READ_ONLY;safe6Button.title=SAFE_READ_ONLY?'Unavailable until authenticated release validation passes':'Enable after confirming cloud/device baseline';
+safe6Button.textContent='Enable guarded saved-parlay auto-sync (TEST) — v6';
 $('sbSyncNow').parentNode.insertBefore(safe6Button,$('sbSyncNow'));
 const safe6Stop=document.createElement('button');safe6Stop.type='button';safe6Stop.className='btn alt';
-safe6Stop.textContent='Pause guarded auto-sync';
+safe6Stop.textContent='Pause guarded auto-sync (TEST) — v6';
 $('sbSyncNow').parentNode.insertBefore(safe6Stop,$('sbSyncNow'));
 function safe6View(x,side){
  const d=trialData(x),ids=new Set(),markers=new Set();
@@ -2186,7 +2316,7 @@ function safe6LocalWrite(uid,d){
  }catch(e){try{for(const [k,v] of [['nflp-saved-v1',oldSaved],['nflp-deleted-saved-v1',oldMarkers],[ACCOUNT_PREFIX+uid,oldPart]]){if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}}catch(_){}throw e}
 }
 async function safe6Cycle(){
- if(SAFE_READ_ONLY||!safe6Running||busy||!auth||!navigator.onLine||document.hidden)return;
+ if(!safe6Running||busy||!auth||!navigator.onLine||document.hidden)return;
  busy=true;
  try{
   const uid=await userId();if(!safe6Active(uid))throw Error('Account ownership changed');
@@ -2225,9 +2355,78 @@ async function safe6Cycle(){
  }catch(e){safe6Running=false;status('AUTO-SYNC v7 PAUSED: '+(e&&e.message||String(e))+'. No further automatic writes. Review before resuming.');}
  finally{busy=false}
 }
-// TEST-only cloud reconciliation retired from production release.
+// One-time, explicitly confirmed, TEST-only union of nonconflicting saved parlays.
+// Never infer deletion from absence; never use legacy unrestricted cloud writers.
+const safe11Merge=document.createElement('button');
+safe11Merge.type='button';safe11Merge.className='btn alt';
+safe11Merge.textContent='Reconcile cloud + this device (guarded TEST)';
+$('sbSyncNow').parentNode.insertBefore(safe11Merge,$('sbSyncNow'));
+safe11Merge.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}
+ if(!navigator.onLine){status('RECONCILE STOPPED: Offline; no changes.');return;}
+ // A locally opened HTML file can be inspected, but cannot perform writes.
+ if(location.hostname!=='dlindeman333.github.io'||!location.pathname.startsWith('/NFL_Parlays_Test/')){
+  status('RECONCILE STOPPED: Writes are permitted only from the TEST GitHub Pages app.');return;
+ }
+ busy=true;const wasRunning=safe6Running;safe6Running=false;
+ let cloudCommitted=false;
+ try{
+  const uid=await userId();if(!safe6Active(uid))throw Error('Authenticated storage owner mismatch');
+  // Keep auto-sync paused across reload until the user explicitly re-enables it.
+  localStorage.removeItem(safe6Key(uid));
+  const remote=await readRemote(uid);
+  if(!remote||!remote.updated_at||!remote.payload||typeof remote.payload!=='object'||Array.isArray(remote.payload))throw Error('Existing owned cloud record/revision unavailable');
+  // The REST request is scoped to the authenticated UID; reject any explicit contradictory owner.
+  if(remote.payload.user_id!=null&&String(remote.payload.user_id)!==uid)throw Error('Cloud payload owner mismatch');
+  const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
+  const device=safe6View(snapshot(),'Device');
+  const cloudById=new Map(cloud.saved.map(p=>[String(p.id),p]));
+  const localById=new Map(device.saved.map(p=>[String(p.id),p]));
+  const deleted=new Set([...cloud.deleted,...device.deleted]);
+  for(const id of new Set([...cloudById.keys(),...localById.keys()])){
+   if(deleted.has(id))throw Error('Saved parlay conflicts with deletion history: '+id);
+   if(cloudById.has(id)&&localById.has(id)&&JSON.stringify(cloudById.get(id))!==JSON.stringify(localById.get(id)))throw Error('Same-ID parlay conflict: '+id);
+  }
+  const partRaw=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(partRaw!==null){
+   const part=JSON.parse(partRaw);
+   if(!part||typeof part!=='object'||Array.isArray(part))throw Error('Invalid account partition');
+   if(safe6Canonical(safe6View(part,'Account partition'))!==safe6Canonical(device))throw Error('Account partition differs from active device data');
+  }
+  const combined=safe6View({'nflp-saved-v1':JSON.stringify([...cloudById.values(),...[...localById].filter(([id])=>!cloudById.has(id)).map(([,p])=>p)]),'nflp-deleted-saved-v1':JSON.stringify([...deleted])},'Reconciled result');
+  const canonical=safe6Canonical(combined),initialCloud=safe6Canonical(cloud),initialDevice=safe6Canonical(device);
+  const addedToCloud=[...localById.keys()].filter(id=>!cloudById.has(id));
+  const addedToDevice=[...cloudById.keys()].filter(id=>!localById.has(id));
+  const backup={version:1,kind:'phase3-test-reconcile-before-write',timestamp:new Date().toISOString(),uid,cloud_revision:remote.updated_at,cloud_payload:remote.payload,device_storage:snapshot(),account_partition_raw:partRaw,planned_saved_ids:combined.saved.map(p=>String(p.id)),planned_deletion_markers:combined.deleted};
+  downloadJSON(backup,'NFL-TEST-reconcile-BACKUP-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json');
+  if(!confirm('TEST ACCOUNT ONLY: A combined backup download was requested. VERIFY it is saved before continuing.\n\nCloud-only saved parlays: '+addedToDevice.length+'; device-only saved parlays: '+addedToCloud.length+'; combined: '+combined.saved.length+'.\n\nNo parlay deletions; drafts stay local. Continue ONLY after verifying the backup?')){status('RECONCILE CANCELED: Backup requested; no data changed.');return;}
+  if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==initialDevice)throw Error('Device or account changed during confirmation');
+  const currentPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(currentPart!==partRaw)throw Error('Account partition changed during confirmation');
+  const fresh=await readRemote(uid);
+  if(!fresh||fresh.updated_at!==remote.updated_at||safe6Canonical(safe6View(personalCloudValues(fresh.payload),'Cloud'))!==initialCloud)throw Error('Cloud changed before write; retry after review');
+  if(fresh.payload.user_id!=null&&String(fresh.payload.user_id)!==uid)throw Error('Cloud owner changed');
+  if(initialCloud!==canonical){
+   const jwt=await token();
+   const next={...fresh.payload,'nflp-saved-v1':JSON.stringify(combined.saved),'nflp-deleted-saved-v1':JSON.stringify(combined.deleted)};
+   const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(fresh.updated_at)+'&select=payload,updated_at',{
+    method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:next,updated_at:new Date().toISOString()})
+   });
+   if(!Array.isArray(rows)||rows.length!==1)throw Error('Cloud CAS write not confirmed; check cloud before retry');
+   cloudCommitted=true;
+  }
+  const verified=await readRemote(uid);
+  if(!verified||safe6Canonical(safe6View(personalCloudValues(verified.payload),'Cloud'))!==canonical)throw Error('Cloud read-back mismatch');
+  if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==initialDevice)throw Error('Device changed before local update');
+  safe6LocalWrite(uid,combined);
+  const partition=JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)||'null');
+  if(!partition||safe6Canonical(safe6View(partition,'Partition readback'))!==canonical)throw Error('Account partition read-back mismatch');
+  localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical}));
+  status('RECONCILE VERIFIED: '+combined.saved.length+' saved parlays; '+combined.deleted.length+' deletion markers. Cloud, device and account partition match. Drafts untouched. Auto-sync remains paused; enable it separately.');
+ }catch(e){status('RECONCILE STOPPED: '+(e&&e.message||String(e))+(cloudCommitted?'. Cloud write may have succeeded; DO NOT repeat until read-only preflight confirms state.':'. No confirmed cloud write.'));}
+ finally{busy=false;safe6Running=false;}
+};
 safe6Button.onclick=async()=>{
- if(SAFE_READ_ONLY){status('Auto-sync unavailable during release validation. No data changed.');return;}
  if(busy){status('Another cloud operation is running.');return;}busy=true;
  try{
   const uid=await userId();if(!safe6Active(uid))throw Error('Account ownership mismatch');
@@ -2237,54 +2436,13 @@ safe6Button.onclick=async()=>{
   if(c!==l)throw Error('Cloud/device saved parlays or deletion markers differ. Run read-only preflight first');
   const raw=localStorage.getItem(ACCOUNT_PREFIX+uid);
   if(raw!==null){const p=JSON.parse(raw);if(safe6Canonical(safe6View(p,'Account partition'))!==l)throw Error('Account partition mismatch');}
-  if(!confirm('Enable guarded automatic saved-parlay sync on THIS device? Drafts remain local. Concurrent edits pause sync. Legacy sync remains disabled.'))return;
+  if(!confirm('TEST ONLY: Enable guarded automatic saved-parlay sync on THIS device? Drafts remain local. Concurrent edits pause sync. Legacy sync remains disabled.'))return;
   localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:l}));safe6Running=true;
-  status('AUTO-SYNC v7 ENABLED for this device. Resumes after reload; checks approximately every 15 seconds while tab is active.');
+  status('AUTO-SYNC v7 ENABLED for this TEST device. Resumes after reload; checks approximately every 15 seconds while tab is active.');
  }catch(e){status('AUTO-SYNC v6 NOT ENABLED: '+(e&&e.message||String(e)));}
  finally{busy=false}
 };
-// Phase 3 TEST-only initial cloud-to-device baseline import. No Supabase mutations.
-const phase3InitialPull=document.createElement('button');
-phase3InitialPull.type='button';phase3InitialPull.className='btn alt';
-phase3InitialPull.textContent='Initialize this device from TEST cloud (guarded read-only pull)';
-$('sbSyncNow').parentNode.insertBefore(phase3InitialPull,$('sbSyncNow'));
-let phase3InitialPullBackupUid=null;
-phase3InitialPull.onclick=async()=>{
- if(busy){status('Another cloud operation is running. No changes made.');return;}
- busy=true;
- try{
-  const uid=await userId();
-  if(!safe6Active(uid))throw Error('Authenticated account ownership mismatch');
-  if(safe6Running||localStorage.getItem(safe6Key(uid)))throw Error('Auto-sync baseline already exists. Initial import unavailable');
-  const local=safe6View(snapshot(),'Device');
-  if(local.saved.length||local.deleted.length)throw Error('Device already has saved parlays or deletion markers; initial import refused');
-  const partRaw=localStorage.getItem(ACCOUNT_PREFIX+uid);
-  if(partRaw){
-   const part=safe6View(JSON.parse(partRaw),'Account partition');
-   if(part.saved.length||part.deleted.length)throw Error('Account partition already contains saved parlays or deletion markers; initial import refused');
-  }
-  if(phase3InitialPullBackupUid!==uid){
-   download();phase3InitialPullBackupUid=uid;
-   status('STEP 1/2: Local backup download requested. Verify the backup file is present in Downloads, then click Initialize this device from TEST cloud again. No cloud or local data changed.');
-   return;
-  }
-  if(!confirm('Have you verified the local backup file downloaded successfully?\n\nImport saved parlays and deletion markers from your signed-in TEST cloud to this empty device? Device-local drafts will be preserved. This operation will NOT write to Supabase or enable auto-sync.'))return;
-  const first=await readRemote(uid);
-  if(!first||!first.updated_at)throw Error('TEST cloud record or revision missing');
-  const cloud=safe6View(personalCloudValues(first.payload),'TEST cloud');
-  const second=await readRemote(uid);
-  if(!second||second.updated_at!==first.updated_at||safe6Canonical(safe6View(personalCloudValues(second.payload),'TEST cloud readback'))!==safe6Canonical(cloud))throw Error('Cloud changed during import; no local changes made');
-  if(!safe6Active(uid))throw Error('Account changed during import');
-  const latest=safe6View(snapshot(),'Device recheck');
-  if(latest.saved.length||latest.deleted.length)throw Error('Device changed during import; no local changes made');
-  if(partRaw!==localStorage.getItem(ACCOUNT_PREFIX+uid))throw Error('Account partition changed during import; no local changes made');
-  safe6LocalWrite(uid,cloud);
-  phase3InitialPullBackupUid=null;
-  status('TEST CLOUD IMPORT VERIFIED: '+cloud.saved.length+' saved parlays and '+cloud.deleted.length+' deletion markers copied to this device. Drafts preserved. Cloud unchanged. Auto-sync remains OFF. Run read-only preflight again.');
- }catch(e){status('TEST CLOUD IMPORT STOPPED: '+(e&&e.message||String(e))+'. No cloud writes performed.');}
- finally{busy=false;}
-};
-// Phase 3 consolidated cloud deletion controls: one, selected, or all.
+// Phase 3 consolidated TEST cloud deletion controls: one, selected, or all.
 // Cloud-first CAS, readback, then device update. Drafts and unrelated payload keys are preserved.
 const safe8Delete=document.createElement('button');safe8Delete.type='button';safe8Delete.className='btn alt';
 safe8Delete.textContent='Select and delete saved parlays…';
@@ -2293,34 +2451,34 @@ function safe10DeletionFeedback(message,scroll=false){
  const target=document.getElementById('savedActionStatus');
  if(target){target.textContent=message;if(scroll)target.scrollIntoView({block:'nearest',behavior:'smooth'});}
 }
+// Read-only preflight timeout: prevent indefinite "checking account" UI hangs.
+// Timed-out requests can still finish in the background, but cannot trigger deletion.
+function phase3DeletionReadTimeout(promise,label,ms=18000){
+ let timer;
+ return Promise.race([
+  Promise.resolve(promise),
+  new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label+' timed out after '+Math.round(ms/1000)+'s. No deletion attempted. Check connection, sign in, then retry.')),ms);})
+ ]).finally(()=>clearTimeout(timer));
+}
 async function safe9DeleteSaved(requestedIds=null,cardFeedback=null,cardId=null){
- if(SAFE_READ_ONLY){status('Deletion unavailable in release-review mode. No data changed.');return;}
  const report=message=>{safe10DeletionFeedback(message,false);if(cardId!==null)phase3DeleteReport(cardId,message);if(cardFeedback&&cardFeedback.isConnected)cardFeedback.textContent=message;};
  report('Checking signed-in account and cloud sync before deletion…');
- if(busy){report('Another cloud operation is running. Try again.');return;}
+ if(busy){report('Another cloud operation is running. Wait for auto-sync to finish, then retry. No deletion attempted.');return;}
  if(!navigator.onLine){report('Cloud deletion requires an online connection. No changes made.');return;}
+ // Match the existing guarded reconcile host restriction. Local previews and
+ // production URLs must never perform destructive cloud operations.
+ if(location.hostname!=='dlindeman333.github.io'||!location.pathname.startsWith('/NFL_Parlays_Test/')){
+  report('TEST deletion blocked: open the deployed TEST GitHub Pages app. No changes made.');return;
+ }
  busy=true;
  const priorRunning=safe6Running;safe6Running=false;
- let deletionStage='starting';
- const deletionRead=async(uid,stage)=>{
-  deletionStage=stage;
-  let last;
-  for(let attempt=0;attempt<4;attempt++){
-   if(attempt)await new Promise(resolve=>setTimeout(resolve,[0,900,1800,3000][attempt]));
-   if(!safe6Active(uid))throw Error('Account changed during '+stage);
-   try{return await readRemote(uid)}catch(e){
-    last=e;
-    if(!navigator.onLine||!/Load failed|Failed to fetch|NetworkError|AbortError/i.test(String(e&&e.message||e)))throw e;
-   }
-  }
-  throw Error('Cloud GET failed after 4 attempts: '+String(last&&last.message||last));
- };
- let cloudWriteAttempted=false;
  try{
-  report('Verifying signed-in account…');
-  const uid=await userId();if(!safe6Active(uid))throw Error('Authenticated account ownership mismatch');
-  report('Reading your cloud record…');
-  const remote=await deletionRead(uid,'initial cloud read');if(!remote||!remote.updated_at)throw Error('Cloud revision unavailable');
+  report('Verifying signed-in TEST account…');
+  const uid=await phase3DeletionReadTimeout(userId(),'Account verification');
+  report('Signed-in account verified. Checking device ownership…');
+  if(!safe6Active(uid))throw Error('Authenticated account ownership mismatch');
+  report('Reading your TEST cloud record…');
+  const remote=await phase3DeletionReadTimeout(readRemote(uid),'Cloud record read');if(!remote||!remote.updated_at)throw Error('Cloud revision unavailable');
   const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
   const local=safe6View(snapshot(),'Device');
   const canonical=safe6Canonical(cloud);
@@ -2346,32 +2504,31 @@ async function safe9DeleteSaved(requestedIds=null,cardFeedback=null,cardId=null)
   const existing=new Set(cloud.saved.map(p=>String(p.id)));
   if(ids.some(id=>!existing.has(id)))throw Error('Selection contains an unknown parlay');
   const all=ids.length===cloud.saved.length;
-  downloadJSON({version:8,source:'pre-delete',exported_at:new Date().toISOString(),cloud:personalCloudValues(remote.payload),device:snapshot()},'parlays-backup-'+new Date().toISOString().slice(0,10)+'.json');
-  if(!confirm('ACCOUNT BACKUP: Save the downloaded JSON backup before continuing. Cancel leaves everything unchanged.')){report('Deletion canceled at backup confirmation. No data changed.');return;}
-  if(!confirm((all?'DELETE ALL '+ids.length:'DELETE '+ids.length+' SELECTED')+' saved parlay(s) from ONLY the signed-in account? This will propagate to your other devices. Drafts, statistics, and prediction data are preserved.')){report('Deletion canceled at final confirmation. No data changed.');return;}
+  downloadJSON({version:8,source:'test-pre-delete',exported_at:new Date().toISOString(),cloud:personalCloudValues(remote.payload),device:snapshot()},'TEST-parlays-backup-'+new Date().toISOString().slice(0,10)+'.json');
+  if(!confirm('TEST ACCOUNT BACKUP: Save the downloaded JSON backup before continuing. Cancel leaves everything unchanged.')){report('Deletion canceled at backup confirmation. No changes made.');return;}
+  if(!confirm((all?'DELETE ALL '+ids.length:'DELETE '+ids.length+' SELECTED')+' saved parlay(s) from ONLY the signed-in TEST account? This will propagate to your other devices. Drafts, statistics, and prediction data are preserved.')){report('Deletion canceled at final confirmation. No changes made.');return;}
   // Revalidate account and cloud revision after the potentially lengthy Safari download.
   if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==canonical)throw Error('Account/device changed during confirmation; no deletion');
-  deletionStage='waiting for Safari confirmation to close';
-  await new Promise(resolve=>setTimeout(resolve,1000));
-  const fresh=await deletionRead(uid,'pre-write cloud revision check');
+  const fresh=await phase3DeletionReadTimeout(readRemote(uid),'Cloud revision recheck');
   if(!fresh||fresh.updated_at!==remote.updated_at||safe6Canonical(safe6View(personalCloudValues(fresh.payload),'Cloud'))!==canonical)throw Error('Cloud changed during confirmation; no deletion');
   const marks=[...new Set([...cloud.deleted,...ids])].sort();
   const nextSaved=cloud.saved.filter(p=>!ids.includes(String(p.id)));
   const nextData={saved:nextSaved,deleted:marks};
-  const jwt=await token();
+  const jwt=await phase3DeletionReadTimeout(token(),'Session token verification');
   const nextPayload={...fresh.payload,'nflp-saved-v1':JSON.stringify(nextSaved),'nflp-deleted-saved-v1':JSON.stringify(marks)};
-  deletionStage='guarded cloud deletion write';cloudWriteAttempted=true;
   const rows=await api('/rest/v1/nfl_parlay_sync?user_id=eq.'+encodeURIComponent(uid)+'&updated_at=eq.'+encodeURIComponent(fresh.updated_at)+'&select=payload,updated_at',{
    method:'PATCH',headers:{Authorization:'Bearer '+jwt,Prefer:'return=representation'},body:JSON.stringify({payload:nextPayload,updated_at:new Date().toISOString()})
   });
   if(!Array.isArray(rows)||rows.length!==1)throw Error('Concurrent cloud change; deletion not confirmed');
-  const check=await deletionRead(uid,'post-write cloud read-back');
+  report('Cloud update returned; verifying deletion against TEST cloud readback…');
+  const check=await phase3DeletionReadTimeout(readRemote(uid),'Post-deletion cloud readback');
   if(!check||safe6Canonical(safe6View(personalCloudValues(check.payload),'Cloud'))!==safe6Canonical(nextData))throw Error('Cloud readback failed; inspect cloud before retrying');
   // Cloud is verified; a local storage error cannot undo the cloud operation.
   try{safe6LocalWrite(uid,nextData);localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:safe6Canonical(nextData)}));}
   catch(e){throw Error('Cloud deletion VERIFIED, but this device update failed: '+e.message+'. Do not retry deletion; inspect sync status.');}
-  deletionStage='complete';report('CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
- }catch(e){report('CLOUD DELETION STOPPED at '+deletionStage+': '+(e&&e.message||String(e))+(cloudWriteAttempted?'. A write was attempted: inspect cloud read-only before retrying.':'. No cloud write attempted.'));}
+  for(const id of ids)phase3DeleteMessages.delete(String(id));
+  report('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
+ }catch(e){report('TEST v8 deletion: '+(e&&e.message||String(e)));}
  finally{busy=false;safe6Running=priorRunning&&!!localStorage.getItem(safe6Key(localStorage.getItem(OWNER_KEY)||''));}
 }
 window.phase3GuardedDeleteSaved=safe9DeleteSaved;
@@ -2388,40 +2545,44 @@ if(deleteAllSavedButton){
 }
 
 safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_KEY);if(uid)localStorage.removeItem(safe6Key(uid));status('AUTO-SYNC v6 PAUSED on this device. No data deleted.');};
-setInterval(()=>{if(!SAFE_READ_ONLY&&safe6Running)safe6Cycle()},15000);
+setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
 $('sbSyncNow').onclick=async()=>{
- status('Legacy additive sync retired. Guarded sync requires validated account baseline; no data changed.');
-};
-for(const id of ['sbRestoreCloud','sbUploadLocal']){const el=$(id);if(el){el.hidden=true;el.disabled=true;}}
+ if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
 settings();auth=authLoad();authControls(false);
 privacyGate('Personal parlays are locked until account sign-in is verified.');
 if(auth&&config.url&&config.key){status('Restoring saved sign-in…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();authControls(true);
  // Refresh the builder's in-memory list from the authenticated account's active storage.
  const fresh=trialData(snapshot()).saved;
  saved=fresh;renderSaved();
- status('Signed in · guarded auto-sync available; legacy cloud sync disabled.');
+ const checkRaw=sessionStorage.getItem('nflp-phase3-test-pull-check-v1');
+ if(checkRaw){
+  sessionStorage.removeItem('nflp-phase3-test-pull-check-v1');
+  const check=JSON.parse(checkRaw);
+  const part=JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)||'null');
+  const partSaved=part?trialData(part).saved:[];
+  if(check.uid===uid&&fresh.some(p=>String(p.id)===check.id))status('POST-RELOAD RESTORE VERIFIED: 1 parlay loaded on this device. Cloud unchanged.');
+  else status('POST-RELOAD RESTORE CHECK FAILED: active '+fresh.length+' saved; account partition '+partSaved.length+' saved. No cloud changes.');
+ }else status('Signed in · guarded auto-sync available; legacy cloud sync disabled.');
  // v7: Resume only a previously user-enabled, account-scoped guarded sync.
  // The v6 in-memory flag was lost on every Safari reload/navigation.
  const resumeRaw=localStorage.getItem(safe6Key(uid));
- if(resumeRaw&&!SAFE_READ_ONLY){
+ if(resumeRaw){
   try{
    const resume=JSON.parse(resumeRaw);
    if(!resume||resume.uid!==uid||typeof resume.canonical!=='string')throw Error('Invalid saved-sync baseline');
    safe6Running=true;
-   status('AUTO-SYNC v7 RESUMED for this account. Checking cloud/device changes; drafts stay local.');
+   status('AUTO-SYNC v7 RESUMED for this TEST account. Checking cloud/device changes; drafts stay local.');
    setTimeout(()=>{if(safe6Running)safe6Cycle()},1200);
   }catch(e){safe6Running=false;status('AUTO-SYNC v7 NOT RESUMED: '+e.message+'. No writes.');}
  }
  }catch(e){authControls(false);status('Saved sign-in could not be verified: '+e.message+'. Sign in again if needed.');privacyGate('Sign in to unlock this browser. No cloud data changed.');}},900)}
 else status('No saved sign-in found in this browser installation. Sign in to restore your account; cloud data has not been changed.');
-// Phase 3 RC v2: retired legacy additive 5-second cloud sync timer.
-// Guarded saved-parlay synchronization is managed by safe6Cycle only.
+setInterval(()=>{if(SAFE_READ_ONLY||!started||!auth||busy)return;sync(false)},5000);
 // Do not snapshot on pagehide: a partition switch can occur before old in-memory
 // arrays are discarded, and pagehide would overwrite the new account partition.
 // Explicit sign-out saves; switching accounts snapshots active localStorage.
-// Phase 3 RC v2: retired legacy online event that called additive sync().
-// Guarded synchronization checks connectivity during safe6Cycle.
+window.addEventListener('online',()=>{if(auth)sync(!started)});
 })();
 </script>
 <script>
@@ -2764,61 +2925,5 @@ else status('No saved sign-in found in this browser installation. Sign in to res
  window.matchMedia('(min-width:701px)').addEventListener('change',e=>{if(e.matches&&dialog.open)dialog.close();});
 })();
 </script>
-<script id="phase3AdvancedControlsCleanup">
-(()=>{
-  "use strict";
-  function organize(){
-    const mount=document.getElementById('advancedSetupMount');
-    const cloud=document.getElementById('cloudSyncPanel');
-    const advanced=document.getElementById('advancedSetupDialog');
-    const setup=document.getElementById('setupDialog');
-    const open=document.getElementById('openAdvancedSetup');
-    if(!mount||!cloud||!advanced||!setup||!open)return;
-    const heading=document.createElement('section');
-    heading.id='phase3AdvancedSyncDiagnostics';
-    heading.innerHTML='<h2>Cloud sync diagnostics &amp; recovery</h2><p class="mu">Advanced recovery tools. Routine syncing remains in Setup; guarded operations retain their existing confirmations and safety checks.</p>';
-    const row=document.createElement('div');row.className='tools';
-    heading.appendChild(row);mount.insertBefore(heading,mount.firstChild);
-    // Mirror the existing status into the panel where the diagnostic was clicked.
-    // Keep the original Setup status in place for routine Sync now actions.
-    const result=document.createElement('div');
-    result.id='phase3AdvancedActionResult';
-    result.setAttribute('role','status');result.setAttribute('aria-live','polite');
-    result.style.cssText='display:none;margin:12px 0;padding:12px;border:1px solid var(--bd);border-radius:10px;white-space:pre-wrap;overflow-wrap:anywhere';
-    heading.appendChild(result);
-    const originalStatus=document.getElementById('sbStatus');
-    if(originalStatus){
-      let pending=false;
-      const update=()=>{if(!advanced.open)return;const message=originalStatus.textContent||'';if(message&&message!==result.dataset.last){result.textContent=message;result.dataset.last=message;result.style.display='block';}};
-      new MutationObserver(()=>{if(!pending){pending=true;queueMicrotask(()=>{pending=false;update()});}}).observe(originalStatus,{childList:true,characterData:true,subtree:true});
-      row.addEventListener('click',e=>{if(e.target.closest('button')){result.style.display='none';result.dataset.last='';}},true);
-    }
-    // All temporary controls are created dynamically before DOMContentLoaded.
-    // Move the original elements rather than cloning them, preserving event handlers.
-    const routine=new Set(['sbSyncNow','openAdvancedSetup','sbSignIn','sbSignOut','sbSignUp']);
-    const candidates=Array.from(cloud.querySelectorAll('button'));
-    let moved=0;
-    for(const button of candidates){
-      if(routine.has(button.id))continue;
-      if(button.closest('#sbAuthForm'))continue;
-      if(button.id==='sbRestoreCloud'||button.id==='sbUploadLocal'||button.id==='sbBackup')continue;
-      row.appendChild(button);moved++;
-    }
-    // Opening Advanced Options must not close the Setup dialog underneath.
-    open.addEventListener('click',e=>{
-      e.preventDefault();e.stopImmediatePropagation();
-      if(!advanced.open)advanced.showModal();
-    },true);
-    // Keep a minimal indication of where the diagnostics went.
-    const note=document.createElement('p');note.className='mu';
-    note.textContent='Testing, recovery, and diagnostic tools are available under Advanced Options.';
-    cloud.appendChild(note);
-    console.info('Phase 3 Phase 3: moved '+moved+' diagnostic buttons to Advanced Options.');
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',organize,{once:true});
-  else organize();
-})();
-</script>
-<div id="phase3FinalTestNotice" style="position:fixed;bottom:0;left:0;right:0;background:#7f1d1d;color:white;text-align:center;padding:6px;font:700 12px sans-serif;z-index:2147483647;pointer-events:none">PHASE 3 FINAL REGRESSION — TEST SUPABASE ONLY — NOT FOR PRODUCTION</div>
 </body></html>
 
