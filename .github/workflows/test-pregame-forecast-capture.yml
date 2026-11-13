@@ -1,0 +1,91 @@
+name: NFL Phase 3 TEST Pregame Forecast Capture (Artifact Only)
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: 'Season (blank = ESPN current season)'
+        required: false
+        type: string
+      week:
+        description: 'Week (blank = ESPN current week)'
+        required: false
+        type: string
+permissions:
+  contents: read
+concurrency:
+  group: nfl-phase3-test-forecast-capture
+  cancel-in-progress: false
+jobs:
+  capture:
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Validate TEST-only boundary
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: python scripts/phase3_test_boundary.py
+      - name: Run snapshot and grading regression tests
+        env:
+          PYTHONPATH: scripts
+        run: python -m unittest scripts.test_phase3_forecast_snapshot scripts.test_phase3_model_forecast_grading -v
+      - name: Generate candidate manifest from TEST source
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NFL_SEASON: ${{ inputs.season }}
+          NFL_WEEK: ${{ inputs.week }}
+        shell: bash
+        run: |
+          args=()
+          if [[ -n "$NFL_SEASON" ]]; then args+=(--season "$NFL_SEASON"); fi
+          if [[ -n "$NFL_WEEK" ]]; then args+=(--week "$NFL_WEEK"); fi
+          python scripts/phase3d37h_full_manifest.py "${args[@]}"
+      - name: Evaluate forecast eligibility
+        id: eligibility
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          p = Path('phase3d37h-output/manifest.json')
+          m = json.loads(p.read_text())
+          stale = m.get('source_freshness_blocker')
+          readiness = m.get('readiness')
+          if stale:
+              status = 'SKIPPED_STALE_SOURCE'
+          elif readiness != 'READY_FOR_AUTOMATED_SNAPSHOTS':
+              status = 'SKIPPED_NOT_READY'
+          else:
+              status = 'ELIGIBLE'
+          out = {'status': status, 'readiness': readiness, 'source_freshness_blocker': stale}
+          Path('phase3d37h-output/capture-status.json').write_text(json.dumps(out, indent=2, default=str) + '\n')
+          print(out)
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write(f'eligible={str(status == "ELIGIBLE").lower()}\n')
+          PY
+      - name: Capture forward-only model forecast artifact
+        if: steps.eligibility.outputs.eligible == 'true'
+        env:
+          PYTHONPATH: scripts
+        run: python scripts/phase3_forecast_snapshot.py --input-dir phase3d37h-output --output-dir phase3-forecast-output
+      - name: Verify captured forecast integrity
+        if: steps.eligibility.outputs.eligible == 'true'
+        env:
+          PYTHONPATH: scripts
+        run: python scripts/phase3_capture_artifact_check.py --directory phase3-forecast-output
+      - name: Upload evidence with limited retention (not durable cloud history)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase3-test-pregame-forecast-${{ github.run_id }}
+          path: |
+            phase3d37h-output/manifest.json
+            phase3d37h-output/capture-status.json
+            phase3-forecast-output/*.json
+          retention-days: 30
+          if-no-files-found: warn

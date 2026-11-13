@@ -1,0 +1,54 @@
+name: NFL Phase 3 - TEST Stats Export
+on:
+  workflow_dispatch:
+    inputs:
+      upload_to_test:
+        description: 'Upload validated CSV to TEST Supabase (default preview only)'
+        type: boolean
+        default: false
+permissions:
+  contents: read
+concurrency:
+  group: nfl-phase3-test-stats-export
+  cancel-in-progress: false
+jobs:
+  test-stats-export:
+    if: github.repository == 'dlindeman333/NFL_Parlays_Test'
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+          cache-dependency-path: requirements-automation.txt
+      - name: Install statistics dependencies
+        run: python -m pip install -r requirements-automation.txt
+      - name: Generate CSV without Supabase credentials
+        env:
+          NFL_SEASON: '2026'
+          SUPABASE_URL: ''
+          SUPABASE_SERVICE_ROLE_KEY: ''
+        run: python export_automated.py
+      - name: Validate statistics CSV (no writes)
+        run: python scripts/phase3_test_stats_upload.py --csv nfl_player_stats.csv --season 2026
+      - name: Validate TEST boundary before optional upload
+        if: inputs.upload_to_test == true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: python scripts/phase3_test_boundary.py
+      - name: Optional guarded TEST upload
+        if: inputs.upload_to_test == true
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: python scripts/phase3_test_stats_upload.py --csv nfl_player_stats.csv --season 2026 --upload
+      - name: Upload CSV evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nfl-phase3-test-stats-${{ github.run_id }}
+          path: nfl_player_stats.csv
+          if-no-files-found: warn
+          retention-days: 7
