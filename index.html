@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- PHASE 3 PRODUCTION RELEASE REVIEW v2. CLOUD WRITES DISABLED. TEST MAINTENANCE DISABLED. DO NOT DEPLOY. -->
+<!-- PHASE 3 V5 ISOLATED TEST REGRESSION. GUARDED TEST WRITES ENABLED. NEVER DEPLOY TO PRODUCTION. -->
 <html lang="en"><head><meta charset="utf-8"><title>NFL Parlay Builder</title>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <style>
@@ -137,9 +137,9 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
  </div>
  <div class="kickoff-note" id="kickoffStatus" role="status" aria-live="polite">Checking NFL schedule…</div>
 </section>
-<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 NFL Parlay Builder · Your Account</strong><span class="mu" style="font-weight:700;color:#047857" id="topEnvironment">PRODUCTION RELEASE REVIEW</span></div><div id="accountIdentityCard" role="status" aria-live="polite" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="mu">Signed in as</div><strong id="topAccountIndicator">Checking sign-in…</strong></div><span id="topConnectionBadge" class="mu">Not connected</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">Production review only: cloud writes and automatic synchronization remain disabled pending release approval.</div></section>
+<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 NFL Parlay Builder · Your Account</strong><span class="mu" style="font-weight:700;color:#047857" id="topEnvironment">TEST ONLY</span></div><div id="accountIdentityCard" role="status" aria-live="polite" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="mu">Signed in as</div><strong id="topAccountIndicator">Checking sign-in…</strong></div><span id="topConnectionBadge" class="mu">Not connected</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST environment: guarded cloud writes are available only after account and synchronization preflight checks. Do not use production credentials or deploy to production.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
-<div class="card" style="border-color:#b45309"><b>PRODUCTION RELEASE REVIEW · CLOUD WRITES DISABLED</b><div class="mu">Inspection-only candidate. Do not deploy this file or enable cloud writes before final authorization and production security checks.</div></div>
+<div class="card" style="border-color:#b45309"><b>PHASE 3 V5 · ISOLATED TEST REGRESSION</b><div class="mu">TEST Supabase only. Guarded save, sync, and deletion require their normal account checks and confirmations. Never deploy this file to production.</div></div>
 <div class="navlinks"><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
 
 <dialog id="setupDialog" class="setup-modal" aria-label="Setup"><div class="setup-content"><div class="setup-head"><h2 style="margin:0">⚙ Setup</h2><button class="btn alt" type="button" id="closeSetup">Close ✕</button></div><section id="cloudSyncPanel">
@@ -208,7 +208,7 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
     const stats=document.getElementById('autoStatsStatus');
     const statsText=stats?(stats.textContent||'').trim():'NFL statistics status unavailable';
     target.replaceChildren();
-    for(const [label,value] of [['Network',online],['Cloud sync',cloudText],['NFL statistics',statsText],['Cloud writes','Paused for Phase 3 release validation']]){
+    for(const [label,value] of [['Network',online],['Cloud sync',cloudText],['NFL statistics',statsText],['Cloud writes','Guarded TEST writes enabled; account preflight required']]){
       const p=document.createElement('p');p.className='mu';
       const b=document.createElement('strong');b.textContent=label+': ';
       p.append(b,document.createTextNode(value));target.appendChild(p);
@@ -1346,7 +1346,7 @@ const prefix='nflp-cloud-';
 // Fail closed on cross-account browser data. Never silently merge personal data
 // from a previous account into a different authenticated Supabase user.
 const OWNER_KEY='nflp-phase3-finaltest-storage-owner-v1';
-const SAFE_READ_ONLY=false; // RELEASE HOLD: enable writes only after authenticated production-equivalent validation.
+const SAFE_READ_ONLY=false; // ISOLATED TEST ONLY: guarded writes allowed after preflight; never deploy to production.
 const ACCOUNT_PREFIX='nflp-phase3-finaltest-account-v1-';
 const LEGACY_PREFIX='nflp-phase3-finaltest-legacy-quarantine-v1-';
 // Phase 3 privacy gate: never display one account's local parlays to a signed-out
@@ -1683,7 +1683,7 @@ async function sign(kind){
   // Never unlock this document after changing partitions: reload first.
   if(changed){location.reload();return;}
   privacyUnlock();authControls(true);
-  status('Signed in. Cloud writes paused for safety; only this account’s local data is active.');
+  status('Signed in to TEST. Guarded synchronization requires account-scoped preflight. No automatic upload was performed.');
  }catch(e){status('Authentication error: '+e.message);if(localStorage.getItem(OWNER_KEY))privacyGate('This browser is reserved for its original account. Sign in with that account or use a separate browser profile.')}
 }
 $('sbAuthForm').addEventListener('submit',e=>{e.preventDefault();sign('signin')});
