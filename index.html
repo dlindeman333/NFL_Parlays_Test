@@ -2304,7 +2304,16 @@ function safe6View(x,side){
  if([...ids].some(id=>markers.has(id)))throw Error(side+' saved parlay has deletion marker');
  return {saved:d.saved,deleted:[...markers].sort()};
 }
-function safe6Canonical(d){return JSON.stringify({saved:[...d.saved].sort((a,b)=>String(a.id).localeCompare(String(b.id))),deleted:[...d.deleted].sort()});}
+// Stable comparison only: preserve the original objects and storage payloads unchanged.
+// JSON object key order can differ between Supabase and Safari without a data change.
+function safe6StableValue(v){
+ if(Array.isArray(v))return v.map(safe6StableValue);
+ if(v&&typeof v==='object'){
+  const out={};for(const k of Object.keys(v).sort())out[k]=safe6StableValue(v[k]);return out;
+ }
+ return v;
+}
+function safe6Canonical(d){return JSON.stringify({saved:[...d.saved].sort((a,b)=>String(a.id).localeCompare(String(b.id))).map(safe6StableValue),deleted:[...d.deleted].map(String).sort()});}
 function safe6Active(uid){return localStorage.getItem(OWNER_KEY)===uid&&!!auth;}
 function safe6LocalWrite(uid,d){
  const oldSaved=localStorage.getItem('nflp-saved-v1'),oldMarkers=localStorage.getItem('nflp-deleted-saved-v1'),oldPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
@@ -2350,7 +2359,7 @@ async function safe6Cycle(){
    const checked=await readRemote(uid);
    if(!checked||safe6Canonical(safe6View(personalCloudValues(checked.payload),'Cloud'))!==l)throw Error('Cloud readback mismatch');
    localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:l}));
-   saveActiveAccount();status('AUTO-SYNC v6: Device changes verified in cloud. Drafts preserved.');
+   saveActiveAccount();status('AUTO-SYNC v7: Device changes verified in cloud. Drafts preserved.');
   }
  }catch(e){safe6Running=false;status('AUTO-SYNC v7 PAUSED: '+(e&&e.message||String(e))+'. No further automatic writes. Review before resuming.');}
  finally{busy=false}
@@ -2436,7 +2445,7 @@ safe6Button.onclick=async()=>{
   if(c!==l){
    const cm=new Map(cloud.saved.map(p=>[String(p.id),p])),lm=new Map(local.saved.map(p=>[String(p.id),p]));
    const cloudOnly=[...cm.keys()].filter(id=>!lm.has(id)),deviceOnly=[...lm.keys()].filter(id=>!cm.has(id));
-   const changed=[...cm.keys()].filter(id=>lm.has(id)&&JSON.stringify(cm.get(id))!==JSON.stringify(lm.get(id)));
+   const changed=[...cm.keys()].filter(id=>lm.has(id)&&JSON.stringify(safe6StableValue(cm.get(id)))!==JSON.stringify(safe6StableValue(lm.get(id))));
    const cd=new Set(cloud.deleted.map(String)),ld=new Set(local.deleted.map(String));
    const cloudMarkers=[...cd].filter(id=>!ld.has(id)),deviceMarkers=[...ld].filter(id=>!cd.has(id));
    const orderingOnly=!cloudOnly.length&&!deviceOnly.length&&!changed.length&&!cloudMarkers.length&&!deviceMarkers.length;
@@ -2447,7 +2456,7 @@ safe6Button.onclick=async()=>{
   if(!confirm('TEST ONLY: Enable guarded automatic saved-parlay sync on THIS device? Drafts remain local. Concurrent edits pause sync. Legacy sync remains disabled.'))return;
   localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:l}));safe6Running=true;
   status('AUTO-SYNC v7 ENABLED for this TEST device. Resumes after reload; checks approximately every 15 seconds while tab is active.');
- }catch(e){status('AUTO-SYNC v6 NOT ENABLED: '+(e&&e.message||String(e)));}
+ }catch(e){status('AUTO-SYNC v7 NOT ENABLED: '+(e&&e.message||String(e)));}
  finally{busy=false}
 };
 // Phase 3 consolidated TEST cloud deletion controls: one, selected, or all.
