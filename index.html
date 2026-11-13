@@ -2292,7 +2292,7 @@ markerPullButton.onclick=async()=>{
 const safe6Key=uid=>'nflp-phase3-test-saved-sync-v6-'+uid;
 let safe6Running=false;
 const safe6Button=document.createElement('button');safe6Button.type='button';safe6Button.className='btn alt';
-safe6Button.textContent='Enable guarded saved-parlay auto-sync (TEST) — v6';
+safe6Button.textContent='Enable guarded saved-parlay auto-sync (TEST) — v7 diagnostic';
 $('sbSyncNow').parentNode.insertBefore(safe6Button,$('sbSyncNow'));
 const safe6Stop=document.createElement('button');safe6Stop.type='button';safe6Stop.className='btn alt';
 safe6Stop.textContent='Pause guarded auto-sync (TEST) — v6';
@@ -2433,7 +2433,15 @@ safe6Button.onclick=async()=>{
   const remote=await readRemote(uid);if(!remote)throw Error('Cloud record missing');
   const cloud=safe6View(personalCloudValues(remote.payload),'Cloud'),local=safe6View(snapshot(),'Device');
   const c=safe6Canonical(cloud),l=safe6Canonical(local);
-  if(c!==l)throw Error('Cloud/device saved parlays or deletion markers differ. Run read-only preflight first');
+  if(c!==l){
+   const cm=new Map(cloud.saved.map(p=>[String(p.id),p])),lm=new Map(local.saved.map(p=>[String(p.id),p]));
+   const cloudOnly=[...cm.keys()].filter(id=>!lm.has(id)),deviceOnly=[...lm.keys()].filter(id=>!cm.has(id));
+   const changed=[...cm.keys()].filter(id=>lm.has(id)&&JSON.stringify(cm.get(id))!==JSON.stringify(lm.get(id)));
+   const cd=new Set(cloud.deleted.map(String)),ld=new Set(local.deleted.map(String));
+   const cloudMarkers=[...cd].filter(id=>!ld.has(id)),deviceMarkers=[...ld].filter(id=>!cd.has(id));
+   const orderingOnly=!cloudOnly.length&&!deviceOnly.length&&!changed.length&&!cloudMarkers.length&&!deviceMarkers.length;
+   throw Error('Cloud/device exact-match check failed: '+cloudOnly.length+' cloud-only saved, '+deviceOnly.length+' device-only saved, '+changed.length+' changed same-ID saved, '+cloudMarkers.length+' cloud-only markers, '+deviceMarkers.length+' device-only markers'+(orderingOnly?' (likely ordering or serialization difference)':'')+'. No sync enabled; no data changed.');
+  }
   const raw=localStorage.getItem(ACCOUNT_PREFIX+uid);
   if(raw!==null){const p=JSON.parse(raw);if(safe6Canonical(safe6View(p,'Account partition'))!==l)throw Error('Account partition mismatch');}
   if(!confirm('TEST ONLY: Enable guarded automatic saved-parlay sync on THIS device? Drafts remain local. Concurrent edits pause sync. Legacy sync remains disabled.'))return;
