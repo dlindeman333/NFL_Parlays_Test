@@ -2238,6 +2238,39 @@ discrepancyAuditButton.onclick=async()=>{
  }catch(e){status('READ-ONLY DISCREPANCY AUDIT STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
  finally{busy=false;}
 };
+// Phase 3 TEST: export-only backup before targeted recovery. No writes to cloud or browser storage.
+const recoveryBackupButton=document.createElement('button');
+recoveryBackupButton.type='button';recoveryBackupButton.className='btn alt';
+recoveryBackupButton.textContent='Download TEST recovery backup (cloud + iPhone + partition) — v1';
+$('sbSyncNow').parentNode.insertBefore(recoveryBackupButton,$('sbSyncNow'));
+recoveryBackupButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  if(!auth)throw Error('Sign in to your TEST account first.');
+  const uid=await userId();
+  if(localStorage.getItem(OWNER_KEY)!==uid)throw Error('Account owner mismatch. No backup created.');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud account record missing.');
+  const cloudValues=personalCloudValues(remote.payload),deviceValues=snapshot();
+  const rawPart=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  let partitionValues=null;
+  if(rawPart!==null){partitionValues=JSON.parse(rawPart);if(!partitionValues||typeof partitionValues!=='object'||Array.isArray(partitionValues))throw Error('Invalid account partition.');}
+  const cloud=trialData(cloudValues),device=trialData(deviceValues);
+  const part=partitionValues?trialData(partitionValues):null;
+  const validate=(v,side)=>{const seen=new Set();for(const item of v.saved){if(!item||item.id==null)throw Error(side+' has a saved record without ID.');const id=String(item.id);if(seen.has(id))throw Error(side+' has duplicate saved ID '+id);seen.add(id);}return seen;};
+  validate(cloud,'Cloud');validate(device,'iPhone');if(part)validate(part,'Partition');
+  const second=await readRemote(uid);
+  if(!second||second.updated_at!==remote.updated_at||JSON.stringify(personalCloudValues(second.payload))!==JSON.stringify(cloudValues))throw Error('Cloud changed during backup verification; retry.');
+  if(localStorage.getItem(OWNER_KEY)!==uid||JSON.stringify(snapshot())!==JSON.stringify(deviceValues)||localStorage.getItem(ACCOUNT_PREFIX+uid)!==rawPart)throw Error('Local data changed during backup verification; retry.');
+  const backup={format:'nfl-phase3-test-recovery-backup-v1',exported_at:new Date().toISOString(),environment:'TEST',cloud_updated_at:remote.updated_at,
+   cloud_storage:cloudValues,device_storage:deviceValues,account_partition_storage:partitionValues,
+   counts:{cloud_saved:cloud.saved.length,device_saved:device.saved.length,partition_saved:part?part.saved.length:null,cloud_markers:cloud.deleted.length,device_markers:device.deleted.length,partition_markers:part?part.deleted.length:null},
+   note:'Backup only. Does not contain login credentials or tokens. Contains personal parlay records; keep private.'};
+  if(!confirm('Download a TEST-only recovery backup of this signed-in account’s cloud, device, and partition parlay data?\n\nCloud: '+cloud.saved.length+' saved; iPhone: '+device.saved.length+' saved; partition: '+(part?part.saved.length:'missing')+' saved.\n\nNO DATA WILL BE MODIFIED.'))return;
+  downloadJSON(backup,'nfl-phase3-test-recovery-backup-'+new Date().toISOString().replace(/[:.]/g,'-')+'.json');
+  status('TEST recovery backup download requested. Open the JSON file in Files/Downloads and verify format, environment TEST, and counts. NO DATA CHANGED. Do not share this backup publicly.');
+ }catch(e){status('TEST RECOVERY BACKUP STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
+ finally{busy=false;}
+};
 // TEST-only explicit marker reconciliation. All legacy automatic writers remain disabled.
 const markerUnionButton=document.createElement('button');
 markerUnionButton.type='button';markerUnionButton.className='btn alt';
