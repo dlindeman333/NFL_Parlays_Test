@@ -2274,7 +2274,7 @@ recoveryBackupButton.onclick=async()=>{
 // Phase 3 TEST: guarded device + account-partition repair. NEVER writes cloud.
 const recoveryRepairButton=document.createElement('button');
 recoveryRepairButton.type='button';recoveryRepairButton.className='btn alt';
-recoveryRepairButton.textContent='Repair this TEST device from verified cloud (guarded) — v1';
+recoveryRepairButton.textContent='Repair this TEST device from verified cloud (guarded) — v2';
 $('sbSyncNow').parentNode.insertBefore(recoveryRepairButton,$('sbSyncNow'));
 recoveryRepairButton.onclick=async()=>{
  if(busy){status('Another operation is running. No changes.');return;}
@@ -2300,15 +2300,15 @@ recoveryRepairButton.onclick=async()=>{
   const partition=trialData(partitionValues);
   const c=idSet(cloud),d=idSet(device),p=idSet(partition);
   const cm=new Set(cloud.deleted.map(String)),dm=new Set(device.deleted.map(String)),pm=new Set(partition.deleted.map(String));
-  if(c.size!==9||d.size!==7||p.size!==7||cm.size!==12||dm.size!==11||pm.size!==8)throw Error('Counts changed from verified audit; stop and rerun audit');
-  if(c.has(unwanted)||!d.has(unwanted)||p.has(unwanted)||!cm.has(unwanted)||dm.has(unwanted))throw Error('Unwanted parlay/deletion state changed');
-  if(c.has(stale)||d.has(stale)||!p.has(stale)||!cm.has(stale)||!dm.has(stale)||pm.has(stale))throw Error('Stale partition parlay/deletion state changed');
+  if(c.size!==9||d.size!==7||p.size!==7||cm.size!==12||dm.size!==11||pm.size!==11)throw Error('Counts changed from verified audit; stop and rerun audit');
+  if(c.has(unwanted)||!d.has(unwanted)||!p.has(unwanted)||!cm.has(unwanted)||dm.has(unwanted)||pm.has(unwanted))throw Error('Unwanted parlay/deletion state changed');
+  if(c.has(stale)||d.has(stale)||p.has(stale)||!cm.has(stale)||!dm.has(stale)||!pm.has(stale))throw Error('Stale partition parlay/deletion state changed');
   for(const id of expectedCloudOnly)if(!c.has(id)||d.has(id)||p.has(id)||cm.has(id))throw Error('Cloud-only ID state changed: '+id);
   for(const id of expectedOtherDeleted)if(c.has(id)||d.has(id)||p.has(id)||!cm.has(id)||!dm.has(id))throw Error('Deletion history changed: '+id);
   const cloudOnly=[...c].filter(id=>!d.has(id)).sort();
   const deviceOnly=[...d].filter(id=>!c.has(id)).sort();
   const partitionOnly=[...p].filter(id=>!c.has(id)).sort();
-  if(JSON.stringify(cloudOnly)!==JSON.stringify([...expectedCloudOnly].sort())||JSON.stringify(deviceOnly)!==JSON.stringify([unwanted])||JSON.stringify(partitionOnly)!==JSON.stringify([stale]))throw Error('Unexpected saved-ID differences');
+  if(JSON.stringify(cloudOnly)!==JSON.stringify([...expectedCloudOnly].sort())||JSON.stringify(deviceOnly)!==JSON.stringify([unwanted])||JSON.stringify(partitionOnly)!==JSON.stringify([unwanted]))throw Error('Unexpected saved-ID differences');
   for(const id of c){if(d.has(id)){
    const a=cloud.saved.find(x=>String(x.id)===id),b=device.saved.find(x=>String(x.id)===id);
    if(JSON.stringify(safe6StableValue(a))!==JSON.stringify(safe6StableValue(b)))throw Error('Shared saved parlay differs: '+id);
@@ -2324,7 +2324,7 @@ recoveryRepairButton.onclick=async()=>{
   // Preserve all non-saved/non-marker keys in each location, including drafts.
   const beforeSaved=localStorage.getItem('nflp-saved-v1'),beforeMarkers=localStorage.getItem('nflp-deleted-saved-v1');
   const nextPartition={...partitionValues,'nflp-saved-v1':JSON.stringify(target.saved),'nflp-deleted-saved-v1':JSON.stringify(target.deleted)};
-  const preview='TEST DEVICE-ONLY RECOVERY\nCloud saved: 9 (unchanged)\nDevice saved: 7 → 9\nPartition saved: 7 → 9\nDevice/partition deletion markers: → 12\nRemove stale saved IDs: '+unwanted+' (device), '+stale+' (partition)\nPreserve drafts and every other storage key. Cloud will NOT be written.\n\nProceed with this device-only repair?';
+  const preview='TEST DEVICE-ONLY RECOVERY\nCloud saved: 9 (unchanged)\nDevice saved: 7 → 9\nPartition saved: 7 → 9\nDevice/partition deletion markers: → 12\nRemove unwanted saved ID: '+unwanted+' (device and partition)\nPreserve drafts and every other storage key. Cloud will NOT be written.\n\nProceed with this device-only repair?';
   if(!confirm(preview)){status('TEST RECOVERY CANCELED. No changes.');return;}
   const fresh=await readRemote(uid);
   if(!fresh||fresh.updated_at!==first.updated_at||JSON.stringify(personalCloudValues(fresh.payload))!==JSON.stringify(cloudValues))throw Error('Cloud changed during confirmation; no changes');
