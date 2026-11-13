@@ -2271,6 +2271,84 @@ recoveryBackupButton.onclick=async()=>{
  }catch(e){status('TEST RECOVERY BACKUP STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
  finally{busy=false;}
 };
+// Phase 3 TEST: guarded device + account-partition repair. NEVER writes cloud.
+const recoveryRepairButton=document.createElement('button');
+recoveryRepairButton.type='button';recoveryRepairButton.className='btn alt';
+recoveryRepairButton.textContent='Repair this TEST device from verified cloud (guarded) — v1';
+$('sbSyncNow').parentNode.insertBefore(recoveryRepairButton,$('sbSyncNow'));
+recoveryRepairButton.onclick=async()=>{
+ if(busy){status('Another operation is running. No changes.');return;}
+ if(location.hostname!=='dlindeman333.github.io'||!location.pathname.startsWith('/NFL_Parlays_Test/')){status('REPAIR BLOCKED: TEST GitHub Pages only. No changes.');return;}
+ if(safe6Running){status('REPAIR BLOCKED: Pause guarded auto-sync first. No changes.');return;}
+ busy=true;
+ const unwanted='1794514426411',stale='1794427313003';
+ const expectedCloudOnly=['1794591581033','1794593326722','1794593375516'];
+ const expectedOtherDeleted=['1794523333148','1794540093440'];
+ const idSet=x=>new Set(x.saved.map(p=>String(p.id)));
+ const same=(a,b)=>safe6Canonical(a)===safe6Canonical(b);
+ const sameRaw=(a,b)=>a===b;
+ try{
+  if(!auth||!navigator.onLine)throw Error('Sign in and connect to the internet');
+  const uid=await userId();if(!safe6Active(uid))throw Error('TEST account/device ownership mismatch');
+  const first=await readRemote(uid);if(!first||!first.updated_at)throw Error('Cloud record/revision unavailable');
+  const cloudValues=personalCloudValues(first.payload),cloud=safe6View(cloudValues,'Cloud');
+  const deviceRaw=snapshot(),device=trialData(deviceRaw);
+  const partitionRaw=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(partitionRaw===null)throw Error('Account partition missing');
+  const partitionValues=JSON.parse(partitionRaw);
+  if(!partitionValues||typeof partitionValues!=='object'||Array.isArray(partitionValues))throw Error('Invalid partition');
+  const partition=trialData(partitionValues);
+  const c=idSet(cloud),d=idSet(device),p=idSet(partition);
+  const cm=new Set(cloud.deleted.map(String)),dm=new Set(device.deleted.map(String)),pm=new Set(partition.deleted.map(String));
+  if(c.size!==9||d.size!==7||p.size!==7||cm.size!==12||dm.size!==11||pm.size!==8)throw Error('Counts changed from verified audit; stop and rerun audit');
+  if(c.has(unwanted)||!d.has(unwanted)||p.has(unwanted)||!cm.has(unwanted)||dm.has(unwanted))throw Error('Unwanted parlay/deletion state changed');
+  if(c.has(stale)||d.has(stale)||!p.has(stale)||!cm.has(stale)||!dm.has(stale)||pm.has(stale))throw Error('Stale partition parlay/deletion state changed');
+  for(const id of expectedCloudOnly)if(!c.has(id)||d.has(id)||p.has(id)||cm.has(id))throw Error('Cloud-only ID state changed: '+id);
+  for(const id of expectedOtherDeleted)if(c.has(id)||d.has(id)||p.has(id)||!cm.has(id)||!dm.has(id))throw Error('Deletion history changed: '+id);
+  const cloudOnly=[...c].filter(id=>!d.has(id)).sort();
+  const deviceOnly=[...d].filter(id=>!c.has(id)).sort();
+  const partitionOnly=[...p].filter(id=>!c.has(id)).sort();
+  if(JSON.stringify(cloudOnly)!==JSON.stringify([...expectedCloudOnly].sort())||JSON.stringify(deviceOnly)!==JSON.stringify([unwanted])||JSON.stringify(partitionOnly)!==JSON.stringify([stale]))throw Error('Unexpected saved-ID differences');
+  for(const id of c){if(d.has(id)){
+   const a=cloud.saved.find(x=>String(x.id)===id),b=device.saved.find(x=>String(x.id)===id);
+   if(JSON.stringify(safe6StableValue(a))!==JSON.stringify(safe6StableValue(b)))throw Error('Shared saved parlay differs: '+id);
+  }}
+  for(const id of c){if(p.has(id)){
+   const a=cloud.saved.find(x=>String(x.id)===id),b=partition.saved.find(x=>String(x.id)===id);
+   if(JSON.stringify(safe6StableValue(a))!==JSON.stringify(safe6StableValue(b)))throw Error('Partition saved parlay differs: '+id);
+  }}
+  if([...dm].some(id=>!cm.has(id))||[...pm].some(id=>!cm.has(id)))throw Error('Device/partition has deletion marker missing in cloud; requires separate review');
+  if(JSON.stringify(partition.drafts)!==JSON.stringify(device.drafts))throw Error('Partition drafts differ from device; preserve both and review separately');
+  const target=safe6View({'nflp-saved-v1':JSON.stringify(cloud.saved),'nflp-deleted-saved-v1':JSON.stringify(cloud.deleted)},'Target');
+  if([...c].some(id=>cm.has(id)))throw Error('Cloud saved/deleted collision');
+  // Preserve all non-saved/non-marker keys in each location, including drafts.
+  const beforeSaved=localStorage.getItem('nflp-saved-v1'),beforeMarkers=localStorage.getItem('nflp-deleted-saved-v1');
+  const nextPartition={...partitionValues,'nflp-saved-v1':JSON.stringify(target.saved),'nflp-deleted-saved-v1':JSON.stringify(target.deleted)};
+  const preview='TEST DEVICE-ONLY RECOVERY\nCloud saved: 9 (unchanged)\nDevice saved: 7 → 9\nPartition saved: 7 → 9\nDevice/partition deletion markers: → 12\nRemove stale saved IDs: '+unwanted+' (device), '+stale+' (partition)\nPreserve drafts and every other storage key. Cloud will NOT be written.\n\nProceed with this device-only repair?';
+  if(!confirm(preview)){status('TEST RECOVERY CANCELED. No changes.');return;}
+  const fresh=await readRemote(uid);
+  if(!fresh||fresh.updated_at!==first.updated_at||JSON.stringify(personalCloudValues(fresh.payload))!==JSON.stringify(cloudValues))throw Error('Cloud changed during confirmation; no changes');
+  if(!safe6Active(uid)||JSON.stringify(snapshot())!==JSON.stringify(deviceRaw)||!sameRaw(localStorage.getItem(ACCOUNT_PREFIX+uid),partitionRaw))throw Error('Device/partition/account changed during confirmation; no changes');
+  let writeStarted=false;
+  try{
+   writeStarted=true;
+   localStorage.setItem('nflp-saved-v1',JSON.stringify(target.saved));
+   localStorage.setItem('nflp-deleted-saved-v1',JSON.stringify(target.deleted));
+   localStorage.setItem(ACCOUNT_PREFIX+uid,JSON.stringify(nextPartition));
+   if(!same(safe6View(snapshot(),'Device readback'),target)||!same(safe6View(JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid)),'Partition readback'),target))throw Error('Device/partition readback mismatch');
+   if(JSON.stringify(trialData(snapshot()).drafts)!==JSON.stringify(device.drafts)||JSON.stringify(trialData(JSON.parse(localStorage.getItem(ACCOUNT_PREFIX+uid))).drafts)!==JSON.stringify(partition.drafts))throw Error('Draft preservation readback mismatch');
+   saved=target.saved;renderSaved();
+  }catch(err){
+   if(writeStarted){
+    try{for(const [k,v] of [['nflp-saved-v1',beforeSaved],['nflp-deleted-saved-v1',beforeMarkers],[ACCOUNT_PREFIX+uid,partitionRaw]]){if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}saved=device.saved;renderSaved();}
+    catch(rollbackErr){throw Error('LOCAL ROLLBACK FAILED. Keep your verified JSON backup and stop: '+rollbackErr.message+'; original error: '+err.message);}
+   }
+   throw err;
+  }
+  status('TEST DEVICE RECOVERY VERIFIED: 9 saved parlays and 12 deletion markers on this device and its account partition. Cloud record was NOT written. Drafts unchanged. Auto-sync remains paused. Run the READ-ONLY preflight next.');
+ }catch(e){status('TEST DEVICE RECOVERY STOPPED: '+(e&&e.message||String(e))+'. No cloud write attempted. If a local write failed, rollback was attempted; keep your backup.');}
+ finally{busy=false;}
+};
 // TEST-only explicit marker reconciliation. All legacy automatic writers remain disabled.
 const markerUnionButton=document.createElement('button');
 markerUnionButton.type='button';markerUnionButton.className='btn alt';
