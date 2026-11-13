@@ -94,26 +94,64 @@ def api_request(url, key, method, endpoint, payload=None, prefer=None):
 
 
 def compare_existing(existing, incoming):
+    """Allow completed-game transitions, never unexplained historical/future losses."""
     if not existing:
         return 'first_upload'
     old_text = existing.get('csv_text') or ''
-    old = csv.DictReader(io.StringIO(old_text))
-    old_completed = 0
-    old_weeks = set()
-    for row in old:
-        if row.get('game_status') == 'COMPLETED':
-            old_completed += 1
-            try:
-                old_weeks.add(int(row['week']))
-            except (TypeError, ValueError, KeyError):
-                raise ValueError('existing_export_invalid_week') from None
-    if incoming['record_count'] < int(existing.get('record_count') or 0):
-        raise ValueError('refusing_record_count_regression')
-    if incoming['completed'] < old_completed:
-        raise ValueError('refusing_completed_count_regression')
+    old_rows = list(csv.DictReader(io.StringIO(old_text)))
+    new_rows = list(csv.DictReader(io.StringIO(incoming['csv_text'])))
+
+    def identity(row):
+        return (row['player_id'], row['team'], row['week'],
+                row['game_date'], row['game_status'])
+
+    old_map = {identity(row): row for row in old_rows}
+    new_map = {identity(row): row for row in new_rows}
+    if len(old_map) != len(old_rows) or len(new_map) != len(new_rows):
+        raise ValueError('duplicate_player_game_row')
+
+    old_completed = {key for key in old_map if key[4] == 'COMPLETED'}
+    new_completed = {key for key in new_map if key[4] == 'COMPLETED'}
+    if not old_completed.issubset(new_completed):
+        raise ValueError('refusing_existing_completed_record_loss')
+
+    old_weeks = {int(key[2]) for key in old_completed}
     if not old_weeks.issubset(set(incoming['completed_weeks'])):
         raise ValueError('refusing_completed_week_regression')
-    return 'non_regressive'
+    if incoming['completed'] < len(old_completed):
+        raise ValueError('refusing_completed_count_regression')
+
+    removed = old_map.keys() - new_map.keys()
+    added = new_map.keys() - old_map.keys()
+    # Only a newly completed team/week can lose scheduled placeholders.
+    newly_completed_team_weeks = {
+        (key[1], key[2]) for key in new_completed - old_completed
+    }
+    unsafe = [key for key in removed
+              if key[4] != 'SCHEDULED' or
+              (key[1], key[2]) not in newly_completed_team_weeks]
+    if unsafe:
+        print('Unexplained removed record examples:',
+              [list(key) for key in sorted(unsafe)[:10]])
+        raise ValueError('refusing_unexplained_record_loss')
+
+    # If a team/week is marked completed, no scheduled placeholders may remain.
+    completed_team_weeks = {(key[1], key[2]) for key in new_completed}
+    mixed = [key for key in new_map
+             if key[4] == 'SCHEDULED' and
+             (key[1], key[2]) in completed_team_weeks]
+    if mixed:
+        raise ValueError('refusing_mixed_completed_scheduled_team_week')
+
+    print(json.dumps({
+        'old_count': len(old_rows), 'new_count': len(new_rows),
+        'removed_scheduled': len(removed),
+        'added_completed': sum(key[4] == 'COMPLETED' for key in added),
+        'added_scheduled': sum(key[4] == 'SCHEDULED' for key in added),
+        'transition_team_weeks': sorted([list(x) for x in newly_completed_team_weeks]),
+        'note': 'Scheduled placeholder losses permitted only for newly completed team/weeks'
+    }, indent=2))
+    return 'validated_completed_game_transition'
 
 
 def main():
@@ -138,10 +176,10 @@ def main():
     if not isinstance(existing_rows, list) or len(existing_rows) > 1:
         raise RuntimeError('unexpected_existing_season_response')
     existing = existing_rows[0] if existing_rows else None
-    comparison = compare_existing(existing, report)
     if existing and hashlib.sha256((existing.get('csv_text') or '').encode('utf-8')).hexdigest() == report['sha256']:
         print('TEST export already matches CSV: no database write needed')
         return
+    comparison = compare_existing(existing, report)
     print('Existing export check passed:', comparison)
     payload = json.dumps({'season': args.season,
                           'record_count': report['record_count'],
