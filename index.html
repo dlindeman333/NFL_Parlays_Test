@@ -2243,6 +2243,47 @@ safe6Button.onclick=async()=>{
  }catch(e){status('AUTO-SYNC v6 NOT ENABLED: '+(e&&e.message||String(e)));}
  finally{busy=false}
 };
+// Phase 3 TEST-only initial cloud-to-device baseline import. No Supabase mutations.
+const phase3InitialPull=document.createElement('button');
+phase3InitialPull.type='button';phase3InitialPull.className='btn alt';
+phase3InitialPull.textContent='Initialize this device from TEST cloud (guarded read-only pull)';
+$('sbSyncNow').parentNode.insertBefore(phase3InitialPull,$('sbSyncNow'));
+let phase3InitialPullBackupUid=null;
+phase3InitialPull.onclick=async()=>{
+ if(busy){status('Another cloud operation is running. No changes made.');return;}
+ busy=true;
+ try{
+  const uid=await userId();
+  if(!safe6Active(uid))throw Error('Authenticated account ownership mismatch');
+  if(safe6Running||localStorage.getItem(safe6Key(uid)))throw Error('Auto-sync baseline already exists. Initial import unavailable');
+  const local=safe6View(snapshot(),'Device');
+  if(local.saved.length||local.deleted.length)throw Error('Device already has saved parlays or deletion markers; initial import refused');
+  const partRaw=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  if(partRaw){
+   const part=safe6View(JSON.parse(partRaw),'Account partition');
+   if(part.saved.length||part.deleted.length)throw Error('Account partition already contains saved parlays or deletion markers; initial import refused');
+  }
+  if(phase3InitialPullBackupUid!==uid){
+   download();phase3InitialPullBackupUid=uid;
+   status('STEP 1/2: Local backup download requested. Verify the backup file is present in Downloads, then click Initialize this device from TEST cloud again. No cloud or local data changed.');
+   return;
+  }
+  if(!confirm('Have you verified the local backup file downloaded successfully?\n\nImport saved parlays and deletion markers from your signed-in TEST cloud to this empty device? Device-local drafts will be preserved. This operation will NOT write to Supabase or enable auto-sync.'))return;
+  const first=await readRemote(uid);
+  if(!first||!first.updated_at)throw Error('TEST cloud record or revision missing');
+  const cloud=safe6View(personalCloudValues(first.payload),'TEST cloud');
+  const second=await readRemote(uid);
+  if(!second||second.updated_at!==first.updated_at||safe6Canonical(safe6View(personalCloudValues(second.payload),'TEST cloud readback'))!==safe6Canonical(cloud))throw Error('Cloud changed during import; no local changes made');
+  if(!safe6Active(uid))throw Error('Account changed during import');
+  const latest=safe6View(snapshot(),'Device recheck');
+  if(latest.saved.length||latest.deleted.length)throw Error('Device changed during import; no local changes made');
+  if(partRaw!==localStorage.getItem(ACCOUNT_PREFIX+uid))throw Error('Account partition changed during import; no local changes made');
+  safe6LocalWrite(uid,cloud);
+  phase3InitialPullBackupUid=null;
+  status('TEST CLOUD IMPORT VERIFIED: '+cloud.saved.length+' saved parlays and '+cloud.deleted.length+' deletion markers copied to this device. Drafts preserved. Cloud unchanged. Auto-sync remains OFF. Run read-only preflight again.');
+ }catch(e){status('TEST CLOUD IMPORT STOPPED: '+(e&&e.message||String(e))+'. No cloud writes performed.');}
+ finally{busy=false;}
+};
 // Phase 3 consolidated cloud deletion controls: one, selected, or all.
 // Cloud-first CAS, readback, then device update. Drafts and unrelated payload keys are preserved.
 const safe8Delete=document.createElement('button');safe8Delete.type='button';safe8Delete.className='btn alt';
