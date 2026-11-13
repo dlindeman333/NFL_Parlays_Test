@@ -2200,6 +2200,44 @@ autoPreflightButton.onclick=async()=>{
  }catch(e){status('AUTO-SYNC PREFLIGHT STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
  finally{busy=false;}
 };
+// TEST-only read-only record discrepancy audit. No local or remote writes.
+const discrepancyAuditButton=document.createElement('button');
+discrepancyAuditButton.type='button';discrepancyAuditButton.className='btn alt';
+discrepancyAuditButton.textContent='Inspect conflicting parlay IDs (READ ONLY) — v1';
+$('sbSyncNow').parentNode.insertBefore(discrepancyAuditButton,$('sbSyncNow'));
+discrepancyAuditButton.onclick=async()=>{
+ if(busy){status('Another cloud operation is running.');return;}busy=true;
+ try{
+  const uid=await userId();
+  if(!auth||localStorage.getItem(OWNER_KEY)!==uid)throw Error('Signed-in TEST account does not own active browser data.');
+  const remote=await readRemote(uid);if(!remote)throw Error('Cloud account record missing.');
+  const cloud=trialData(personalCloudValues(remote.payload));
+  const device=trialData(snapshot());
+  const raw=localStorage.getItem(ACCOUNT_PREFIX+uid);
+  let partition=null;
+  if(raw!==null){const obj=JSON.parse(raw);if(!obj||typeof obj!=='object'||Array.isArray(obj))throw Error('Invalid account partition.');partition=trialData(obj);}
+  const index=(items,side)=>{const map=new Map();for(const p of items){if(!p||p.id==null)throw Error(side+' has a parlay without an ID.');const id=String(p.id);if(map.has(id))throw Error(side+' contains duplicate ID '+id);map.set(id,p);}return map;};
+  const c=index(cloud.saved,'Cloud'),d=index(device.saved,'Device'),a=partition?index(partition.saved,'Account partition'):null;
+  const cm=new Set(cloud.deleted.map(String)),dm=new Set(device.deleted.map(String)),am=partition?new Set(partition.deleted.map(String)):null;
+  const all=[...new Set([...c.keys(),...d.keys(),...(a?[...a.keys()]:[]),...cm,...dm,...(am?[...am]:[])])].sort();
+  const rows=all.filter(id=>c.has(id)!==d.has(id)||(a&&a.has(id)!==d.has(id))||cm.has(id)!==dm.has(id)||(am&&am.has(id)!==dm.has(id))||((c.has(id)&&d.has(id))&&JSON.stringify(c.get(id))!==JSON.stringify(d.get(id)))||((a&&a.has(id)&&d.has(id))&&JSON.stringify(a.get(id))!==JSON.stringify(d.get(id)))||((c.has(id)||d.has(id))&&(cm.has(id)||dm.has(id))));
+  const fmt=(m,id)=>m===null?'N/A':m.has(id)?'YES':'no';
+  const lines=['TEST READ-ONLY PARLAY DISCREPANCY REPORT v1',
+   'Cloud saved '+c.size+'; device saved '+d.size+'; account partition '+(a?a.size:'not initialized')+'.',
+   'Cloud markers '+cm.size+'; device markers '+dm.size+'; partition markers '+(am?am.size:'not initialized')+'.',
+   'Conflicting IDs: '+rows.length+'. No data changed.',''];
+  for(const id of rows){
+   const contentMismatch=c.has(id)&&d.has(id)&&JSON.stringify(c.get(id))!==JSON.stringify(d.get(id));
+   const partMismatch=a&&a.has(id)&&d.has(id)&&JSON.stringify(a.get(id))!==JSON.stringify(d.get(id));
+   lines.push('ID '+id+' | saved cloud='+fmt(c,id)+', device='+fmt(d,id)+', partition='+fmt(a,id)+' | deleted marker cloud='+fmt(cm,id)+', device='+fmt(dm,id)+', partition='+fmt(am,id)+(contentMismatch?' | CLOUD/DEVICE CONTENT DIFF':'')+(partMismatch?' | DEVICE/PARTITION CONTENT DIFF':''));
+  }
+  if(!rows.length)lines.push('No per-ID discrepancy found; check ordering or other non-ID data differences.');
+  lines.push('','READ ONLY: no cloud, device, partition, or draft changes. Do not use Reconcile, Upload, Clear, or Enable Auto-Sync.');
+  const message=lines.join('\n');status(message);
+  const node=$('sbStatus');if(node)node.style.whiteSpace='pre-wrap';
+ }catch(e){status('READ-ONLY DISCREPANCY AUDIT STOPPED: '+(e&&e.message||String(e))+'. No data changed.');}
+ finally{busy=false;}
+};
 // TEST-only explicit marker reconciliation. All legacy automatic writers remain disabled.
 const markerUnionButton=document.createElement('button');
 markerUnionButton.type='button';markerUnionButton.className='btn alt';
