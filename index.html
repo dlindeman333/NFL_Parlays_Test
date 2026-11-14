@@ -1539,23 +1539,9 @@ function download(){
  status('Local backup download requested. Verify the file in Downloads before changing cloud data.');
 }
 async function readRemote(uid){
- // TEST v10: Retry only a transient, read-only cloud GET. Never retry writes.
- // Obtain the session token once; authentication failures remain visible and are not retried.
- let jwt;
- try{jwt=await token();}catch(e){throw Error('Cloud session token: '+(e&&e.message||String(e)));}
- const path='/rest/v1/nfl_parlay_sync?select=payload,updated_at&user_id=eq.'+encodeURIComponent(uid);
- for(let attempt=1;attempt<=2;attempt++){
-  try{
-   const rows=await api(path,{headers:{Authorization:'Bearer '+jwt}});
-   if(!Array.isArray(rows))throw Error('Cloud record response was not a list');
-   return rows[0]||null;
-  }catch(e){
-   const message=e&&e.message||String(e);
-   const transient=e instanceof TypeError||/^(Load failed|Failed to fetch|NetworkError)/i.test(message);
-   if(!transient||attempt===2)throw Error('Cloud record GET attempt '+attempt+'/2: '+message);
-   await new Promise(resolve=>setTimeout(resolve,450));
-  }
- }
+ const jwt=await token();
+ const rows=await api('/rest/v1/nfl_parlay_sync?select=payload,updated_at&user_id=eq.'+encodeURIComponent(uid),{headers:{Authorization:'Bearer '+jwt}});
+ return rows[0]||null;
 }
 async function push(uid,values){
  if(SAFE_READ_ONLY)throw Error('Cloud writes temporarily disabled.');
@@ -2668,6 +2654,33 @@ function phase3DeletionReadTimeout(promise,label,ms=18000){
   new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error(label+' timed out after '+Math.round(ms/1000)+'s. No deletion attempted. Check connection, sign in, then retry.')),ms);})
  ]).finally(()=>clearTimeout(timer));
 }
+// TEST v10: nonblocking in-page confirmation avoids Safari's synchronous native
+// confirm() dialogs around a download and subsequent guarded Supabase GET.
+// A missing/dismissed dialog always resolves to Cancel, never to approval.
+function phase3V10Confirm(title,description,approveLabel){
+ return new Promise(resolve=>{
+  const overlay=document.createElement('div');
+  overlay.setAttribute('role','presentation');
+  overlay.style.cssText='position:fixed;inset:0;z-index:2147483000;background:rgba(8,19,35,.75);display:flex;align-items:center;justify-content:center;padding:16px';
+  const panel=document.createElement('div');
+  panel.setAttribute('role','alertdialog');panel.setAttribute('aria-modal','true');
+  panel.setAttribute('aria-label',title);
+  panel.style.cssText='background:#fff;color:#14263d;max-width:460px;width:100%;border-radius:12px;padding:22px;box-shadow:0 12px 35px #0006;font:16px/1.45 system-ui,sans-serif';
+  const heading=document.createElement('h3');heading.textContent=title;heading.style.cssText='margin:0 0 12px;font-size:19px';
+  const details=document.createElement('p');details.textContent=description;details.style.cssText='white-space:pre-line;margin:0 0 20px';
+  const actions=document.createElement('div');actions.style.cssText='display:flex;gap:12px;justify-content:flex-end;flex-wrap:wrap';
+  const cancel=document.createElement('button');cancel.type='button';cancel.textContent='Cancel';cancel.style.cssText='padding:12px 18px;min-width:100px;border-radius:8px;border:1px solid #667;background:#f4f6f9;color:#14263d';
+  const approve=document.createElement('button');approve.type='button';approve.textContent=approveLabel;approve.style.cssText='padding:12px 18px;min-width:120px;border-radius:8px;border:1px solid #174a85;background:#174a85;color:white;font-weight:700';
+  actions.append(cancel,approve);panel.append(heading,details,actions);overlay.append(panel);document.body.append(overlay);
+  const previous=document.activeElement;let finished=false;
+  const finish=answer=>{if(finished)return;finished=true;document.removeEventListener('keydown',onKey,true);overlay.remove();if(previous&&previous.isConnected&&previous.focus)previous.focus();resolve(answer)};
+  const onKey=e=>{if(e.key==='Escape'){e.preventDefault();finish(false)}else if(e.key==='Tab'){e.preventDefault();(document.activeElement===cancel?approve:cancel).focus()}};
+  document.addEventListener('keydown',onKey,true);
+  cancel.addEventListener('click',()=>finish(false));approve.addEventListener('click',()=>finish(true));
+  overlay.addEventListener('click',e=>{if(e.target===overlay)finish(false)});
+  cancel.focus();
+ });
+}
 async function safe9DeleteSaved(requestedIds=null,cardFeedback=null,cardId=null){
  let deletionStage='initial safety checks';
  const report=message=>{safe10DeletionFeedback(message,false);if(cardId!==null)phase3DeleteReport(cardId,message);if(cardFeedback&&cardFeedback.isConnected)cardFeedback.textContent=message;};
@@ -2719,10 +2732,14 @@ async function safe9DeleteSaved(requestedIds=null,cardFeedback=null,cardId=null)
   if(ids.some(id=>!existing.has(id)))throw Error('Selection contains an unknown parlay');
   const all=ids.length===cloud.saved.length;
   downloadJSON({version:8,source:'test-pre-delete',exported_at:new Date().toISOString(),cloud:personalCloudValues(remote.payload),device:snapshot()},'TEST-parlays-backup-'+new Date().toISOString().slice(0,10)+'.json');
-  if(!confirm('TEST ACCOUNT BACKUP: Save the downloaded JSON backup before continuing. Cancel leaves everything unchanged.')){report('Deletion canceled at backup confirmation. No changes made.');return;}
-  const selectedNames=cloud.saved.filter(p=>ids.includes(String(p.id))).map(p=>String(p.name||'Untitled Parlay').slice(0,100));
-  const targetDescription=all?'ALL '+ids.length+' saved parlays':ids.length===1?'saved parlay "'+selectedNames[0]+'" ('+ids[0]+')':ids.length+' selected saved parlays: '+selectedNames.join(', ');
-  if(!confirm('DELETE '+targetDescription+' from ONLY the signed-in TEST account? This will propagate to your other devices. Drafts, statistics, and prediction data are preserved.')){report('Deletion canceled at final confirmation. No changes made.');return;}
+  if(!await phase3V10Confirm('Verify TEST backup',
+   'A JSON backup download was requested. Verify the file is saved in Downloads before continuing.\n\nCancel leaves everything unchanged.',
+   'Backup verified')){report('Deletion canceled at backup confirmation. No changes made.');return;}
+  const selectedNames=cloud.saved.filter(p=>ids.includes(String(p.id))).map(p=>(p.name&&String(p.name).trim())||'Untitled Parlay (ID '+p.id+')');
+  const targetList=selectedNames.length<=8?selectedNames.map(n=>'• '+n).join('\n'):selectedNames.slice(0,8).map(n=>'• '+n).join('\n')+'\n… and '+(selectedNames.length-8)+' more';
+  if(!await phase3V10Confirm('Final TEST deletion confirmation',
+   'Delete exactly '+ids.length+' saved parlay(s) from your signed-in TEST account?\n\n'+targetList+'\n\nThis deletion will synchronize to your other devices. Drafts, statistics, and prediction data are preserved.',
+   'Delete '+ids.length+' parlay'+(ids.length===1?'':'s'))){report('Deletion canceled at final confirmation. No changes made.');return;}
   // Revalidate account and cloud revision after the potentially lengthy Safari download.
   if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==canonical)throw Error('Account/device changed during confirmation; no deletion');
   deletionStage='cloud revision recheck';
@@ -2746,8 +2763,8 @@ async function safe9DeleteSaved(requestedIds=null,cardFeedback=null,cardId=null)
   try{safe6LocalWrite(uid,nextData);localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:safe6Canonical(nextData)}));}
   catch(e){throw Error('Cloud deletion VERIFIED, but this device update failed: '+e.message+'. Do not retry deletion; inspect sync status.');}
   for(const id of ids)phase3DeleteMessages.delete(String(id));
-  report('TEST v8 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
- }catch(e){report('TEST v8 deletion stopped during '+deletionStage+': '+(e&&e.message||String(e))+'. '+(deletionStage.includes('write')||deletionStage.includes('post-deletion')?'Cloud outcome may be uncertain; inspect Supabase before retrying.':'No deletion write was attempted at this stage.'));}
+  report('TEST v10 CLOUD DELETION VERIFIED: '+ids.length+' removed; '+nextSaved.length+' remain. Deletion markers '+marks.length+'. Other devices will pull while active.');
+ }catch(e){report('TEST v10 deletion stopped during '+deletionStage+': '+(e&&e.message||String(e))+'. '+(deletionStage.includes('write')||deletionStage.includes('post-deletion')?'Cloud outcome may be uncertain; inspect Supabase before retrying.':'No deletion write was attempted at this stage.'));}
  finally{busy=false;safe6Running=priorRunning&&!!localStorage.getItem(safe6Key(localStorage.getItem(OWNER_KEY)||''));}
 }
 window.phase3GuardedDeleteSaved=safe9DeleteSaved;
