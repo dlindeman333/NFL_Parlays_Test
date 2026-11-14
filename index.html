@@ -2512,7 +2512,7 @@ async function safe6Cycle(){
   const cloud=safe6View(personalCloudValues(remote.payload),'Cloud');
   const local=safe6View(snapshot(),'Device');
   const c=safe6Canonical(cloud),l=safe6Canonical(local),b=base.canonical;
-  if(c===l){if(b!==c)localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:c}));return;}
+  if(c===l){if(b!==c)localStorage.setItem(safe6Key(uid),JSON.stringify({uid,canonical:c}));status('GUARDED SYNC v11 PASSED: Cloud and device saved parlays and deletion markers match. Drafts preserved.');return;}
   if(c!==b&&l!==b)throw Error('Both cloud and device changed; manual review required');
   if(l===b){
    // Cloud changed, local did not. Do not discard local drafts or account ownership.
@@ -2783,8 +2783,36 @@ if(deleteAllSavedButton){
 safe6Stop.onclick=()=>{safe6Running=false;const uid=localStorage.getItem(OWNER_KEY);if(uid)localStorage.removeItem(safe6Key(uid));status('AUTO-SYNC v6 PAUSED on this device. No data deleted.');};
 setInterval(()=>{if(safe6Running)safe6Cycle()},15000);
 
+// TEST v11: route the legacy Sync now button to guarded synchronization only.
+// When guarded auto-sync is paused, perform a strictly read-only comparison;
+// never enable legacy sync or silently resume cloud writes.
 $('sbSyncNow').onclick=async()=>{
- if(SAFE_READ_ONLY){status('Cloud sync paused for safety.');return;}if(!auth){status('Sign in first.');return}await sync(!started)};
+ if(!auth){status('Sign in first. No changes made.');return;}
+ if(busy){status('Another guarded cloud operation is in progress. Wait and retry.');return;}
+ if(!navigator.onLine){status('GUARDED SYNC v11: Device reports offline. No changes made.');return;}
+ if(safe6Running){
+  status('GUARDED SYNC v11: Checking cloud/device state…');
+  await safe6Cycle();
+  return;
+ }
+ busy=true;
+ try{
+  status('GUARDED SYNC v11: Read-only safety check in progress…');
+  const uid=await phase3DeletionReadTimeout(userId(),'Account verification');
+  if(!safe6Active(uid))throw Error('Authenticated account does not match active device owner');
+  const raw=localStorage.getItem(safe6Key(uid));
+  if(!raw){status('GUARDED SYNC v11: Auto-sync is not enabled for this account. No writes attempted. Use the guarded enable control only after reviewing account data.');return;}
+  const base=JSON.parse(raw);
+  if(!base||base.uid!==uid||typeof base.canonical!=='string')throw Error('Invalid guarded baseline');
+  const remote=await phase3DeletionReadTimeout(readRemote(uid),'Cloud record read');
+  if(!remote||!remote.updated_at)throw Error('Cloud revision unavailable');
+  const c=safe6Canonical(safe6View(personalCloudValues(remote.payload),'Cloud'));
+  const l=safe6Canonical(safe6View(snapshot(),'Device'));
+  if(c===l){status('GUARDED SYNC v11 READ-ONLY PASSED: Cloud and device match. Auto-sync remains paused; no writes attempted.');}
+  else{status('GUARDED SYNC v11 PAUSED: Cloud and device differ. No writes attempted. Review guarded synchronization status before proceeding.');}
+ }catch(e){status('GUARDED SYNC v11 READ-ONLY FAILED: '+(e&&e.message||String(e))+'. No writes attempted.');}
+ finally{busy=false;}
+};
 settings();auth=authLoad();authControls(false);
 privacyGate('Personal parlays are locked until account sign-in is verified.');
 if(auth&&config.url&&config.key){status('Restoring saved sign-in…');setTimeout(async()=>{try{const uid=await userId();const changed=activateAccount(uid);if(changed){location.reload();return;}privacyUnlock();authControls(true);
