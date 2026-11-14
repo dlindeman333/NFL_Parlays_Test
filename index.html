@@ -753,6 +753,23 @@ function undoSavedDeletion(){
  lastSavedDeletion=null;persist();renderSaved();
  $('msg').textContent='Deletion undone.'; $('savedActionStatus').textContent='Deletion undone.';
 }
+// Capture-phase deletion handler: responds even when another saved-card handler
+// stops bubbling. Keep cloud deletion behind the existing guarded confirmations.
+$('saved').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-saved-action="delete-parlay"]');
+ if(!button || !$('saved').contains(button))return;
+ event.preventDefault();event.stopImmediatePropagation();
+ const id=String(button.dataset.savedId||'');
+ if(!id){phase3DeleteReport('', 'Delete blocked: missing saved parlay ID. No changes made.');return;}
+ if(button.disabled)return;
+ button.disabled=true;
+ phase3DeleteReport(id,'Delete clicked — verifying your signed-in TEST account…');
+ Promise.resolve().then(()=>{
+   if(typeof window.phase3GuardedDeleteSaved!=='function')throw Error('Guarded TEST deletion controller unavailable');
+   return window.phase3GuardedDeleteSaved([id],null,id);
+ }).catch(error=>phase3DeleteReport(id,'Delete blocked: '+(error?.message||String(error))+'. No deletion confirmed.'))
+ .finally(()=>{if(button.isConnected)button.disabled=false;});
+},true);
 // Delegated click handling works even after saved cards are re-rendered.
 $('saved').addEventListener('click',event=>{
  const button=event.target.closest('button[data-saved-action]');
