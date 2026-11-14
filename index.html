@@ -118,6 +118,8 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
 <style id="phase3KickoffCountdownStyles">
 #phase3KickoffCountdown{margin:10px 0 12px;padding:12px 14px;text-align:center;border:1px solid var(--bd);border-radius:12px;background:var(--card)}
 #phase3KickoffCountdown .kickoff-title{font-size:13px;font-weight:800;letter-spacing:.045em}
+#phase3KickoffCountdown .kickoff-heading{display:flex;align-items:center;justify-content:space-between;gap:10px}
+#phase3KickoffCountdown .kickoff-week{font-size:clamp(15px,3.6vw,21px);font-weight:900;letter-spacing:.04em;border:1px solid var(--bd);border-radius:8px;padding:5px 12px;background:var(--sel);white-space:nowrap}
 #phase3KickoffCountdown .kickoff-clock{display:flex;justify-content:center;gap:8px;margin:9px 0 5px}
 #phase3KickoffCountdown .kickoff-unit{min-width:64px;flex:0 1 95px;padding:7px 4px;border-radius:8px;background:var(--sel)}
 #phase3KickoffCountdown .kickoff-value{display:block;font-size:clamp(19px,4vw,27px);font-weight:800;font-variant-numeric:tabular-nums}
@@ -128,7 +130,7 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
 </head><body class="phase3-privacy-locked">
 <div class="hd"><div class="row" style="justify-content:space-between"><h1>NFL Parlay Builder</h1><button id="theme" class="btn alt" type="button" aria-label="Toggle dark mode">◐ Theme</button></div><div class="mu" id="sub"></div></div>
 <section id="phase3KickoffCountdown" aria-label="Countdown to next NFL kickoff" aria-live="off">
- <div class="kickoff-title">🏈 NEXT NFL KICKOFF</div>
+ <div class="kickoff-heading"><div class="kickoff-title">🏈 NEXT NFL KICKOFF</div><strong id="kickoffWeek" class="kickoff-week" aria-label="NFL week">WEEK --</strong></div>
  <div class="kickoff-clock" role="timer" aria-label="Time remaining to next kickoff">
   <div class="kickoff-unit"><span class="kickoff-value" id="kickoffDays">--</span><span class="kickoff-label">Days</span></div>
   <div class="kickoff-unit"><span class="kickoff-value" id="kickoffHours">--</span><span class="kickoff-label">Hours</span></div>
@@ -137,7 +139,7 @@ body.phase3-privacy-locked > :not(.hd):not(#topAccountPanel):not(#phase3KickoffC
  </div>
  <div class="kickoff-note" id="kickoffStatus" role="status" aria-live="polite">Checking NFL schedule…</div>
 </section>
-<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 NFL Parlay Builder · Your Account</strong><span class="mu" style="font-weight:700;color:#047857" id="topEnvironment">TEST</span></div><div id="accountIdentityCard" role="status" aria-live="polite" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="mu">Signed in as</div><strong id="topAccountIndicator">Checking sign-in…</strong></div><span id="topConnectionBadge" class="mu">Not connected</span></div><div id="topAuthMount"></div><div class="tools" style="margin-top:9px"><button id="openSetup" class="btn alt" type="button" aria-haspopup="dialog" aria-controls="setupDialog">⚙ Setup</button></div><div class="mu" style="margin-top:7px">TEST safety mode: guarded authenticated parlay sync and deletion are available. Automated prediction publishing remains disabled pending validation.</div></section>
+<section id="topAccountPanel" class="card" aria-label="NFL Parlay Builder account" style="margin:10px 0 12px;border:1px solid var(--bd)"><div class="tools" style="justify-content:space-between;align-items:center;margin:0 0 6px"><strong>🔐 NFL Parlay Builder · Your Account</strong><span class="mu" style="font-weight:700;color:#047857" id="topEnvironment">TEST</span></div><div id="accountIdentityCard" role="status" aria-live="polite" style="border:1px solid var(--bd);border-radius:10px;padding:12px;margin:8px 0;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><div><div class="mu">Signed in as</div><strong id="topAccountIndicator">Checking sign-in…</strong></div><span id="topConnectionBadge" class="mu">Not connected</span></div><div id="topAuthMount"></div><div class="mu" style="margin-top:7px">TEST safety mode: guarded authenticated parlay sync and deletion are available. Automated prediction publishing remains disabled pending validation.</div></section>
 <div class="toolbar"><label for="seasonSelect" style="font-weight:700">Season</label><select id="seasonSelect" aria-label="NFL season"></select><label for="wkTop" style="font-weight:700">Week</label><select id="wkTop" aria-label="NFL week (top selector)"></select><button id="refresh" class="btn" type="button">↻ Refresh NFL schedule</button><button id="boxRefresh" class="btn alt" type="button" hidden>↻ Load completed team box scores</button></div><div class="refresh-status-line"><span class="data-state" id="dataState" role="status" aria-live="polite">Offline snapshot • 2026 weeks 9–10</span></div>
 <div class="card" style="border-color:#b45309"><b>TEST account safety · guarded parlay operations</b><div class="mu">Authenticated parlay synchronization, guarded reconciliation, and confirmed deletion are available in TEST. Account checks, backups, and cloud read-back remain required. Automated prediction publishing is disabled pending validation. Do not use manual cloud restore or device upload to resolve a mismatch; use guarded reconciliation instead.</div></div>
 <div class="navlinks"><a href="#myParlays">My parlays</a><a href="#builderSettingsTitle">Builder</a><a href="#gameSection">Games</a><a href="#recommendations">Potential plays</a><a href="#advancedPredictions">AI Matchups</a></div>
@@ -951,15 +953,18 @@ function parseESPN(data){if(!Array.isArray(data.events))throw Error("No schedule
 // Phase 3 TEST: next NFL kickoff, sourced from actual ESPN event ISO timestamps.
 const PHASE3_KICKOFF_KEY='nflp-next-kickoff-'+SEASON;
 let phase3KickoffAt=null;
+let phase3KickoffWeek=null;
 let phase3KickoffRetry=false;
 function phase3SetNextKickoff(events){
- const now=Date.now();const starts=events.map(e=>Number(e.start)).filter(t=>Number.isFinite(t)&&t>now).sort((a,b)=>a-b);
- phase3KickoffAt=starts.length?starts[0]:null;
- try{if(phase3KickoffAt)localStorage.setItem(PHASE3_KICKOFF_KEY,JSON.stringify({start:phase3KickoffAt,checkedAt:now}));else localStorage.removeItem(PHASE3_KICKOFF_KEY)}catch(e){}
+ const now=Date.now();const next=events.filter(e=>Number.isFinite(Number(e.start))&&Number(e.start)>now).sort((a,b)=>Number(a.start)-Number(b.start))[0];
+ phase3KickoffAt=next?Number(next.start):null;
+ phase3KickoffWeek=next&&Number.isInteger(Number(next.week))&&Number(next.week)>=1&&Number(next.week)<=18?Number(next.week):null;
+ try{if(phase3KickoffAt)localStorage.setItem(PHASE3_KICKOFF_KEY,JSON.stringify({start:phase3KickoffAt,week:phase3KickoffWeek,checkedAt:now}));else localStorage.removeItem(PHASE3_KICKOFF_KEY)}catch(e){}
  phase3RenderKickoff();
 }
 function phase3RenderKickoff(){
  const el=id=>document.getElementById(id);const status=el('kickoffStatus');if(!status)return;
+ const week=el('kickoffWeek');if(week)week.textContent=phase3KickoffWeek?'WEEK '+phase3KickoffWeek:'WEEK --';
  const ms=phase3KickoffAt-Date.now();
  if(!Number.isFinite(ms)||ms<=0){
   for(const id of ['kickoffDays','kickoffHours','kickoffMinutes','kickoffSeconds'])el(id).textContent='--';
@@ -972,7 +977,7 @@ function phase3RenderKickoff(){
  ['kickoffDays','kickoffHours','kickoffMinutes','kickoffSeconds'].forEach((id,i)=>el(id).textContent=String(parts[i]).padStart(2,'0'));
  status.textContent='Kickoff: '+new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',weekday:'short',month:'short',day:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(new Date(phase3KickoffAt));
 }
-try{const cached=JSON.parse(localStorage.getItem(PHASE3_KICKOFF_KEY)||'null');if(cached&&Number(cached.start)>Date.now()&&Date.now()-Number(cached.checkedAt)<12*3600000)phase3KickoffAt=Number(cached.start)}catch(e){}
+try{const cached=JSON.parse(localStorage.getItem(PHASE3_KICKOFF_KEY)||'null');if(cached&&Number(cached.start)>Date.now()&&Date.now()-Number(cached.checkedAt)<12*3600000){phase3KickoffAt=Number(cached.start);phase3KickoffWeek=Number.isInteger(Number(cached.week))&&Number(cached.week)>=1&&Number(cached.week)<=18?Number(cached.week):null}}catch(e){}
 phase3RenderKickoff();setInterval(phase3RenderKickoff,1000);
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)phase3RenderKickoff()});
 const NFL_REFRESH_KEY="nflp-last-schedule-refresh-v1";
@@ -1339,7 +1344,14 @@ if(navigator.onLine){setTimeout(()=>{refreshNFL().catch(e=>console.warn('Automat
 (function mountTopAccount(){
  const form=document.getElementById('sbAuthForm');
  const mount=document.getElementById('topAuthMount');
- if(form&&mount){mount.appendChild(form);form.style.margin='4px 0';}
+ if(form&&mount){
+  mount.appendChild(form);form.style.margin='4px 0';
+  const signOut=document.getElementById('sbSignOut');
+  const setup=document.createElement('button');
+  setup.id='openSetup';setup.className='btn alt';setup.type='button';
+  setup.textContent='⚙ Setup';setup.setAttribute('aria-haspopup','dialog');setup.setAttribute('aria-controls','setupDialog');
+  if(signOut)signOut.insertAdjacentElement('afterend',setup);
+ }
  const indicator=document.getElementById('topAccountIndicator');
  const status=document.getElementById('sbStatus');
  if(indicator&&status){
