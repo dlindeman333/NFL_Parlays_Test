@@ -1539,9 +1539,23 @@ function download(){
  status('Local backup download requested. Verify the file in Downloads before changing cloud data.');
 }
 async function readRemote(uid){
- const jwt=await token();
- const rows=await api('/rest/v1/nfl_parlay_sync?select=payload,updated_at&user_id=eq.'+encodeURIComponent(uid),{headers:{Authorization:'Bearer '+jwt}});
- return rows[0]||null;
+ // TEST v10: Retry only a transient, read-only cloud GET. Never retry writes.
+ // Obtain the session token once; authentication failures remain visible and are not retried.
+ let jwt;
+ try{jwt=await token();}catch(e){throw Error('Cloud session token: '+(e&&e.message||String(e)));}
+ const path='/rest/v1/nfl_parlay_sync?select=payload,updated_at&user_id=eq.'+encodeURIComponent(uid);
+ for(let attempt=1;attempt<=2;attempt++){
+  try{
+   const rows=await api(path,{headers:{Authorization:'Bearer '+jwt}});
+   if(!Array.isArray(rows))throw Error('Cloud record response was not a list');
+   return rows[0]||null;
+  }catch(e){
+   const message=e&&e.message||String(e);
+   const transient=e instanceof TypeError||/^(Load failed|Failed to fetch|NetworkError)/i.test(message);
+   if(!transient||attempt===2)throw Error('Cloud record GET attempt '+attempt+'/2: '+message);
+   await new Promise(resolve=>setTimeout(resolve,450));
+  }
+ }
 }
 async function push(uid,values){
  if(SAFE_READ_ONLY)throw Error('Cloud writes temporarily disabled.');
@@ -2706,7 +2720,9 @@ async function safe9DeleteSaved(requestedIds=null,cardFeedback=null,cardId=null)
   const all=ids.length===cloud.saved.length;
   downloadJSON({version:8,source:'test-pre-delete',exported_at:new Date().toISOString(),cloud:personalCloudValues(remote.payload),device:snapshot()},'TEST-parlays-backup-'+new Date().toISOString().slice(0,10)+'.json');
   if(!confirm('TEST ACCOUNT BACKUP: Save the downloaded JSON backup before continuing. Cancel leaves everything unchanged.')){report('Deletion canceled at backup confirmation. No changes made.');return;}
-  if(!confirm((all?'DELETE ALL '+ids.length:'DELETE '+ids.length+' SELECTED')+' saved parlay(s) from ONLY the signed-in TEST account? This will propagate to your other devices. Drafts, statistics, and prediction data are preserved.')){report('Deletion canceled at final confirmation. No changes made.');return;}
+  const selectedNames=cloud.saved.filter(p=>ids.includes(String(p.id))).map(p=>String(p.name||'Untitled Parlay').slice(0,100));
+  const targetDescription=all?'ALL '+ids.length+' saved parlays':ids.length===1?'saved parlay "'+selectedNames[0]+'" ('+ids[0]+')':ids.length+' selected saved parlays: '+selectedNames.join(', ');
+  if(!confirm('DELETE '+targetDescription+' from ONLY the signed-in TEST account? This will propagate to your other devices. Drafts, statistics, and prediction data are preserved.')){report('Deletion canceled at final confirmation. No changes made.');return;}
   // Revalidate account and cloud revision after the potentially lengthy Safari download.
   if(!safe6Active(uid)||safe6Canonical(safe6View(snapshot(),'Device'))!==canonical)throw Error('Account/device changed during confirmation; no deletion');
   deletionStage='cloud revision recheck';
